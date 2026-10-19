@@ -79,4 +79,31 @@ class SpecialistFlowTest extends TestCase
         $this->assertSame('Tóm tắt sức khỏe tinh thần của khách hàng.', $record->summary);
         $this->assertDatabaseMissing('consultation_records', ['summary' => 'Tóm tắt sức khỏe tinh thần của khách hàng.']);
     }
+
+    public function test_specialist_gets_a_friendly_message_when_starting_before_the_allowed_window(): void
+    {
+        $specialist = User::factory()->create(['role' => 'specialist']);
+        $profile = SpecialistProfile::factory()->create(['user_id' => $specialist->id, 'status' => 'ACTIVE']);
+        $customer = User::factory()->create(['role' => 'customer']);
+        $service = Service::factory()->create();
+        $profile->services()->attach($service);
+        $start = CarbonImmutable::now()->addHour();
+        $appointment = Appointment::factory()->create([
+            'customer_id' => $customer->id,
+            'created_by' => $customer->id,
+            'specialist_profile_id' => $profile->id,
+            'service_id' => $service->id,
+            'status' => 'CONFIRMED',
+            'start_at' => $start,
+            'end_at' => $start->addHour(),
+            'confirmed_at' => $start->subDay(),
+        ]);
+
+        $this->actingAs($specialist)
+            ->post(route('specialist.appointments.start', $appointment->id))
+            ->assertRedirect(route('specialist.appointments.detail', $appointment->id))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'CONFIRMED']);
+    }
 }

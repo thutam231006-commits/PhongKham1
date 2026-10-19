@@ -40,11 +40,7 @@
                 Đăng nhập tài khoản
             </a>
 
-            <button type="button"
-                    onclick="alert('Đã gửi lại email xác thực thành công. Vui lòng kiểm tra hộp thư đến hoặc mục Thư rác.')"
-                    class="block w-full rounded-xl border border-gray-300 bg-white py-3 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">
-                Chưa nhận được thư? Gửi lại email
-            </button>
+            <form method="POST" action="{{ route('verification.resend') }}" class="space-y-2">@csrf<input type="email" name="email" required placeholder="Email cần xác thực" class="w-full rounded-xl border-gray-300 text-sm"><button class="block w-full rounded-xl border border-gray-300 bg-white py-3 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">Chưa nhận được thư? Gửi lại email</button></form>
         </div>
 
     </div>

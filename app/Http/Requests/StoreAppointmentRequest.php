@@ -29,7 +29,8 @@ class StoreAppointmentRequest extends FormRequest
             'date' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9](\s*-\s*([01][0-9]|2[0-3]):[0-5][0-9])?$/'],
             'customer_note' => ['nullable', 'string', 'max:500'],
-            'payment_method' => ['required', Rule::in(['CASH'])],
+            'payment_method' => ['required', Rule::in(['CASH', 'BANK_QR'])],
+            'idempotency_key' => ['nullable', 'string', 'max:80'],
         ];
     }
 }

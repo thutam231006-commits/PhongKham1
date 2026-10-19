@@ -170,9 +170,9 @@
                                 <div class="flex items-center gap-2">
                                     <span class="font-bold text-[#0F172A]">Khách hàng ẩn danh</span>
                                     <span class="inline-block h-1 w-1 rounded-full bg-gray-400"></span>
-                                    <span class="text-[#709782]">{{ $rev->service_name ?? 'Tham vấn tâm lý' }}</span>
+                                    <span class="text-[#709782]">{{ $rev->appointment?->service?->name ?? 'Tham vấn tâm lý' }}</span>
                                 </div>
-                                <span>{{ $rev->created_at }}</span>
+                                <span>{{ $rev->created_at?->format('d/m/Y') }}</span>
                             </div>
 
                             {{-- Sao --}}
@@ -190,6 +190,7 @@
                         </div>
                     @endforelse
                 </div>
+                <div class="mt-5">{{ $reviews->links() }}</div>
             </div>
 
         </div>

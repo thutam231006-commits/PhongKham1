@@ -33,6 +33,7 @@
 
 @section('content')
 <div class="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8 space-y-8"
+     x-init="showCancelModal = false; showRescheduleModal = false; showEditNoteModal = false"
      x-data="{
         showCancelModal: false,
         showRescheduleModal: false,
@@ -77,6 +78,8 @@
             {{-- Đổi lịch (CONFIRMED, >=24h, < 2 lần) --}}
             @if($appointment->status === 'CONFIRMED' && ($appointment->can_reschedule ?? true))
                 <button type="button"
+                        data-modal-open="reschedule-appointment-modal"
+                        onclick="document.getElementById('reschedule-appointment-modal').style.display = 'flex'; return false;"
                         @click="showRescheduleModal = true"
                         class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-[#0F172A] hover:bg-gray-50 transition shadow-2xs">
                     Yêu cầu đổi lịch
@@ -86,6 +89,8 @@
             {{-- Hủy lịch (CONFIRMED hoặc PENDING) --}}
             @if(in_array($appointment->status, ['CONFIRMED', 'PENDING']))
                 <button type="button"
+                        data-modal-open="cancel-appointment-modal"
+                        onclick="document.getElementById('cancel-appointment-modal').style.display = 'flex'; return false;"
                         @click="showCancelModal = true; cancelStep = 1"
                         class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-700 hover:bg-red-100 transition shadow-2xs">
                     Hủy lịch hẹn
@@ -284,8 +289,8 @@
     </div>
 
     {{-- ═══ POP-UP HỦY LỊCH HẸN 2 BƯỚC (FR-PAY-009/010) ═══ --}}
-    <div x-show="showCancelModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-        <div class="w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-xl space-y-6" @click.outside="showCancelModal = false">
+    <div id="cancel-appointment-modal" x-show="showCancelModal" x-cloak @click.self="showCancelModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+        <div class="pointer-events-auto w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-xl space-y-6">
             
             {{-- Bước 1: Xem trước tỷ lệ hoàn tiền --}}
             <div x-show="cancelStep === 1">
@@ -296,7 +301,7 @@
                         </svg>
                         Xác nhận hủy lịch hẹn
                     </h3>
-                    <button type="button" @click="showCancelModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+                    <button type="button" data-modal-close="cancel-appointment-modal" onclick="document.getElementById('cancel-appointment-modal').style.display = 'none'; return false;" @click.stop="showCancelModal = false" @keydown.escape.window="showCancelModal = false" class="relative z-10 cursor-pointer p-2 text-gray-400 hover:text-gray-600" aria-label="Đóng hộp thoại hủy lịch">✕</button>
                 </div>
 
                 <div class="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 space-y-2">
@@ -322,7 +327,7 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showCancelModal = false" class="rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                    <button type="button" data-modal-close="cancel-appointment-modal" onclick="document.getElementById('cancel-appointment-modal').style.display = 'none'; return false;" @click.stop="showCancelModal = false" class="relative z-10 cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50">
                         Đóng
                     </button>
                     <button type="button" @click="cancelStep = 2" class="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700">
@@ -335,7 +340,7 @@
             <div x-show="cancelStep === 2">
                 <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                     <h3 class="text-lg font-bold text-[#0F172A]">Thông tin ngân hàng nhận hoàn tiền</h3>
-                    <button type="button" @click="showCancelModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+                    <button type="button" data-modal-close="cancel-appointment-modal" onclick="document.getElementById('cancel-appointment-modal').style.display = 'none'; return false;" @click.stop="showCancelModal = false" class="relative z-10 cursor-pointer p-2 text-gray-400 hover:text-gray-600" aria-label="Đóng hộp thoại hoàn tiền">✕</button>
                 </div>
 
                 <form method="POST" action="{{ route('customer.appointments.cancel', ['id' => $appointment->id]) }}" class="mt-4 space-y-4 text-xs">
@@ -375,14 +380,14 @@
     </div>
 
     {{-- ═══ MODAL YÊU CẦU ĐỔI LỊCH (SCR-CUS-06) ═══ --}}
-    <div x-show="showRescheduleModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-        <div class="w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-xl space-y-6" @click.outside="showRescheduleModal = false">
+    <div id="reschedule-appointment-modal" x-show="showRescheduleModal" x-cloak @click.self="showRescheduleModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+        <div class="pointer-events-auto w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-xl space-y-6">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div>
                     <h3 class="text-lg font-bold text-[#0F172A]">Yêu cầu dời lịch hẹn</h3>
                     <p class="text-xs text-[#4A5568] mt-0.5">Số lần đã đổi: {{ $appointment->reschedule_count ?? 0 }} / 2 lần tối đa</p>
                 </div>
-                <button type="button" @click="showRescheduleModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+                <button type="button" data-modal-close="reschedule-appointment-modal" onclick="document.getElementById('reschedule-appointment-modal').style.display = 'none'; return false;" @click.stop="showRescheduleModal = false" @keydown.escape.window="showRescheduleModal = false" class="relative z-10 cursor-pointer p-2 text-gray-400 hover:text-gray-600" aria-label="Đóng hộp thoại đổi lịch">✕</button>
             </div>
 
             <form method="POST" action="{{ route('customer.appointments.reschedule', ['id' => $appointment->id]) }}" class="space-y-4 text-xs">
@@ -412,7 +417,7 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" @click="showRescheduleModal = false" class="rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700">
+                    <button type="button" data-modal-close="reschedule-appointment-modal" onclick="document.getElementById('reschedule-appointment-modal').style.display = 'none'; return false;" @click.stop="showRescheduleModal = false" class="relative z-10 cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700">
                         Hủy
                     </button>
                     <button type="submit" class="rounded-xl bg-[#1D4B43] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#14352F]">
@@ -424,4 +429,36 @@
     </div>
 
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('click', function (event) {
+        const openButton = event.target.closest('[data-modal-open]');
+        if (openButton) {
+            const modal = document.getElementById(openButton.dataset.modalOpen);
+            if (modal) modal.style.display = '';
+            return;
+        }
+
+        const closeButton = event.target.closest('[data-modal-close]');
+        if (!closeButton) return;
+
+        const modal = document.getElementById(closeButton.dataset.modalClose);
+        if (!modal) return;
+
+        modal.style.display = 'none';
+        const stateRoot = modal.closest('[x-data]');
+        if (stateRoot && window.Alpine && typeof window.Alpine.$data === 'function') {
+            const state = window.Alpine.$data(stateRoot);
+            if (closeButton.dataset.modalClose === 'cancel-appointment-modal') state.showCancelModal = false;
+            if (closeButton.dataset.modalClose === 'reschedule-appointment-modal') state.showRescheduleModal = false;
+        }
+    });
+    window.addEventListener('pageshow', function () {
+        ['cancel-appointment-modal', 'reschedule-appointment-modal'].forEach(function (id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'none';
+        });
+    });
+</script>
+@endpush
 @endsection

@@ -1,0 +1,5 @@
+@extends('layouts.app')
+@section('title', 'Cấu hình hệ thống')
+@section('content')
+<div class="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6"><div><h1 class="text-3xl font-black text-[#1D4B43]">Cấu hình hệ thống</h1><p class="mt-2 text-sm text-[#4A5568]">Các quy tắc vận hành được đọc trực tiếp khi đặt và xử lý lịch.</p></div>@if(session('success'))<div class="rounded border border-green-200 bg-green-50 p-3 text-sm">{{ session('success') }}</div>@endif<form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-4 rounded-lg border bg-white p-6">@csrf @method('PUT')@forelse($settings as $setting)<label class="grid gap-2 sm:grid-cols-2 sm:items-center"><span class="text-sm font-bold">{{ $setting->label }}<small class="block font-normal text-gray-500">{{ $setting->key }}</small></span><input name="settings[{{ $setting->key }}]" value="{{ $setting->value }}" class="rounded-lg border-gray-300"></label>@empty<p class="text-sm text-gray-500">Chưa có cấu hình. Hãy chạy seeder để tạo giá trị mặc định.</p>@endforelse<button class="rounded-lg bg-[#1D4B43] px-5 py-3 font-bold text-white">Lưu cấu hình</button></form></div>
+@endsection

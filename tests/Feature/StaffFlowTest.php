@@ -44,7 +44,8 @@ class StaffFlowTest extends TestCase
         $staff = User::factory()->create(['role' => 'staff']);
         $appointment = $this->makeAppointment(['status' => 'CONFIRMED', 'payment_method' => 'CASH']);
 
-        $this->actingAs($staff)->post(route('staff.payments.collect', $appointment->id))->assertStatus(409);
+        $this->actingAs($staff)->post(route('staff.payments.collect', $appointment->id))->assertRedirect()->assertSessionHas('error');
+        $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'payment_status' => 'UNPAID']);
     }
 
     /** @param array<string, mixed> $overrides */

@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreConsultationRecordRequest;
 use App\Http\Requests\StoreWorkingScheduleRequest;
 use App\Models\Appointment;
-use App\Models\Specialist;
+use App\Models\Review;
+use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\WorkingSchedule;
+use App\Services\AuditService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -52,58 +56,12 @@ class SpecialistController extends Controller
      */
     public function show(string|int $specialist): View
     {
-        $specialistItem = null;
-
-        // 1. Tìm trong DB nếu Model Specialist tồn tại
-        if (class_exists(Specialist::class)) {
-            try {
-                $specialistItem = Specialist::query()
-                    ->where('status', 'ACTIVE')
-                    ->where(function ($q) use ($specialist) {
-                        $q->where('id', $specialist);
-                        if (! is_numeric($specialist)) {
-                            $q->orWhere('slug', $specialist);
-                        }
-                    })
-                    ->with(['services' => fn ($s) => $s->where('status', 'ACTIVE')])
-                    ->withCount(['reviews as visible_reviews_count' => fn ($q) => $q->where('status', 'VISIBLE')])
-                    ->withAvg(['reviews as average_rating' => fn ($q) => $q->where('status', 'VISIBLE')], 'rating')
-                    ->first();
-            } catch (\Throwable) {
-                // DB lỗi hoặc chưa migrate
-            }
-        }
-
-        // 2. Fallback tìm trong dữ liệu mẫu demo
-        if (! $specialistItem) {
-            $all = $this->getSpecialists('');
-            $specialistItem = $all->first(function ($item) use ($specialist) {
-                return (string) $item->id === (string) $specialist
-                    || (isset($item->slug) && $item->slug === $specialist);
-            });
-        }
-
-        // Nếu không tìm thấy chuyên viên hoặc INACTIVE -> 404
-        if (! $specialistItem) {
-            abort(404, 'Không tìm thấy thông tin chuyên viên tâm lý.');
-        }
-
-        // 3. Lấy danh sách dịch vụ mà chuyên viên này cung cấp
-        $allServices = $this->getActiveServicesList();
-        $serviceIds = (array) ($specialistItem->service_ids ?? []);
-        $providedServices = $allServices->filter(fn ($s) => in_array($s->id, $serviceIds))->values();
-
-        // 4. Dữ liệu đánh giá mẫu VISIBLE (BR-047: ẩn danh)
-        $reviews = $this->getSampleReviewsForSpecialist($specialistItem->id);
-
-        // 5. Phân bố sao đánh giá
-        $ratingDistribution = [
-            5 => 80,
-            4 => 15,
-            3 => 5,
-            2 => 0,
-            1 => 0,
-        ];
+        $profile = SpecialistProfile::query()->where('status', 'ACTIVE')->with(['user', 'services' => fn ($query) => $query->where('status', 'ACTIVE')])->findOrFail($specialist);
+        $reviewQuery = Review::query()->where('specialist_profile_id', $profile->id)->where('status', 'VISIBLE');
+        $reviews = (clone $reviewQuery)->with('appointment.service')->latest()->paginate(10);
+        $ratingDistribution = collect(range(1, 5))->mapWithKeys(fn (int $rating): array => [$rating => (clone $reviewQuery)->where('rating', $rating)->count()])->all();
+        $specialistItem = (object) ['id' => $profile->id, 'name' => $profile->user->name, 'title' => $profile->title, 'specialization' => $profile->expertise, 'bio' => $profile->bio, 'credentials' => $profile->credentials, 'experience_years' => $profile->years_of_experience, 'average_rating' => (float) ($reviewQuery->avg('rating') ?? 0), 'visible_reviews_count' => $reviewQuery->count(), 'avatar_url' => $profile->avatar_url, 'service_ids' => $profile->services->pluck('id')->all()];
+        $providedServices = $profile->services;
 
         return view('public.specialist-detail', [
             'specialist' => $specialistItem,
@@ -136,8 +94,19 @@ class SpecialistController extends Controller
     {
         $profile = $this->ownedProfile();
         $schedules = $profile->workingSchedules()->orderBy('day_of_week')->orderBy('start_time')->get();
+        $exceptions = $profile->scheduleExceptions()->latest('start_date')->get();
 
-        return view('specialist.schedule', compact('profile', 'schedules'));
+        return view('specialist.schedule', compact('profile', 'schedules', 'exceptions'));
+    }
+
+    public function storeScheduleException(Request $request): RedirectResponse
+    {
+        $profile = $this->ownedProfile();
+        $data = $request->validate(['type' => ['required', 'in:DAY_OFF,TIME_BLOCK'], 'start_date' => ['required', 'date'], 'end_date' => ['required', 'date', 'after_or_equal:start_date'], 'start_time' => ['nullable', 'date_format:H:i'], 'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'], 'reason' => ['required', 'string', 'max:255'], 'is_emergency' => ['nullable', 'boolean']]);
+        $exception = $profile->scheduleExceptions()->create([...$data, 'created_by' => auth()->id(), 'is_emergency' => (bool) ($data['is_emergency'] ?? false)]);
+        Appointment::query()->where('specialist_profile_id', $profile->id)->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->whereBetween('start_at', [$exception->start_date->startOfDay(), $exception->end_date->endOfDay()])->update(['needs_attention' => true]);
+
+        return back()->with('success', 'Đã lưu ngày nghỉ/chặn giờ và đánh dấu lịch bị ảnh hưởng.');
     }
 
     public function storeSchedule(StoreWorkingScheduleRequest $request): RedirectResponse
@@ -200,8 +169,26 @@ class SpecialistController extends Controller
     public function startAppointment(int $id): RedirectResponse
     {
         $appointment = $this->ownedAppointment($id);
-        abort_unless($appointment->status === 'CONFIRMED', 409, 'Lịch hẹn không ở trạng thái có thể bắt đầu.');
-        abort_unless(now()->gte($appointment->start_at->copy()->subMinutes(15)) && now()->lte($appointment->end_at), 422, 'Chưa đến khung giờ bắt đầu buổi tư vấn.');
+        if ($appointment->status !== 'CONFIRMED') {
+            return redirect()
+                ->route('specialist.appointments.detail', $appointment->id)
+                ->with('error', 'Lịch hẹn không ở trạng thái có thể bắt đầu.');
+        }
+
+        $now = now();
+        $allowedStartAt = $appointment->start_at->copy()->subMinutes(15);
+
+        if ($now->lt($allowedStartAt)) {
+            return redirect()
+                ->route('specialist.appointments.detail', $appointment->id)
+                ->with('error', 'Chưa đến giờ bắt đầu. Bạn có thể bắt đầu từ '.$allowedStartAt->format('d/m/Y H:i').'.');
+        }
+
+        if ($now->gt($appointment->end_at)) {
+            return redirect()
+                ->route('specialist.appointments.detail', $appointment->id)
+                ->with('error', 'Khung giờ tư vấn đã kết thúc. Hãy kiểm tra lịch hoặc đánh dấu khách vắng mặt nếu phù hợp.');
+        }
 
         DB::transaction(function () use ($appointment): void {
             $appointment->update(['status' => 'IN_PROGRESS', 'started_at' => now()]);
@@ -214,7 +201,7 @@ class SpecialistController extends Controller
         return back()->with('success', 'Buổi tư vấn đã được bắt đầu.');
     }
 
-    public function completeAppointment(int $id): RedirectResponse
+    public function completeAppointment(int $id, NotificationService $notifications): RedirectResponse
     {
         $appointment = $this->ownedAppointment($id);
         abort_unless($appointment->status === 'IN_PROGRESS', 409, 'Chỉ có thể hoàn thành buổi tư vấn đang diễn ra.');
@@ -226,6 +213,7 @@ class SpecialistController extends Controller
                 'actor_id' => auth()->id(), 'actor_role' => 'SPECIALIST',
             ]);
         });
+        $notifications->send($appointment->customer, 'Buổi tư vấn đã hoàn thành', 'Bạn có thể gửi đánh giá cho lịch '.$appointment->appointment_code.' trong 30 ngày.', 'appointment.completed', route('customer.review', ['appointment_id' => $appointment->id]), $appointment);
 
         return back()->with('success', 'Buổi tư vấn đã hoàn thành.');
     }
@@ -247,15 +235,16 @@ class SpecialistController extends Controller
         return back()->with('success', 'Đã đánh dấu khách vắng mặt.');
     }
 
-    public function consultationNote(int $id): View
+    public function consultationNote(int $id, AuditService $audit): View
     {
         $appointment = $this->ownedAppointment($id)->load('consultationRecord');
         abort_unless(in_array($appointment->status, ['IN_PROGRESS', 'COMPLETED'], true), 422, 'Chỉ có thể ghi hồ sơ khi buổi tư vấn đang diễn ra hoặc đã hoàn thành.');
+        $audit->record('consultation_record.viewed', 'consultation_records', $appointment->consultationRecord?->id, new: ['appointment_id' => $appointment->id]);
 
         return view('specialist.consultation-note', compact('appointment'));
     }
 
-    public function storeConsultationNote(StoreConsultationRecordRequest $request, int $id): RedirectResponse
+    public function storeConsultationNote(StoreConsultationRecordRequest $request, int $id, AuditService $audit): RedirectResponse
     {
         $appointment = $this->ownedAppointment($id);
         abort_unless(in_array($appointment->status, ['IN_PROGRESS', 'COMPLETED'], true), 422);
@@ -284,6 +273,7 @@ class SpecialistController extends Controller
                 ]);
             }
         });
+        $audit->record('consultation_record.saved', 'consultation_records', $appointment->consultationRecord?->id, new: ['appointment_id' => $appointment->id, 'fields' => ['summary', 'follow_up_plan', 'follow_up_needed']]);
 
         return back()->with('success', 'Hồ sơ buổi tư vấn đã được lưu an toàn.');
     }
@@ -302,7 +292,13 @@ class SpecialistController extends Controller
             'title' => ['required', 'string', 'max:100'],
             'expertise' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:3000'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
+        unset($data['avatar']);
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('specialists', 'public');
+            $data['avatar_url'] = Storage::url($path);
+        }
         $profile->update($data);
 
         return back()->with('success', 'Hồ sơ chuyên viên đã được cập nhật.');
@@ -390,128 +386,33 @@ class SpecialistController extends Controller
 
     private function getSpecialists(string $serviceFilter): Collection
     {
-        if (class_exists(Specialist::class)) {
-            try {
-                $query = Specialist::query()
-                    ->where('status', 'ACTIVE')
-                    ->withCount([
-                        'reviews as visible_reviews_count' => fn ($q) => $q->where('status', 'VISIBLE'),
-                    ])
-                    ->withAvg(
-                        ['reviews as average_rating' => fn ($q) => $q->where('status', 'VISIBLE')],
-                        'rating'
-                    )
-                    ->orderByDesc('average_rating')
-                    ->orderByDesc('visible_reviews_count')
-                    ->orderBy('name');
-
-                if ($serviceFilter !== '') {
-                    $query->whereHas('services', function ($q) use ($serviceFilter) {
-                        $q->where('services.id', $serviceFilter)
-                            ->orWhere('services.name', 'like', "%{$serviceFilter}%");
-                    });
-                }
-
-                $results = $query->get();
-                if ($results->isNotEmpty()) {
-                    return $results;
-                }
-            } catch (\Throwable) {
-                // DB chưa migrate hoặc chưa có dữ liệu
-            }
-        }
-
-        // Dữ liệu mẫu demo SCR-PUB-04
-        $all = collect([
-            (object) [
-                'id' => 1,
-                'name' => 'ThS. Nguyễn Thị Mai',
-                'title' => 'Chuyên viên Tâm lý học lâm sàng',
-                'specialization' => 'Rối loạn lo âu, trầm cảm, sang chấn tâm lý, căng thẳng kéo dài',
-                'experience_years' => 10,
-                'average_rating' => 4.9,
-                'visible_reviews_count' => 62,
-                'avatar_url' => null,
-                'service_ids' => [1, 2, 7],
-            ],
-            (object) [
-                'id' => 2,
-                'name' => 'TS. Trần Văn Hưng',
-                'title' => 'Tiến sĩ Tâm lý học tham vấn',
-                'specialization' => 'Tâm lý hôn nhân, khủng hoảng gia đình, trị liệu cặp đôi',
-                'experience_years' => 14,
-                'average_rating' => 5.0,
-                'visible_reviews_count' => 84,
-                'avatar_url' => null,
-                'service_ids' => [3, 5],
-            ],
-            (object) [
-                'id' => 3,
-                'name' => 'ThS. Lê Hoàng An',
-                'title' => 'Chuyên viên Trị liệu Hành vi Nhận thức (CBT)',
-                'specialization' => 'Kiểm soát căng thẳng, rối loạn giấc ngủ, kiệt sức nghề nghiệp',
-                'experience_years' => 7,
-                'average_rating' => 4.8,
-                'visible_reviews_count' => 41,
-                'avatar_url' => null,
-                'service_ids' => [1, 2, 8],
-            ],
-            (object) [
-                'id' => 4,
-                'name' => 'Chuyên viên Phạm Thu Hà',
-                'title' => 'Chuyên viên Tham vấn Thanh thiếu niên',
-                'specialization' => 'Áp lực học đường, giao tiếp cha mẹ - con cái, cảm xúc tuổi dậy thì',
-                'experience_years' => 6,
-                'average_rating' => 4.9,
-                'visible_reviews_count' => 35,
-                'avatar_url' => null,
-                'service_ids' => [4, 9],
-            ],
-            (object) [
-                'id' => 5,
-                'name' => 'ThS. Vũ Đức Minh',
-                'title' => 'Chuyên viên Đánh giá & Chẩn đoán Tâm lý',
-                'specialization' => 'Sàng lọc rối loạn cảm xúc, trắc nghiệm nhân cách, định hướng phát triển',
-                'experience_years' => 9,
-                'average_rating' => 4.8,
-                'visible_reviews_count' => 29,
-                'avatar_url' => null,
-                'service_ids' => [5, 6],
-            ],
-            (object) [
-                'id' => 6,
-                'name' => 'ThS. Đỗ Thúy Hằng',
-                'title' => 'Chuyên viên Trị liệu Tâm lý Gia đình',
-                'specialization' => 'Hàn gắn rạn nứt gia đình, trầm cảm sau sinh, khủng hoảng sau biến cố',
-                'experience_years' => 8,
-                'average_rating' => 4.9,
-                'visible_reviews_count' => 53,
-                'avatar_url' => null,
-                'service_ids' => [1, 3],
-            ],
-        ]);
+        $query = SpecialistProfile::query()
+            ->where('status', 'ACTIVE')
+            ->with(['user', 'services'])
+            ->withCount(['reviews as visible_reviews_count' => fn ($review) => $review->where('status', 'VISIBLE')])
+            ->withAvg(['reviews as average_rating' => fn ($review) => $review->where('status', 'VISIBLE')], 'rating')
+            ->orderByDesc('average_rating')
+            ->orderBy('display_order');
 
         if ($serviceFilter !== '') {
-            $all = $all->filter(function ($item) use ($serviceFilter) {
-                return in_array((int) $serviceFilter, $item->service_ids ?? []);
-            });
+            $query->whereHas('services', fn ($service) => $service->where('services.id', $serviceFilter));
         }
 
-        return $all;
+        return $query->get()->map(fn (SpecialistProfile $profile): object => (object) [
+            'id' => $profile->id,
+            'name' => $profile->user->name,
+            'title' => $profile->title,
+            'specialization' => $profile->expertise,
+            'experience_years' => $profile->years_of_experience,
+            'average_rating' => (float) ($profile->average_rating ?? 0),
+            'visible_reviews_count' => $profile->visible_reviews_count,
+            'avatar_url' => $profile->avatar_url,
+            'service_ids' => $profile->services->pluck('id')->all(),
+        ]);
     }
 
     private function getActiveServicesList(): Collection
     {
-        return collect([
-            (object) ['id' => 1, 'name' => 'Tư vấn tâm lý cá nhân 1-1'],
-            (object) ['id' => 2, 'name' => 'Tham vấn & Trị liệu lo âu, trầm cảm'],
-            (object) ['id' => 3, 'name' => 'Tư vấn hôn nhân & Mối quan hệ gia đình'],
-            (object) ['id' => 4, 'name' => 'Tư vấn tâm lý học đường & Thanh thiếu niên'],
-            (object) ['id' => 5, 'name' => 'Quản trị cảm xúc & Khủng hoảng tuổi trưởng thành'],
-            (object) ['id' => 6, 'name' => 'Đánh giá & Sàng lọc sức khỏe tinh thần tổng quát'],
-            (object) ['id' => 7, 'name' => 'Hỗ trợ phục hồi sau sang chấn tâm lý (PTSD)'],
-            (object) ['id' => 8, 'name' => 'Trị liệu tâm lý nhóm & Kỹ năng ứng phó căng thẳng'],
-            (object) ['id' => 9, 'name' => 'Tư vấn hướng nghiệp & Định hướng đam mê cá nhân'],
-        ]);
+        return Service::query()->active()->orderBy('display_order')->get();
     }
 }

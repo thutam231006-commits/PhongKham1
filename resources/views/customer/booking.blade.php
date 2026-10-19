@@ -94,6 +94,7 @@
         selectedTime: '09:30 - 10:30',
         note: '',
         paymentMethod: 'CASH',
+        idempotencyKey: crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random()),
         agreeTerms: false,
         agreeRefundPolicy: false,
 
@@ -196,6 +197,7 @@
                         time: this.selectedTime,
                         customer_note: this.note,
                         payment_method: this.paymentMethod,
+                        idempotency_key: this.idempotencyKey,
                     }),
                 });
                 const payload = await response.json();
@@ -206,6 +208,7 @@
 
                 this.bookingCode = payload.data.appointment_code;
                 this.isBookingSuccess = true;
+                if (this.paymentMethod === 'BANK_QR') this.startCountdown();
                 window.scrollTo({ top: 100, behavior: 'smooth' });
             } catch (error) {
                 this.bookingError = error.message || 'Không thể tạo lịch hẹn. Vui lòng thử lại.';
@@ -319,14 +322,7 @@
                     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-[#F7FAFC] p-6 rounded-2xl border border-gray-200">
                         {{-- Cột QR động --}}
                         <div class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-xs border border-gray-200">
-                            <div class="w-56 h-56 bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden border">
-                                <svg class="w-48 h-48 text-[#1D4B43]" viewBox="0 0 100 100" fill="currentColor">
-                                    <path d="M10 10h30v30h-30z M15 15v20h20v-20z M20 20h10v10h-10z M60 10h30v30h-30z M65 15v20h20v-20z M70 20h10v10h-10z M10 60h30v30h-30z M15 65v20h20v-20z M20 70h10v10h-10z M45 10h10v20h-10z M10 45h20v10h-20z M45 45h10v10h-10z M60 45h20v10h-20z M45 60h10v30h-10z M60 60h10v10h-10z M75 60h15v15h-15z M60 75h10v15h-10z M75 80h15v10h-15z"/>
-                                </svg>
-                                <div class="absolute inset-x-0 bottom-1 text-center bg-white/90 text-[10px] font-bold text-[#1D4B43] py-0.5">
-                                    VIETQR • MBBANK
-                                </div>
-                            </div>
+                            <img :src="`https://img.vietqr.io/image/{{ config('services.vietqr.bank_id') }}-{{ config('services.vietqr.account_number') }}-compact2.png?amount=${getSelectedService().price}&addInfo=${encodeURIComponent('DATLICH' + bookingCode)}&accountName=${encodeURIComponent(@js(config('services.vietqr.account_name')))}`" alt="Mã VietQR thanh toán lịch hẹn" class="h-56 w-56 rounded-lg border object-contain">
                             <p class="mt-3 text-xs text-[#4A5568] text-center font-medium">
                                 Sử dụng App Ngân hàng hoặc Ví MoMo để quét mã
                             </p>
@@ -341,15 +337,15 @@
                             <div class="border-b border-gray-200 pb-2 flex justify-between items-center">
                                 <div>
                                     <span class="text-xs text-[#4A5568] block">Số tài khoản:</span>
-                                    <span class="font-mono font-bold text-[#0F172A] text-base">0987654321</span>
+                                    <span class="font-mono font-bold text-[#0F172A] text-base">{{ config('services.vietqr.account_number') }}</span>
                                 </div>
-                                <button type="button" @click="copyToClipboard('0987654321')" class="text-xs font-bold text-[#1D4B43] hover:underline bg-[#E8F0EC] px-2.5 py-1 rounded-md">
+                                <button type="button" @click="copyToClipboard(@js(config('services.vietqr.account_number')))" class="text-xs font-bold text-[#1D4B43] hover:underline bg-[#E8F0EC] px-2.5 py-1 rounded-md">
                                     Sao chép
                                 </button>
                             </div>
                             <div class="border-b border-gray-200 pb-2">
                                 <span class="text-xs text-[#4A5568] block">Chủ tài khoản:</span>
-                                <span class="font-bold text-[#0F172A]">PHONG KHAM TAM LY MIND GUIDE</span>
+                                <span class="font-bold text-[#0F172A]">{{ config('services.vietqr.account_name') }}</span>
                             </div>
                             <div class="border-b border-gray-200 pb-2 flex justify-between items-center">
                                 <div>
@@ -363,9 +359,9 @@
                             <div class="flex justify-between items-center bg-amber-50 p-3 rounded-xl border border-amber-200">
                                 <div>
                                     <span class="text-xs font-bold text-amber-900 block">Nội dung chuyển khoản (bắt buộc):</span>
-                                    <span class="font-mono font-black text-[#1D4B43] text-base" x-text="'DATLICH ' + bookingCode"></span>
+                                    <span class="font-mono font-black text-[#1D4B43] text-base" x-text="'DATLICH' + bookingCode"></span>
                                 </div>
-                                <button type="button" @click="copyToClipboard('DATLICH ' + bookingCode)" class="text-xs font-bold text-white bg-[#1D4B43] px-3 py-1.5 rounded-lg hover:bg-[#14352F] transition">
+                                <button type="button" @click="copyToClipboard('DATLICH' + bookingCode)" class="text-xs font-bold text-white bg-[#1D4B43] px-3 py-1.5 rounded-lg hover:bg-[#14352F] transition">
                                     Sao chép
                                 </button>
                             </div>
@@ -660,15 +656,15 @@
                             </div>
 
                             <div class="mt-6 space-y-4">
-                                <label class="flex items-start gap-4 p-5 rounded-xl border-2 cursor-not-allowed transition select-none opacity-60 border-gray-200 bg-gray-50">
-                                    <input type="radio" name="paymentMethod" value="BANK_QR" class="mt-1" disabled>
+                                <label class="flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition select-none" :class="paymentMethod === 'BANK_QR' ? 'border-[#1D4B43] bg-[#E8F0EC]/40 shadow-xs ring-1 ring-[#1D4B43]' : 'border-gray-200 hover:border-[#709782] bg-white'">
+                                    <input type="radio" name="paymentMethod" value="BANK_QR" x-model="paymentMethod" class="mt-1">
                                     <div class="flex-1">
                                         <div class="flex items-center justify-between">
-                                            <span class="font-bold text-[#0F172A] text-base">Chuyển khoản QR (sắp mở)</span>
-                                            <span class="text-xs font-bold text-gray-600 bg-gray-200 px-2 py-0.5 rounded">Đang hoàn thiện</span>
+                                            <span class="font-bold text-[#0F172A] text-base">Chuyển khoản QR (VietQR)</span>
+                                            <span class="text-xs font-bold text-[#1D4B43] bg-[#E8F0EC] px-2 py-0.5 rounded">Xác nhận tự động</span>
                                         </div>
                                         <p class="text-xs text-[#4A5568] mt-1 leading-relaxed">
-                                            Tính năng thanh toán VietQR/SePay sẽ được bổ sung sau khi luồng đặt lịch tiền mặt ổn định.
+                                            Giữ chỗ 10 phút. Vui lòng chuyển đúng số tiền và nội dung để hệ thống đối soát tự động.
                                         </p>
                                     </div>
                                 </label>

@@ -7,6 +7,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\SepayWebhookController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SpecialistController;
 use App\Http\Controllers\StaffController;
@@ -31,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 // SCR-PUB-01 — Trang chủ
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
+Route::post('/webhooks/sepay', [PaymentWebhookController::class, 'sepay'])->middleware('throttle:60,1')->name('webhooks.sepay');
 // SCR-PUB-02 — Danh sách dịch vụ (/services & /dich-vu)
 Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/dich-vu', [ServiceController::class, 'index']);
@@ -69,21 +70,23 @@ Route::get('/privacy', [PageController::class, 'privacy']);
 Route::get('/dieu-khoan-su-dung', [PageController::class, 'terms'])->name('terms');
 Route::get('/terms', [PageController::class, 'terms']);
 
+Route::post('/webhooks/sepay', [SepayWebhookController::class, 'sepay'])->middleware('throttle:60,1')->name('webhooks.sepay');
+
 // ------------------------------------------------------------
 // XÁC THỰC CÔNG KHAI (SCR-PUB-06 -> SCR-PUB-10)
 // ------------------------------------------------------------
 
 // SCR-PUB-06 — Đăng nhập
 Route::get('/dang-nhap', [AuthController::class, 'loginForm'])->name('login');
-Route::post('/dang-nhap', [AuthController::class, 'login'])->name('login.post');
+Route::post('/dang-nhap', [AuthController::class, 'login'])->middleware('throttle:authentication')->name('login.post');
 
 // SCR-PUB-07 — Đăng ký
 Route::get('/dang-ky', [AuthController::class, 'registerForm'])->name('register');
-Route::post('/dang-ky', [AuthController::class, 'register'])->name('register.post');
+Route::post('/dang-ky', [AuthController::class, 'register'])->middleware('throttle:authentication')->name('register.post');
 
 // SCR-PUB-08 — Quên mật khẩu
 Route::get('/quen-mat-khau', [AuthController::class, 'forgotForm'])->name('password.request');
-Route::post('/quen-mat-khau', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::post('/quen-mat-khau', [AuthController::class, 'sendResetLink'])->middleware('throttle:authentication')->name('password.email');
 
 // SCR-PUB-09 — Đặt lại mật khẩu
 Route::get('/dat-lai-mat-khau/{token}', [AuthController::class, 'resetForm'])->name('password.reset');
@@ -91,7 +94,8 @@ Route::post('/dat-lai-mat-khau', [AuthController::class, 'resetPassword'])->name
 
 // SCR-PUB-10 — Xác thực email
 Route::get('/xac-thuc-email', [AuthController::class, 'verifyNotice'])->name('verification.notice');
-Route::get('/xac-thuc-email/{id}/{hash}', fn () => redirect()->route('login')->with('success', 'Email đã được xác thực thành công.'))->name('verification.verify');
+Route::get('/xac-thuc-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
+Route::post('/xac-thuc-email/gui-lai', [AuthController::class, 'resendVerification'])->middleware('throttle:3,60')->name('verification.resend');
 
 // ============================================================
 // AUTH — Yêu cầu đăng nhập (middleware 'auth')
@@ -100,7 +104,7 @@ Route::get('/xac-thuc-email/{id}/{hash}', fn () => redirect()->route('login')->w
 Route::middleware('auth')->group(function () {
 
     // SCR-CUS-03 — Tạo lịch hẹn tiền mặt trong MVP
-    Route::post('/booking', [BookingController::class, 'store'])->name('appointments.store');
+    Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:booking')->name('appointments.store');
 
     // Đăng xuất
     Route::match(['get', 'post'], '/dang-xuat', function (Request $request) {
@@ -113,6 +117,8 @@ Route::middleware('auth')->group(function () {
 
     // SCR-COM-01 — Thông báo
     Route::get('/thong-bao', [AccountController::class, 'notifications'])->name('notifications.index');
+    Route::post('/thong-bao/doc-tat-ca', [AccountController::class, 'readAllNotifications'])->name('notifications.read-all');
+    Route::get('/thong-bao/{id}', [AccountController::class, 'readNotification'])->name('notifications.read');
 
     // SCR-COM-02 — Đổi mật khẩu
     Route::get('/doi-mat-khau', [AccountController::class, 'changePassword'])->name('password.change');
@@ -121,7 +127,7 @@ Route::middleware('auth')->group(function () {
     // ----------------------------------------------------------
     // CUSTOMER (SCR-CUS-*)
     // ----------------------------------------------------------
-    Route::prefix('customer')->name('customer.')->group(function () {
+    Route::middleware('role:customer')->prefix('customer')->name('customer.')->group(function () {
         // SCR-CUS-01 — Tổng quan (Dashboard)
         Route::get('/', [CustomerController::class, 'dashboard']);
         Route::get('/dashboard', [CustomerController::class, 'dashboard'])->name('dashboard');
@@ -166,6 +172,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/schedule', [SpecialistController::class, 'schedule'])->name('schedule');
         Route::get('/leaves', [SpecialistController::class, 'schedule'])->name('leaves');
         Route::post('/schedule', [SpecialistController::class, 'storeSchedule'])->name('schedule.store');
+        Route::post('/leaves', [SpecialistController::class, 'storeScheduleException'])->name('leaves.store');
         Route::put('/schedule/{workingSchedule}', [SpecialistController::class, 'updateSchedule'])->name('schedule.update');
         Route::get('/appointments', [SpecialistController::class, 'appointments'])->name('appointments');
         Route::get('/appointments/{id}', [SpecialistController::class, 'appointmentDetail'])->name('appointments.detail');
@@ -185,12 +192,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
         Route::get('/checkin', [StaffController::class, 'checkin'])->name('checkin');
         Route::post('/checkin/{id}', [StaffController::class, 'markCheckin'])->name('checkin.store');
-        Route::get('/appointments', [StaffController::class, 'checkin'])->name('appointments');
-        Route::get('/appointments/pending', [StaffController::class, 'checkin'])->name('appointments.pending');
-        Route::get('/customers', [StaffController::class, 'checkin'])->name('customers');
+        Route::get('/appointments', [StaffController::class, 'appointments'])->name('appointments');
+        Route::get('/appointments/pending', [StaffController::class, 'appointments'])->name('appointments.pending');
+        Route::post('/appointments/{appointment}/confirm', [StaffController::class, 'confirmAppointment'])->name('appointments.confirm');
+        Route::post('/appointments/{appointment}/cancel', [StaffController::class, 'cancelAppointment'])->name('appointments.cancel');
+        Route::post('/reschedule-requests/{rescheduleRequest}', [StaffController::class, 'resolveReschedule'])->name('reschedule-requests.resolve');
+        Route::get('/customers', [StaffController::class, 'customers'])->name('customers');
+        Route::post('/customers', [StaffController::class, 'storeCustomer'])->name('customers.store');
+        Route::put('/customers/{user}', [StaffController::class, 'updateCustomer'])->name('customers.update');
         Route::get('/booking-onsite', [StaffController::class, 'bookingOnsite'])->name('appointments.book');
+        Route::post('/booking-onsite', [StaffController::class, 'storeBookingOnsite'])->name('appointments.store');
         Route::get('/payments', [StaffController::class, 'payments'])->name('payments');
         Route::post('/payments/{id}/collect', [StaffController::class, 'collectPayment'])->name('payments.collect');
+        Route::post('/refunds/{refundRequest}', [StaffController::class, 'markRefunded'])->name('refunds.complete');
     });
 
     // ----------------------------------------------------------
@@ -202,15 +216,32 @@ Route::middleware('auth')->group(function () {
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
         Route::get('/specialists', [AdminController::class, 'specialists'])->name('specialists');
+        Route::post('/specialists', [AdminController::class, 'storeSpecialist'])->name('specialists.store');
+        Route::put('/specialists/{specialistProfile}', [AdminController::class, 'updateSpecialist'])->name('specialists.update');
         Route::post('/specialists/{specialistProfile}/toggle', [AdminController::class, 'toggleSpecialist'])->name('specialists.toggle');
         Route::get('/services', [AdminController::class, 'services'])->name('services');
         Route::post('/services', [AdminController::class, 'storeService'])->name('services.store');
         Route::put('/services/{service}', [AdminController::class, 'updateService'])->name('services.update');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::get('/reports/export', [AdminController::class, 'exportReport'])->name('reports.export');
         Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('audit-logs');
-        Route::get('/appointments', [AdminController::class, 'reports'])->name('appointments');
-        Route::get('/payments', [AdminController::class, 'reports'])->name('payments');
-        Route::get('/settings', [AdminController::class, 'dashboard'])->name('settings');
+        Route::get('/schedule', [AdminController::class, 'schedule'])->name('schedule');
+        Route::post('/schedule', [AdminController::class, 'storeScheduleException'])->name('schedule.store');
+        Route::get('/reviews', [AdminController::class, 'reviews'])->name('reviews');
+        Route::put('/reviews/{review}', [AdminController::class, 'moderateReview'])->name('reviews.update');
+        Route::get('/notifications', [AdminController::class, 'notifications'])->name('notifications');
+        Route::post('/notifications', [AdminController::class, 'sendNotification'])->name('notifications.store');
+        Route::get('/categories', [AdminController::class, 'categories'])->name('categories');
+        Route::post('/categories', [AdminController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{serviceCategory}', [AdminController::class, 'updateCategory'])->name('categories.update');
+        Route::get('/roles', [AdminController::class, 'roles'])->name('roles');
+        Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('roles.update');
+        Route::get('/appointments', [AdminController::class, 'appointments'])->name('appointments');
+        Route::post('/appointments/{appointment}/cancel', [AdminController::class, 'cancelAppointment'])->name('appointments.cancel');
+        Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
+        Route::post('/refunds/{refundRequest}', [AdminController::class, 'markRefunded'])->name('refunds.complete');
+        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+        Route::put('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
     });
 
 });

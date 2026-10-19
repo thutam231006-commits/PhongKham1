@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Exceptions\BookingSlotUnavailable;
 use App\Models\Appointment;
+use App\Models\ScheduleException;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +18,26 @@ class AppointmentBookingService
     /** @var array<int, string> */
     private const HOLDING_STATUSES = ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS'];
 
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly NotificationService $notifications,
+    ) {}
+
     /**
      * @param  array{service_id:int, specialist_id:int, date:string, time:string, customer_note?:string|null, payment_method:string}  $data
      */
-    public function create(User $customer, array $data): Appointment
+    public function create(User $customer, array $data, ?User $actor = null): Appointment
     {
-        return DB::transaction(function () use ($customer, $data): Appointment {
+        $actor ??= $customer;
+
+        return DB::transaction(function () use ($customer, $data, $actor): Appointment {
+            if (! empty($data['idempotency_key'])) {
+                $existing = Appointment::query()->where('customer_id', $customer->id)->where('idempotency_key', $data['idempotency_key'])->first();
+                if ($existing) {
+                    return $existing->load(['service', 'specialistProfile.user']);
+                }
+            }
+
             $service = Service::query()->active()->findOrFail($data['service_id']);
             $specialist = SpecialistProfile::query()
                 ->where('status', 'ACTIVE')
@@ -36,16 +52,19 @@ class AppointmentBookingService
             $startAt = $this->parseStartAt($data['date'], $data['time']);
             $now = CarbonImmutable::now();
 
-            if ($startAt->lt($now->addHours(2)) || $startAt->gt($now->addDays(30))) {
-                throw new BookingSlotUnavailable('BOOKING_OUT_OF_WINDOW', 'Khung giờ phải cách hiện tại ít nhất 2 giờ và không quá 30 ngày.');
+            $leadHours = (int) SystemSetting::valueOf('min_booking_lead_hours', 2);
+            $advanceDays = (int) SystemSetting::valueOf('max_advance_booking_days', 30);
+            if ($startAt->lt($now->addHours($leadHours)) || $startAt->gt($now->addDays($advanceDays))) {
+                throw new BookingSlotUnavailable('BOOKING_OUT_OF_WINDOW', "Khung giờ phải cách hiện tại ít nhất {$leadHours} giờ và không quá {$advanceDays} ngày.");
             }
 
             if (! $this->matchesWorkingSchedule($specialist, $startAt, $service->duration_minutes)) {
                 throw new BookingSlotUnavailable('SLOT_UNAVAILABLE', 'Khung giờ đã chọn không nằm trong lịch làm việc của chuyên viên.');
             }
 
-            if ($customer->appointments()->holdingSlot()->where('start_at', '>=', $now)->count() >= 3) {
-                throw new BookingSlotUnavailable('BOOKING_LIMIT_EXCEEDED', 'Bạn đã đạt giới hạn 3 lịch hẹn đang hoạt động.');
+            $maxActive = (int) SystemSetting::valueOf('max_active_appointments', 3);
+            if ($customer->appointments()->holdingSlot()->where('start_at', '>=', $now)->count() >= $maxActive) {
+                throw new BookingSlotUnavailable('BOOKING_LIMIT_EXCEEDED', "Bạn đã đạt giới hạn {$maxActive} lịch hẹn đang hoạt động.");
             }
 
             $endAt = $startAt->addMinutes($service->duration_minutes);
@@ -60,7 +79,13 @@ class AppointmentBookingService
                 throw new BookingSlotUnavailable('APPOINTMENT_SLOT_UNAVAILABLE', 'Khung giờ vừa được khách khác đặt. Vui lòng chọn khung giờ khác.');
             }
 
-            $status = $data['payment_method'] === 'CASH' ? 'CONFIRMED' : 'PENDING';
+            $customerConflict = $customer->appointments()->holdingSlot()->where('start_at', '<', $endAt)->where('end_at', '>', $startAt)->exists();
+            if ($customerConflict) {
+                throw new BookingSlotUnavailable('CUSTOMER_SCHEDULE_CONFLICT', 'Bạn đã có lịch hẹn trùng khung giờ này.');
+            }
+
+            $isOperatorBooking = in_array(strtolower((string) $actor->role), ['staff', 'admin'], true);
+            $status = $isOperatorBooking || $data['payment_method'] === 'CASH' ? 'CONFIRMED' : 'PENDING';
             $appointment = Appointment::query()->create([
                 'appointment_code' => $this->generateAppointmentCode(),
                 'customer_id' => $customer->id,
@@ -74,18 +99,23 @@ class AppointmentBookingService
                 'status' => $status,
                 'payment_status' => 'UNPAID',
                 'payment_method' => $data['payment_method'],
-                'source' => 'ONLINE',
+                'payment_expires_at' => $status === 'PENDING' ? now()->addMinutes(10) : null,
+                'idempotency_key' => $data['idempotency_key'] ?? null,
+                'source' => $isOperatorBooking ? 'ONSITE' : 'ONLINE',
                 'customer_note' => $data['customer_note'] ?? null,
-                'created_by' => $customer->id,
+                'created_by' => $actor->id,
                 'slot_lock_key' => $specialist->id.'|'.$startAt->format('Y-m-d H:i:s'),
             ]);
 
             $appointment->statusHistory()->create([
                 'to_status' => $status,
                 'action' => 'create',
-                'actor_id' => $customer->id,
-                'actor_role' => 'CUSTOMER',
+                'actor_id' => $actor->id,
+                'actor_role' => strtoupper((string) $actor->role),
             ]);
+
+            $this->audit->record('appointment.created', $appointment, new: ['status' => $status, 'payment_method' => $data['payment_method']], actor: $actor);
+            $this->notifications->send($customer, $status === 'PENDING' ? 'Chờ thanh toán lịch hẹn' : 'Đặt lịch thành công', 'Mã lịch của bạn: '.$appointment->appointment_code.'.', 'appointment.created', route('customer.appointments.detail', $appointment), $appointment);
 
             return $appointment->load(['service', 'specialistProfile.user']);
         }, 3);
@@ -106,6 +136,27 @@ class AppointmentBookingService
     private function matchesWorkingSchedule(SpecialistProfile $specialist, CarbonImmutable $startAt, int $durationMinutes): bool
     {
         $endAt = $startAt->addMinutes($durationMinutes);
+
+        $blocked = ScheduleException::query()
+            ->where(function ($query) use ($specialist): void {
+                $query->whereNull('specialist_profile_id')->orWhere('specialist_profile_id', $specialist->id);
+            })
+            ->whereDate('start_date', '<=', $startAt)
+            ->whereDate('end_date', '>=', $startAt)
+            ->get()
+            ->contains(function (ScheduleException $exception) use ($startAt, $endAt): bool {
+                if (! $exception->start_time || ! $exception->end_time) {
+                    return true;
+                }
+                $blockedStart = CarbonImmutable::parse($startAt->format('Y-m-d').' '.$exception->start_time);
+                $blockedEnd = CarbonImmutable::parse($startAt->format('Y-m-d').' '.$exception->end_time);
+
+                return $startAt->lt($blockedEnd) && $endAt->gt($blockedStart);
+            });
+
+        if ($blocked) {
+            return false;
+        }
 
         return $specialist->workingSchedules()
             ->where('day_of_week', $startAt->isoWeekday())

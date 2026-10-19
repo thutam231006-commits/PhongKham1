@@ -25,13 +25,64 @@
          HEADER (SCR chung — mục 1.2 ThietKeGiaoDien.md)
          Nền: mg-primary (#1D4B43 — Deep Teal)
          ========================================================= --}}
-    <header class="bg-[#1D4B43] text-white shadow-md sticky top-0 z-50">
+    @php
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+    @endphp
+
+    <header class="sticky top-0 z-50 bg-[#1D4B43] text-white shadow-md">
+        @if (! $isAdmin)
+            {{-- Hàng tiện ích theo cấu trúc cổng thông tin: thương hiệu, tìm kiếm, hỗ trợ và đặt lịch. --}}
+            <div class="border-b border-[#E5ECE8] bg-white text-[#1D4B43]">
+                <div class="mx-auto flex min-h-20 max-w-screen-xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+                    <a href="{{ url('/') }}"
+                       class="flex shrink-0 items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-[#709782]"
+                       aria-label="Mind Guide — Về trang chủ">
+                        <svg class="h-9 w-9" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                            <circle cx="16" cy="16" r="14" fill="#709782" />
+                            <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                            <circle cx="16" cy="12" r="3" fill="white"/>
+                        </svg>
+                        <span class="text-xl font-bold tracking-tight">Mind Guide</span>
+                    </a>
+
+                    <form action="{{ route('services.index') }}" method="GET" class="ml-auto hidden min-w-0 max-w-sm flex-1 md:flex">
+                        <label for="site-search" class="sr-only">Tìm kiếm dịch vụ</label>
+                        <div class="flex w-full items-center rounded-full border border-[#D8E3DD] bg-[#F7FAFC] px-4 shadow-sm focus-within:border-[#709782] focus-within:ring-2 focus-within:ring-[#709782]/30">
+                            <input id="site-search" name="q" type="search" value="{{ request('q') }}"
+                                   placeholder="Tìm kiếm dịch vụ"
+                                   class="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1A202C] placeholder:text-[#718096] focus:outline-none focus:ring-0">
+                            <button type="submit" class="rounded-full p-1 text-[#1D4B43] hover:bg-[#E8F0EC]" aria-label="Tìm kiếm">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="hidden items-center gap-3 lg:flex">
+                        <svg class="h-7 w-7 text-[#709782]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5.5A2.5 2.5 0 0 1 5.5 3H7l2 5-2 1.5A13 13 0 0 0 14.5 17L16 15l5 2v1.5a2.5 2.5 0 0 1-2.5 2.5C10.492 21 3 13.508 3 5.5Z"/>
+                        </svg>
+                        <div class="leading-tight">
+                            <span class="block text-xs text-[#4A5568]">Tư vấn và hỗ trợ</span>
+                            <strong class="text-lg text-[#1D4B43]">1900 1567</strong>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('appointments.book') }}"
+                       class="hidden shrink-0 rounded-full border-2 border-[#1D4B43] px-4 py-2 text-sm font-bold text-[#1D4B43] transition hover:bg-[#1D4B43] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#709782] sm:inline-flex">
+                        Đặt lịch
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <div class="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
+            <div class="flex {{ $isAdmin ? 'h-16' : 'min-h-14' }} items-center justify-between gap-4">
 
                 {{-- Logo / Tên thương hiệu --}}
                 <a href="{{ url('/') }}"
-                   class="flex items-center gap-2 text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1D4B43] rounded"
+                   class="{{ $isAdmin ? 'flex' : 'hidden' }} items-center gap-2 rounded text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1D4B43]"
                    aria-label="Mind Guide — Về trang chủ">
                     {{-- Thay bằng <img src="..." alt="Mind Guide"> khi có file logo --}}
                     <svg class="h-8 w-8 flex-shrink-0" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -89,14 +140,26 @@
 
                         {{-- Admin --}}
                         @if ($role === 'admin')
-                            <x-nav-link href="{{ route('admin.dashboard') }}">Tổng quan</x-nav-link>
-                            <x-nav-link href="{{ route('admin.users') }}">Người dùng</x-nav-link>
-                            <x-nav-link href="{{ route('admin.specialists') }}">Chuyên viên</x-nav-link>
-                            <x-nav-link href="{{ route('admin.services') }}">Dịch vụ</x-nav-link>
-                            <x-nav-link href="{{ route('admin.appointments') }}">Lịch hẹn</x-nav-link>
-                            <x-nav-link href="{{ route('admin.payments') }}">Thanh toán & hoàn tiền</x-nav-link>
-                            <x-nav-link href="{{ route('admin.reports') }}">Báo cáo</x-nav-link>
-                            <x-nav-link href="{{ route('admin.settings') }}">Cấu hình</x-nav-link>
+                            <div x-data="{ open: null }" @click.outside="open = null" class="hidden lg:flex items-center gap-1">
+                                <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#14352F]">Tổng quan</a>
+                                @foreach ([
+                                    'operations' => ['label' => 'Vận hành', 'items' => [['Lịch hẹn', 'admin.appointments'], ['Lịch và ngày lễ', 'admin.schedule'], ['Thanh toán và hoàn tiền', 'admin.payments'], ['Kiểm duyệt đánh giá', 'admin.reviews'], ['Thông báo', 'admin.notifications']]],
+                                    'catalog' => ['label' => 'Danh mục', 'items' => [['Chuyên viên', 'admin.specialists'], ['Dịch vụ', 'admin.services'], ['Danh mục dịch vụ', 'admin.categories'], ['Người dùng', 'admin.users']]],
+                                    'analysis' => ['label' => 'Phân tích', 'items' => [['Báo cáo', 'admin.reports']]],
+                                    'system' => ['label' => 'Hệ thống', 'items' => [['Cấu hình', 'admin.settings'], ['Vai trò và quyền', 'admin.roles'], ['Nhật ký audit', 'admin.audit-logs']]],
+                                ] as $key => $group)
+                                    <div class="relative">
+                                        <button type="button" @click="open = open === '{{ $key }}' ? null : '{{ $key }}'" class="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#14352F]">
+                                            {{ $group['label'] }} <span aria-hidden="true">⌄</span>
+                                        </button>
+                                        <div x-show="open === '{{ $key }}'" x-cloak class="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border border-gray-200 bg-white p-1 shadow-xl">
+                                            @foreach ($group['items'] as $item)
+                                                <a href="{{ route($item[1]) }}" class="block rounded-md px-3 py-2 text-sm font-medium text-[#1A202C] hover:bg-[#E8F0EC] hover:text-[#1D4B43]">{{ $item[0] }}</a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         @endif
                     @endauth
                 </nav>
@@ -115,7 +178,7 @@
                                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                             {{-- Badge số chưa đọc — ẩn khi = 0 --}}
-                            @php $unreadCount = auth()->user()->unreadNotificationsCount ?? 0; @endphp
+                            @php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp
                             @if ($unreadCount > 0)
                                 <span class="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold leading-none text-white"
                                       aria-label="{{ $unreadCount }} thông báo chưa đọc">
@@ -256,13 +319,19 @@
 
                     @if ($role === 'admin')
                         <x-mobile-nav-link href="{{ route('admin.dashboard') }}">Tổng quan</x-mobile-nav-link>
-                        <x-mobile-nav-link href="{{ route('admin.users') }}">Người dùng</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.appointments') }}">Lịch hẹn</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.schedule') }}">Lịch và ngày lễ</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.payments') }}">Thanh toán & hoàn tiền</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.reviews') }}">Kiểm duyệt đánh giá</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.notifications') }}">Thông báo thủ công</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.specialists') }}">Chuyên viên</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.services') }}">Dịch vụ</x-mobile-nav-link>
-                        <x-mobile-nav-link href="{{ route('admin.appointments') }}">Lịch hẹn</x-mobile-nav-link>
-                        <x-mobile-nav-link href="{{ route('admin.payments') }}">Thanh toán & hoàn tiền</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.categories') }}">Danh mục dịch vụ</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.users') }}">Người dùng</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.reports') }}">Báo cáo</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.settings') }}">Cấu hình</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.roles') }}">Vai trò và quyền</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.audit-logs') }}">Nhật ký audit</x-mobile-nav-link>
                     @endif
 
                     {{-- Thông báo + Đổi MK + Đăng xuất trên mobile --}}

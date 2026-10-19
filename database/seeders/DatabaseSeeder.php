@@ -3,9 +3,15 @@
 namespace Database\Seeders;
 
 use App\Models\Appointment;
+use App\Models\CustomerProfile;
+use App\Models\Permission;
+use App\Models\RefundRequest;
+use App\Models\Review;
+use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\SpecialistProfile;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\WorkingSchedule;
 use Carbon\CarbonImmutable;
@@ -21,6 +27,8 @@ class DatabaseSeeder extends Seeder
         $specialists = $this->seedSpecialists($users, $services);
 
         $this->seedAppointments($users, $specialists, $services);
+        $this->seedAnalyticsAppointments($users, $specialists, $services);
+        $this->seedOperationalData($users);
     }
 
     /** @return array<string, User> */
@@ -43,16 +51,13 @@ class DatabaseSeeder extends Seeder
 
         $users = [];
         foreach ($accounts as $email => $data) {
-            $users[$email] = User::updateOrCreate(
-                ['email' => $email],
-                [
-                    'name' => $data['name'],
-                    'role' => $data['role'],
-                    'phone' => $data['phone'],
-                    'password' => Hash::make($data['password']),
-                    'email_verified_at' => now(),
-                ]
-            );
+            $user = User::query()->firstOrNew(['email' => $email]);
+            $user->fill(['name' => $data['name'], 'role' => $data['role'], 'phone' => $data['phone'], 'email_verified_at' => $user->email_verified_at ?? now()]);
+            if (! $user->exists) {
+                $user->password = Hash::make($data['password']);
+            }
+            $user->save();
+            $users[$email] = $user;
         }
 
         return $users;
@@ -231,5 +236,127 @@ class DatabaseSeeder extends Seeder
             'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?auto=format&fit=crop&w=640&q=85',
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=640&q=85',
         ][$index];
+    }
+
+    /** @param array<string, User> $users @param array<string, SpecialistProfile> $specialists @param array<string, Service> $services */
+    private function seedAnalyticsAppointments(array $users, array $specialists, array $services): void
+    {
+        $customers = array_values(array_filter($users, fn (User $user): bool => $user->role === 'customer'));
+        $specialistModels = array_values($specialists);
+        $serviceModels = array_values($services);
+        $startDate = CarbonImmutable::now()->subDays(60)->startOfDay();
+
+        for ($index = 1; $index <= 90; $index++) {
+            $start = $startDate->addDays($index)->setTime(9 + ($index % 5) * 2, 0);
+            $service = $serviceModels[$index % count($serviceModels)];
+            $specialist = $specialistModels[$index % count($specialistModels)];
+            $customer = $customers[$index % count($customers)];
+            $status = $this->analyticsStatus($index, $start);
+            $paymentMethod = $index % 10 < 7 ? 'BANK_QR' : 'CASH';
+            $isCompleted = in_array($status, ['COMPLETED', 'NO_SHOW'], true);
+            $isRefunded = $status === 'CANCELLED_BY_CUSTOMER' && $index % 2 === 0;
+            $isRefundPending = $status === 'CANCELLED_BY_CUSTOMER' && $index % 2 === 1;
+            $isPaid = $isCompleted || $isRefunded || $isRefundPending;
+            $price = (int) $service->price;
+
+            Appointment::updateOrCreate(
+                ['appointment_code' => sprintf('MG-SEED-%03d', $index)],
+                [
+                    'customer_id' => $customer->id,
+                    'specialist_profile_id' => $specialist->id,
+                    'service_id' => $service->id,
+                    'start_at' => $start,
+                    'end_at' => $start->addMinutes($service->duration_minutes),
+                    'duration_minutes' => $service->duration_minutes,
+                    'buffer_minutes' => $service->buffer_minutes,
+                    'price' => $price,
+                    'status' => $status,
+                    'payment_status' => $isRefunded ? 'REFUNDED' : ($isRefundPending ? 'REFUND_PENDING' : ($isPaid ? 'PAID' : 'UNPAID')),
+                    'paid_at' => $isPaid ? $start->subDays(1) : null,
+                    'refunded_at' => $isRefunded ? $start->subHours(8) : null,
+                    'refund_amount' => ($isRefunded || $isRefundPending) ? (int) floor($price * 0.5) : null,
+                    'refund_status' => $isRefunded ? 'REFUNDED' : ($isRefundPending ? 'REFUND_PENDING' : null),
+                    'payment_method' => $paymentMethod,
+                    'source' => $index % 4 === 0 ? 'STAFF' : 'ONLINE',
+                    'customer_note' => null,
+                    'created_by' => $customer->id,
+                    'slot_lock_key' => in_array($status, ['PENDING', 'CONFIRMED'], true) ? $specialist->id.'|'.$start->format('Y-m-d H:i:s') : null,
+                    'needs_attention' => $index % 17 === 0,
+                    'confirmed_at' => $status !== 'PENDING' ? $start->subHours(12) : null,
+                    'completed_at' => $isCompleted ? $start->addMinutes($service->duration_minutes) : null,
+                    'cancelled_at' => str_starts_with($status, 'CANCELLED_') ? $start->subDays(2) : null,
+                    'cancel_reason' => str_starts_with($status, 'CANCELLED_') ? 'Dữ liệu mẫu kiểm thử vận hành.' : null,
+                ]
+            );
+        }
+    }
+
+    private function analyticsStatus(int $index, CarbonImmutable $start): string
+    {
+        if ($start->isFuture()) {
+            return $index % 3 === 0 ? 'PENDING' : 'CONFIRMED';
+        }
+        if ($index % 13 === 0) {
+            return 'CANCELLED_BY_CUSTOMER';
+        }
+        if ($index % 11 === 0) {
+            return 'NO_SHOW';
+        }
+
+        return $index % 7 === 0 ? 'CANCELLED_BY_CLINIC' : 'COMPLETED';
+    }
+
+    /** @param array<string, User> $users */
+    private function seedOperationalData(array $users): void
+    {
+        foreach ($users as $user) {
+            if ($user->role === 'customer') {
+                CustomerProfile::query()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    ['customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => '1995-01-01', 'privacy_policy_version' => '2026-01', 'consented_at' => now()]
+                );
+            }
+        }
+
+        $settings = [
+            ['key' => 'min_booking_lead_hours', 'value' => '2', 'type' => 'integer', 'group' => 'booking', 'label' => 'Số giờ tối thiểu trước khi đặt'],
+            ['key' => 'max_advance_booking_days', 'value' => '30', 'type' => 'integer', 'group' => 'booking', 'label' => 'Số ngày được đặt trước tối đa'],
+            ['key' => 'max_active_appointments', 'value' => '3', 'type' => 'integer', 'group' => 'booking', 'label' => 'Số lịch hoạt động tối đa'],
+            ['key' => 'start_early_minutes', 'value' => '15', 'type' => 'integer', 'group' => 'appointment', 'label' => 'Số phút được bắt đầu sớm'],
+            ['key' => 'no_show_grace_minutes', 'value' => '15', 'type' => 'integer', 'group' => 'appointment', 'label' => 'Số phút chờ trước khi no-show'],
+            ['key' => 'review_window_days', 'value' => '30', 'type' => 'integer', 'group' => 'review', 'label' => 'Số ngày được gửi đánh giá'],
+            ['key' => 'email_verification_required', 'value' => '0', 'type' => 'boolean', 'group' => 'authentication', 'label' => 'Bắt buộc xác thực email'],
+            ['key' => 'email_notifications_enabled', 'value' => '0', 'type' => 'boolean', 'group' => 'notification', 'label' => 'Bật gửi thông báo qua email'],
+        ];
+        foreach ($settings as $setting) {
+            SystemSetting::query()->updateOrCreate(['key' => $setting['key']], $setting);
+        }
+
+        $permissionData = [
+            'appointments.manage' => ['Quản lý lịch hẹn', 'appointment'],
+            'customers.manage' => ['Quản lý khách hàng', 'customer'],
+            'payments.manage' => ['Quản lý thanh toán', 'payment'],
+            'specialists.manage' => ['Quản lý chuyên viên', 'specialist'],
+            'services.manage' => ['Quản lý dịch vụ', 'service'],
+            'reports.view' => ['Xem báo cáo', 'report'],
+            'audit.view' => ['Xem nhật ký audit', 'security'],
+        ];
+        $permissions = collect($permissionData)->mapWithKeys(function (array $data, string $code): array {
+            $permission = Permission::query()->updateOrCreate(['code' => $code], ['name' => $data[0], 'group' => $data[1]]);
+
+            return [$code => $permission];
+        });
+        foreach (['customer' => [], 'specialist' => ['appointments.manage'], 'staff' => ['appointments.manage', 'customers.manage', 'payments.manage'], 'admin' => array_keys($permissionData)] as $code => $codes) {
+            $role = Role::query()->updateOrCreate(['code' => $code], ['name' => ucfirst($code), 'is_system' => true]);
+            $role->permissions()->sync($permissions->only($codes)->pluck('id'));
+        }
+
+        Appointment::query()->where('status', 'COMPLETED')->whereDoesntHave('review')->with('customer')->limit(6)->get()->each(function (Appointment $appointment, int $index): void {
+            Review::query()->updateOrCreate(['appointment_id' => $appointment->id], ['customer_id' => $appointment->customer_id, 'specialist_profile_id' => $appointment->specialist_profile_id, 'rating' => 5 - ($index % 2), 'comment' => 'Chuyên viên lắng nghe kỹ và đưa ra hướng dẫn rõ ràng, phù hợp.', 'status' => 'VISIBLE']);
+        });
+
+        Appointment::query()->where('payment_status', 'REFUND_PENDING')->whereDoesntHave('refundRequest')->get()->each(function (Appointment $appointment): void {
+            RefundRequest::query()->create(['appointment_id' => $appointment->id, 'amount' => (int) ($appointment->refund_amount ?? 0), 'percentage' => 50, 'status' => 'PENDING']);
+        });
     }
 }

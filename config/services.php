@@ -2,6 +2,18 @@
 
 return [
 
+    'sepay' => [
+        'webhook_secret' => env('SEPAY_WEBHOOK_SECRET'),
+        'api_key' => env('SEPAY_API_KEY'),
+        'bank_account' => env('SEPAY_BANK_ACCOUNT'),
+    ],
+
+    'vietqr' => [
+        'bank_id' => env('VIETQR_BANK_ID', 'MB'),
+        'account_number' => env('VIETQR_ACCOUNT_NUMBER', '0987654321'),
+        'account_name' => env('VIETQR_ACCOUNT_NAME', 'PHONG KHAM TAM LY MIND GUIDE'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

@@ -17,8 +17,9 @@ class Appointment extends Model
 
     protected $fillable = [
         'appointment_code', 'customer_id', 'specialist_profile_id', 'service_id',
+        'rescheduled_from_id', 'reschedule_count',
         'start_at', 'end_at', 'duration_minutes', 'buffer_minutes', 'price',
-        'status', 'payment_status', 'payment_method', 'source', 'customer_note',
+        'status', 'payment_status', 'paid_at', 'refunded_at', 'refund_amount', 'refund_status', 'payment_method', 'payment_expires_at', 'reminded_at', 'idempotency_key', 'source', 'customer_note',
         'created_by', 'slot_lock_key', 'needs_attention', 'confirmed_at', 'started_at', 'completed_at',
         'cancelled_at', 'cancel_reason',
         'checked_in_at', 'checked_in_by', 'collected_at', 'collected_by', 'payment_reference',
@@ -31,6 +32,9 @@ class Appointment extends Model
             'customer_note' => 'encrypted', 'needs_attention' => 'boolean',
             'confirmed_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime', 'cancelled_at' => 'datetime',
             'checked_in_at' => 'datetime', 'collected_at' => 'datetime',
+            'paid_at' => 'datetime', 'refunded_at' => 'datetime', 'refund_amount' => 'decimal:0',
+            'payment_expires_at' => 'datetime',
+            'reminded_at' => 'datetime',
         ];
     }
 
@@ -57,6 +61,31 @@ class Appointment extends Model
     public function consultationRecord(): HasOne
     {
         return $this->hasOne(ConsultationRecord::class);
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    public function refundRequest(): HasOne
+    {
+        return $this->hasOne(RefundRequest::class);
+    }
+
+    public function rescheduleRequests(): HasMany
+    {
+        return $this->hasMany(RescheduleRequest::class);
+    }
+
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    public function rescheduledFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rescheduled_from_id');
     }
 
     public function scopeHoldingSlot(Builder $query): Builder

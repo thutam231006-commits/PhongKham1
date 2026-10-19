@@ -43,4 +43,14 @@ class SpecialistProfile extends Model
     {
         return $this->hasMany(Appointment::class);
     }
+
+    public function scheduleExceptions(): HasMany
+    {
+        return $this->hasMany(ScheduleException::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

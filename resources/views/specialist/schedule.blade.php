@@ -23,6 +23,12 @@
         </form>
     </section>
 
+    <section class="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 class="text-lg font-bold text-[#0F172A]">Ngày nghỉ và chặn giờ</h2>
+        <form method="POST" action="{{ route('specialist.leaves.store') }}" class="mt-4 grid gap-3 sm:grid-cols-3">@csrf<select name="type" class="rounded-lg border-gray-300"><option value="DAY_OFF">Nghỉ cả ngày</option><option value="TIME_BLOCK">Chặn một khoảng giờ</option></select><input type="date" name="start_date" required class="rounded-lg border-gray-300"><input type="date" name="end_date" required class="rounded-lg border-gray-300"><input type="time" name="start_time" class="rounded-lg border-gray-300"><input type="time" name="end_time" class="rounded-lg border-gray-300"><input name="reason" required maxlength="255" placeholder="Lý do" class="rounded-lg border-gray-300"><label class="flex items-center gap-2"><input type="checkbox" name="is_emergency" value="1"> Nghỉ đột xuất</label><button class="rounded-lg bg-[#1D4B43] px-4 py-2 font-bold text-white">Lưu ngày nghỉ</button></form>
+        <div class="mt-5 space-y-2">@forelse($exceptions as $exception)<div class="flex justify-between rounded border p-3 text-sm"><span><strong>{{ $exception->type }}</strong> · {{ $exception->start_date->format('d/m/Y') }} - {{ $exception->end_date->format('d/m/Y') }}</span><span>{{ $exception->reason }}</span></div>@empty<p class="text-sm text-gray-500">Chưa có ngày nghỉ hoặc giờ bị chặn.</p>@endforelse</div>
+    </section>
+
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white" aria-labelledby="schedule-list-heading">
         <h2 id="schedule-list-heading" class="border-b border-gray-100 px-5 py-4 text-lg font-bold text-[#0F172A]">Các ca đang đăng ký</h2>
         @forelse($schedules as $schedule)
