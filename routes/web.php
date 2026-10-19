@@ -32,7 +32,6 @@ use Illuminate\Support\Facades\Route;
 
 // SCR-PUB-01 — Trang chủ
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::post('/webhooks/sepay', [PaymentWebhookController::class, 'sepay'])->middleware('throttle:60,1')->name('webhooks.sepay');
 // SCR-PUB-02 — Danh sách dịch vụ (/services & /dich-vu)
 Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/dich-vu', [ServiceController::class, 'index']);
@@ -51,6 +50,14 @@ Route::get('/chuyen-vien/{specialist}', [SpecialistController::class, 'show']);
 
 // SCR-CUS-03 — Đặt lịch tư vấn (/booking & /dat-lich)
 Route::get('/booking', [BookingController::class, 'index'])->name('appointments.book');
+Route::get('/booking/select-specialist', [BookingController::class, 'selectSpecialist'])->name('booking.select-specialist');
+Route::get('/booking/select-slot', [BookingController::class, 'selectSlot'])->name('booking.select-slot');
+Route::get('/booking/note', [BookingController::class, 'note'])->name('booking.note');
+Route::get('/booking/confirm', [BookingController::class, 'confirm'])->name('booking.confirm');
+Route::post('/booking/step/service', [BookingController::class, 'storeServiceStep'])->name('booking.step.service');
+Route::post('/booking/step/specialist', [BookingController::class, 'storeSpecialistStep'])->name('booking.step.specialist');
+Route::post('/booking/step/slot', [BookingController::class, 'storeSlotStep'])->name('booking.step.slot');
+Route::post('/booking/step/note', [BookingController::class, 'storeNoteStep'])->name('booking.step.note');
 Route::get('/dat-lich', [BookingController::class, 'index']);
 
 // Trang thông tin tĩnh & Hỗ trợ công khai
@@ -105,6 +112,7 @@ Route::middleware('auth')->group(function () {
 
     // SCR-CUS-03 — Tạo lịch hẹn tiền mặt trong MVP
     Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:booking')->name('appointments.store');
+    Route::post('/booking/confirm', [BookingController::class, 'confirmBooking'])->middleware('throttle:booking')->name('booking.confirm.store');
 
     // Đăng xuất
     Route::match(['get', 'post'], '/dang-xuat', function (Request $request) {

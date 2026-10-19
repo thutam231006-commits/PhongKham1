@@ -70,6 +70,36 @@ class BookingFlowTest extends TestCase
         $this->postJson(route('appointments.store'), [])->assertUnauthorized();
     }
 
+    public function test_booking_flow_moves_through_five_routes_and_preserves_session_state(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(4)->setTime(10, 0);
+        WorkingSchedule::query()->where('specialist_profile_id', $specialist->id)->update(['day_of_week' => $date->isoWeekday(), 'start_time' => '08:00', 'end_time' => '17:00']);
+
+        $this->get(route('appointments.book'))->assertOk()->assertSee('Chọn gói dịch vụ tư vấn');
+        $this->post(route('booking.step.service'), ['service_id' => $service->id])->assertRedirect(route('booking.select-specialist', ['service_id' => $service->id]));
+        $this->withSession(['booking' => ['service_id' => $service->id]])->get(route('booking.select-specialist', ['service_id' => $service->id]))->assertOk()->assertSee($specialist->user->name);
+        $this->withSession(['booking' => ['service_id' => $service->id]])->post(route('booking.step.specialist'), ['specialist_id' => $specialist->id])->assertRedirect(route('booking.select-slot'));
+        $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id]])->get(route('booking.select-slot', ['date' => $date->toDateString()]))->assertOk()->assertSee('10:20');
+        $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id]])->post(route('booking.step.slot'), ['date' => $date->toDateString(), 'time' => '10:20'])->assertRedirect(route('booking.note'));
+        $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id, 'date' => $date->toDateString(), 'time' => '10:20', 'start_at' => $date->format('Y-m-d').' 10:20:00']])->post(route('booking.step.note'), ['customer_note' => 'Ghi chú bước tư vấn.'])->assertRedirect(route('booking.confirm'));
+    }
+
+    public function test_specialists_api_filters_by_selected_service(): void
+    {
+        [$service, $specialist] = $this->bookingSetup();
+        $otherService = Service::factory()->create();
+
+        $this->getJson(route('api.specialists.index', ['service_id' => $service->id]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonFragment(['id' => $specialist->id]);
+        $this->getJson(route('api.specialists.index', ['service_id' => $otherService->id]))
+            ->assertOk()
+            ->assertJsonMissing(['id' => $specialist->id]);
+    }
+
     /** @return array{0: Service, 1: SpecialistProfile} */
     private function bookingSetup(): array
     {
