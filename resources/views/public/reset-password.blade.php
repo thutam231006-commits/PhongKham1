@@ -16,8 +16,8 @@
     <div class="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 border border-gray-200/80 shadow-sm">
 
         <div class="text-center">
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-                <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+                <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                 Cập nhật mật khẩu mới
             </span>
             <h1 class="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-[#0F172A]">
@@ -49,7 +49,7 @@
                        name="email"
                        value="{{ $email ?? old('email') }}"
                        required
-                       class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                       class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
             </div>
 
             <div>
@@ -62,7 +62,7 @@
                        required
                        minlength="8"
                        placeholder="••••••••"
-                       class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                       class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
             </div>
 
             <div>
@@ -75,17 +75,17 @@
                        required
                        minlength="8"
                        placeholder="••••••••"
-                       class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                       class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
             </div>
 
             <button type="submit"
-                    class="w-full rounded-xl bg-[#1D4B43] py-3 text-sm font-bold text-white hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-2 transition shadow-xs mt-2">
+                    class="w-full rounded-xl bg-[#2D82C4] py-3 text-sm font-bold text-white hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-2 transition shadow-xs mt-2">
                 Cập nhật mật khẩu
             </button>
         </form>
 
         <div class="text-center pt-4 border-t border-gray-100 text-xs text-[#4A5568]">
-            <a href="{{ route('login') }}" class="font-bold text-[#1D4B43] hover:underline">
+            <a href="{{ route('login') }}" class="font-bold text-[#2D82C4] hover:underline">
                 Về đăng nhập
             </a>
         </div>

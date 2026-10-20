@@ -12,7 +12,7 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Liên hệ với chúng tôi</li>
@@ -25,8 +25,8 @@
 
     {{-- Tiêu đề trang --}}
     <div class="max-w-2xl">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-            <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+            <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
             Chúng tôi luôn sẵn sàng lắng nghe bạn
         </span>
         <h1 class="mt-3 text-3xl font-black tracking-tight text-[#0F172A] sm:text-4xl">
@@ -52,23 +52,23 @@
                 <div class="space-y-5 text-sm text-[#334155]">
                     {{-- Hotline --}}
                     <div class="flex items-start gap-3.5">
-                        <div class="h-10 w-10 rounded-xl bg-[#E8F0EC] text-[#1D4B43] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div class="h-10 w-10 rounded-xl bg-[#EAF4FB] text-[#2D82C4] flex items-center justify-center flex-shrink-0 mt-0.5">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                             </svg>
                         </div>
                         <div>
                             <span class="text-xs text-[#4A5568] block">Đường dây nóng hỗ trợ:</span>
-                            <a href="tel:19001567" class="text-base font-bold text-[#1D4B43] hover:underline">
+                            <a href="tel:19001567" class="text-base font-bold text-[#2D82C4] hover:underline">
                                 1900 1567
                             </a>
-                            <span class="text-xs text-[#709782] block font-medium">(Hỗ trợ 24/7, cước gọi miễn phí)</span>
+                            <span class="text-xs text-[#6FA6CF] block font-medium">(Hỗ trợ 24/7, cước gọi miễn phí)</span>
                         </div>
                     </div>
 
                     {{-- Email --}}
                     <div class="flex items-start gap-3.5">
-                        <div class="h-10 w-10 rounded-xl bg-[#E8F0EC] text-[#1D4B43] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div class="h-10 w-10 rounded-xl bg-[#EAF4FB] text-[#2D82C4] flex items-center justify-center flex-shrink-0 mt-0.5">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </svg>
@@ -84,7 +84,7 @@
 
                     {{-- Địa chỉ --}}
                     <div class="flex items-start gap-3.5">
-                        <div class="h-10 w-10 rounded-xl bg-[#E8F0EC] text-[#1D4B43] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div class="h-10 w-10 rounded-xl bg-[#EAF4FB] text-[#2D82C4] flex items-center justify-center flex-shrink-0 mt-0.5">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -98,7 +98,7 @@
 
                     {{-- Giờ làm việc --}}
                     <div class="flex items-start gap-3.5">
-                        <div class="h-10 w-10 rounded-xl bg-[#E8F0EC] text-[#1D4B43] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div class="h-10 w-10 rounded-xl bg-[#EAF4FB] text-[#2D82C4] flex items-center justify-center flex-shrink-0 mt-0.5">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
@@ -150,7 +150,7 @@
                                value="{{ old('name') }}"
                                placeholder="Nguyễn Văn A"
                                required
-                               class="w-full rounded-xl border @error('name') border-red-300 bg-red-50 @else border-gray-300 bg-[#F7FAFC] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20">
+                               class="w-full rounded-xl border @error('name') border-red-300 bg-red-50 @else border-gray-300 bg-[#F5FAFE] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20">
                         @error('name')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -167,7 +167,7 @@
                                    value="{{ old('email') }}"
                                    placeholder="email@example.com"
                                    required
-                                   class="w-full rounded-xl border @error('email') border-red-300 bg-red-50 @else border-gray-300 bg-[#F7FAFC] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20">
+                                   class="w-full rounded-xl border @error('email') border-red-300 bg-red-50 @else border-gray-300 bg-[#F5FAFE] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20">
                             @error('email')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -182,7 +182,7 @@
                                    name="phone"
                                    value="{{ old('phone') }}"
                                    placeholder="0912 345 678"
-                                   class="w-full rounded-xl border @error('phone') border-red-300 bg-red-50 @else border-gray-300 bg-[#F7FAFC] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20">
+                                   class="w-full rounded-xl border @error('phone') border-red-300 bg-red-50 @else border-gray-300 bg-[#F5FAFE] @enderror px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20">
                             @error('phone')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -199,14 +199,14 @@
                                   required
                                   maxlength="1000"
                                   placeholder="Bạn đang quan tâm đến gói dịch vụ nào hoặc cần phòng khám giải đáp vấn đề gì?..."
-                                  class="w-full rounded-xl border @error('message') border-red-300 bg-red-50 @else border-gray-300 bg-[#F7FAFC] @enderror p-4 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 leading-relaxed">{{ old('message') }}</textarea>
+                                  class="w-full rounded-xl border @error('message') border-red-300 bg-red-50 @else border-gray-300 bg-[#F5FAFE] @enderror p-4 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 leading-relaxed">{{ old('message') }}</textarea>
                         @error('message')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <button type="submit"
-                            class="w-full sm:w-auto rounded-xl bg-[#1D4B43] px-8 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                            class="w-full sm:w-auto rounded-xl bg-[#2D82C4] px-8 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                         Gửi lời nhắn
                     </button>
                 </form>

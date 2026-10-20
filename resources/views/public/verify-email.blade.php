@@ -15,7 +15,7 @@
 <div class="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
     <div class="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 border border-gray-200/80 shadow-sm text-center">
 
-        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F0EC] text-[#1D4B43]">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4FB] text-[#2D82C4]">
             <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
@@ -36,7 +36,7 @@
 
         <div class="pt-4 space-y-3">
             <a href="{{ route('login') }}"
-               class="block w-full rounded-xl bg-[#1D4B43] py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+               class="block w-full rounded-xl bg-[#2D82C4] py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                 Đăng nhập tài khoản
             </a>
 

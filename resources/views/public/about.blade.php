@@ -1,7 +1,7 @@
 {{--
     Giới thiệu phòng khám tâm lý Mind Guide (About Us)
     ==================================================
-    Phong cách: Soft Medical / Healing Minimalist (#1D4B43, #709782, #F7FAFC)
+    Phong cách: Soft Medical / Healing Minimalist (#2D82C4, #6FA6CF, #F5FAFE)
 --}}
 
 @extends('layouts.app')
@@ -12,7 +12,7 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Giới thiệu về Mind Guide</li>
@@ -25,8 +25,8 @@
 
     {{-- ── 1. HERO GIỚI THIỆU ── --}}
     <div class="max-w-3xl">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-            <span class="h-2 w-2 rounded-full bg-[#709782] animate-pulse"></span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+            <span class="h-2 w-2 rounded-full bg-[#6FA6CF] animate-pulse"></span>
             Không gian an toàn cho tâm hồn của bạn
         </span>
         <h1 class="mt-4 text-3xl font-black tracking-tight text-[#0F172A] sm:text-5xl leading-tight">
@@ -41,14 +41,14 @@
     {{-- ── 2. CÁC GIÁ TRỊ CỐT LÕI (CORE VALUES) ── --}}
     <div>
         <div class="text-center max-w-2xl mx-auto mb-12">
-            <span class="text-xs font-bold uppercase tracking-wider text-[#709782]">Kim chỉ nam hoạt động</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-[#6FA6CF]">Kim chỉ nam hoạt động</span>
             <h2 class="mt-2 text-2xl font-black text-[#0F172A] sm:text-3xl">4 Giá trị cốt lõi tại Mind Guide</h2>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {{-- Giá trị 1 --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#709782] transition">
-                <div class="h-12 w-12 rounded-xl bg-[#E8F0EC] flex items-center justify-center text-[#1D4B43] mb-4">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#6FA6CF] transition">
+                <div class="h-12 w-12 rounded-xl bg-[#EAF4FB] flex items-center justify-center text-[#2D82C4] mb-4">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                     </svg>
@@ -60,8 +60,8 @@
             </div>
 
             {{-- Giá trị 2 --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#709782] transition">
-                <div class="h-12 w-12 rounded-xl bg-[#E8F0EC] flex items-center justify-center text-[#1D4B43] mb-4">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#6FA6CF] transition">
+                <div class="h-12 w-12 rounded-xl bg-[#EAF4FB] flex items-center justify-center text-[#2D82C4] mb-4">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
@@ -73,8 +73,8 @@
             </div>
 
             {{-- Giá trị 3 --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#709782] transition">
-                <div class="h-12 w-12 rounded-xl bg-[#E8F0EC] flex items-center justify-center text-[#1D4B43] mb-4">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#6FA6CF] transition">
+                <div class="h-12 w-12 rounded-xl bg-[#EAF4FB] flex items-center justify-center text-[#2D82C4] mb-4">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                     </svg>
@@ -86,8 +86,8 @@
             </div>
 
             {{-- Giá trị 4 --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#709782] transition">
-                <div class="h-12 w-12 rounded-xl bg-[#E8F0EC] flex items-center justify-center text-[#1D4B43] mb-4">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs hover:border-[#6FA6CF] transition">
+                <div class="h-12 w-12 rounded-xl bg-[#EAF4FB] flex items-center justify-center text-[#2D82C4] mb-4">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
@@ -101,7 +101,7 @@
     </div>
 
     {{-- ── 3. KHỐI THỐNG KÊ NIỀM TIN ── --}}
-    <div class="rounded-3xl bg-[#1D4B43] p-8 sm:p-12 text-white text-center">
+    <div class="rounded-3xl bg-[#2D82C4] p-8 sm:p-12 text-white text-center">
         <div class="max-w-2xl mx-auto mb-8">
             <h2 class="text-2xl sm:text-3xl font-black">Những con số biết nói</h2>
             <p class="text-sm text-emerald-100 mt-2">Được xây dựng từ sự tin cậy và tiến bộ thực tế của hàng trăm thân chủ mỗi tháng.</p>
@@ -134,7 +134,7 @@
             Đừng để những áp lực tinh thần đè nặng một mình. Hãy để các chuyên gia tại Mind Guide chia sẻ cùng bạn ngay hôm nay.
         </p>
         <div class="mt-6 flex flex-wrap justify-center gap-4">
-            <a href="{{ route('appointments.book') }}" class="rounded-xl bg-[#1D4B43] px-8 py-3.5 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+            <a href="{{ route('appointments.book') }}" class="rounded-xl bg-[#2D82C4] px-8 py-3.5 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                 Đặt lịch tư vấn ngay
             </a>
             <a href="{{ route('services.index') }}" class="rounded-xl border border-gray-300 bg-white px-8 py-3.5 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">

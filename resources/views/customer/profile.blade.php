@@ -17,11 +17,11 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li>
-            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#1D4B43] hover:underline transition">Khách hàng</a>
+            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#2D82C4] hover:underline transition">Khách hàng</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Hồ sơ cá nhân</li>
@@ -35,8 +35,8 @@
 
     {{-- Tiêu đề trang --}}
     <div>
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-            <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+            <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
             Tài khoản thân chủ
         </span>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-[#0F172A]">
@@ -74,21 +74,21 @@
             <button type="button"
                     @click="activeTab = 'info'"
                     class="pb-4 px-1 border-b-2 transition"
-                    :class="activeTab === 'info' ? 'border-[#1D4B43] text-[#1D4B43] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
+                    :class="activeTab === 'info' ? 'border-[#2D82C4] text-[#2D82C4] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
                 Thông tin tài khoản
             </button>
 
             <button type="button"
                     @click="activeTab = 'security'"
                     class="pb-4 px-1 border-b-2 transition"
-                    :class="activeTab === 'security' ? 'border-[#1D4B43] text-[#1D4B43] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
+                    :class="activeTab === 'security' ? 'border-[#2D82C4] text-[#2D82C4] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
                 Đổi mật khẩu & Bảo mật
             </button>
 
             <button type="button"
                     @click="activeTab = 'notification'"
                     class="pb-4 px-1 border-b-2 transition"
-                    :class="activeTab === 'notification' ? 'border-[#1D4B43] text-[#1D4B43] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
+                    :class="activeTab === 'notification' ? 'border-[#2D82C4] text-[#2D82C4] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
                 Cài đặt thông báo
             </button>
         </nav>
@@ -102,10 +102,10 @@
             </h2>
 
             {{-- Thông tin chỉ đọc (Readonly) theo đặc tả SCR-CUS-02 --}}
-            <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-[#F7FAFC] border border-gray-200/80 text-xs">
+            <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-[#F5FAFE] border border-gray-200/80 text-xs">
                 <div>
                     <span class="text-[#4A5568] block">Mã khách hàng:</span>
-                    <strong class="font-mono text-sm font-bold text-[#1D4B43] mt-0.5 block">{{ $user->code }}</strong>
+                    <strong class="font-mono text-sm font-bold text-[#2D82C4] mt-0.5 block">{{ $user->code }}</strong>
                 </div>
 
                 <div>
@@ -136,7 +136,7 @@
                                required
                                minlength="2"
                                maxlength="100"
-                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                     </div>
 
                     <div>
@@ -148,7 +148,7 @@
                                name="email"
                                value="{{ old('email', $user->email) }}"
                                required
-                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                     </div>
 
                     <div>
@@ -160,13 +160,13 @@
                                name="phone"
                                value="{{ old('phone', $user->phone) }}"
                                placeholder="0912 345 678"
-                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-gray-100 flex justify-end">
                     <button type="submit"
-                            class="rounded-xl bg-[#1D4B43] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                            class="rounded-xl bg-[#2D82C4] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                         Lưu thay đổi hồ sơ
                     </button>
                 </div>
@@ -193,7 +193,7 @@
                            name="current_password"
                            required
                            placeholder="••••••••"
-                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                 </div>
 
                 <div>
@@ -206,7 +206,7 @@
                            required
                            minlength="8"
                            placeholder="••••••••"
-                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                 </div>
 
                 <div>
@@ -219,12 +219,12 @@
                            required
                            minlength="8"
                            placeholder="••••••••"
-                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20">
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                 </div>
 
                 <div class="pt-4 border-t border-gray-100 flex justify-end">
                     <button type="submit"
-                            class="rounded-xl bg-[#1D4B43] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                            class="rounded-xl bg-[#2D82C4] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                         Cập nhật mật khẩu mới
                     </button>
                 </div>
@@ -240,24 +240,24 @@
             </h2>
 
             <div class="mt-6 space-y-4 text-xs">
-                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F7FAFC] cursor-pointer">
-                    <input type="checkbox" checked class="mt-1 rounded text-[#1D4B43] focus:ring-[#1D4B43]">
+                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F5FAFE] cursor-pointer">
+                    <input type="checkbox" checked class="mt-1 rounded text-[#2D82C4] focus:ring-[#2D82C4]">
                     <div>
                         <span class="font-bold text-[#0F172A] text-sm block">Nhắc lịch hẹn qua Email (24h trước giờ hẹn)</span>
                         <p class="text-[#4A5568] mt-0.5">Nhận thư thông báo và đường dẫn phòng họp trực tuyến tự động.</p>
                     </div>
                 </label>
 
-                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F7FAFC] cursor-pointer">
-                    <input type="checkbox" checked class="mt-1 rounded text-[#1D4B43] focus:ring-[#1D4B43]">
+                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F5FAFE] cursor-pointer">
+                    <input type="checkbox" checked class="mt-1 rounded text-[#2D82C4] focus:ring-[#2D82C4]">
                     <div>
                         <span class="font-bold text-[#0F172A] text-sm block">Cập nhật trạng thái thanh toán & hoàn tiền</span>
                         <p class="text-[#4A5568] mt-0.5">Thông báo khi giao dịch VietQR hoàn tất hoặc khi lệnh hoàn tiền được xác nhận.</p>
                     </div>
                 </label>
 
-                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F7FAFC] cursor-pointer">
-                    <input type="checkbox" class="mt-1 rounded text-[#1D4B43] focus:ring-[#1D4B43]">
+                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 bg-[#F5FAFE] cursor-pointer">
+                    <input type="checkbox" class="mt-1 rounded text-[#2D82C4] focus:ring-[#2D82C4]">
                     <div>
                         <span class="font-bold text-[#0F172A] text-sm block">Bài viết & Lời khuyên sức khỏe tinh thần</span>
                         <p class="text-[#4A5568] mt-0.5">Bản tin định kỳ chia sẻ các bài tập chánh niệm và quản lý căng thẳng từ chuyên gia.</p>

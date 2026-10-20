@@ -76,8 +76,8 @@
 @endphp
 
 <article
-    class="flex flex-col rounded-xl border border-gray-200 bg-white transition
-           hover:border-[#709782] hover:shadow-md focus-within:ring-2 focus-within:ring-[#1D4B43]"
+    class="group flex flex-col rounded-xl border border-[#D7E8F3] bg-white transition
+           hover:-translate-y-1 hover:border-[#6FA6CF] hover:shadow-lg focus-within:ring-2 focus-within:ring-[#2D82C4]"
     aria-label="Chuyên viên: {{ e($name) }}"
     {{ $attributes }}>
 
@@ -95,7 +95,7 @@
                  height="72"
                  loading="lazy"
                  onerror="this.onerror=null;this.src='{{ asset('images/default-avatar.svg') }}'"
-                 class="h-[72px] w-[72px] rounded-full object-cover ring-2 ring-[#E8F0EC]">
+                 class="h-[72px] w-[72px] rounded-full object-cover ring-4 ring-[#EAF4FB] transition duration-500 group-hover:scale-105">
         </a>
 
         {{-- Thông tin văn bản --}}
@@ -104,7 +104,7 @@
             {{-- Họ tên (link đến trang chi tiết) --}}
             <h3 class="text-base font-semibold leading-snug text-[#1A202C]">
                 <a href="{{ $detailRoute }}"
-                   class="hover:text-[#1D4B43] focus:outline-none focus:underline transition line-clamp-1">
+                   class="hover:text-[#2D82C4] focus:outline-none focus:underline transition line-clamp-1">
                     {{ e($name) }}
                 </a>
             </h3>
@@ -127,7 +127,7 @@
             {{-- Kinh nghiệm --}}
             @if ($expLabel)
             <div class="mt-1.5 flex items-center gap-1.5 text-xs text-[#4A5568]">
-                <svg class="h-3.5 w-3.5 flex-shrink-0 text-[#709782]" fill="none" viewBox="0 0 24 24"
+                <svg class="h-3.5 w-3.5 flex-shrink-0 text-[#6FA6CF]" fill="none" viewBox="0 0 24 24"
                      stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -192,16 +192,16 @@
 
         {{-- Nút đặt lịch (CTA chính) --}}
         <a href="{{ $bookRoute }}"
-           class="flex-1 rounded-lg bg-[#1D4B43] px-4 py-2 text-center text-sm font-medium text-white
-                  hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-2 transition"
+           class="flex-1 rounded-full bg-[#2D82C4] px-4 py-2.5 text-center text-sm font-bold text-white
+                  hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-2 transition"
            aria-label="Đặt lịch với chuyên viên {{ e($name) }}">
             Đặt lịch
         </a>
 
         {{-- Nút xem chi tiết --}}
         <a href="{{ $detailRoute }}"
-           class="rounded-lg border border-[#1D4B43] px-4 py-2 text-center text-sm font-medium text-[#1D4B43]
-                  hover:bg-[#E8F0EC] focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-2 transition"
+           class="rounded-full border border-[#2D82C4] px-4 py-2.5 text-center text-sm font-bold text-[#2D82C4]
+                  hover:bg-[#EAF4FB] focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-2 transition"
            aria-label="Xem hồ sơ chuyên viên {{ e($name) }}">
             Hồ sơ
         </a>

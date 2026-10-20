@@ -16,11 +16,11 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li>
-            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#1D4B43] hover:underline transition">Khách hàng</a>
+            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#2D82C4] hover:underline transition">Khách hàng</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Lịch sử tư vấn & Lời dặn</li>
@@ -34,8 +34,8 @@
     {{-- Tiêu đề trang --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-                <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+                <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                 Hồ sơ sức khỏe tinh thần (§1.7 bảo mật)
             </span>
             <h1 class="mt-2 text-3xl font-black tracking-tight text-[#0F172A]">
@@ -60,17 +60,17 @@
     {{-- Danh sách hồ sơ các buổi tư vấn --}}
     <div class="space-y-6">
         @forelse($records as $rec)
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-xs hover:border-[#709782] transition space-y-5">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-xs hover:border-[#6FA6CF] transition space-y-5">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="font-mono text-xs font-black text-[#1D4B43] bg-[#E8F0EC] px-3 py-1 rounded-lg">
+                            <span class="font-mono text-xs font-black text-[#2D82C4] bg-[#EAF4FB] px-3 py-1 rounded-lg">
                                 {{ $rec->appointment_code }}
                             </span>
                             <span class="text-xs text-[#4A5568]">Ngày tư vấn: <strong class="text-[#0F172A]">{{ $rec->date }}</strong> ({{ $rec->time_slot }})</span>
                         </div>
                         <h3 class="text-lg font-bold text-[#0F172A] mt-2">{{ $rec->service_name }}</h3>
-                        <p class="text-xs text-[#709782] font-semibold mt-0.5">Chuyên gia: {{ $rec->specialist_name }}</p>
+                        <p class="text-xs text-[#6FA6CF] font-semibold mt-0.5">Chuyên gia: {{ $rec->specialist_name }}</p>
                     </div>
 
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 self-start sm:self-auto border border-emerald-200">
@@ -82,8 +82,8 @@
                 {{-- Khối tóm tắt và lời khuyên --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm">
                     {{-- Ghi nhận từ chuyên viên --}}
-                    <div class="rounded-xl border border-gray-200/80 bg-[#F7FAFC] p-4 space-y-1.5">
-                        <span class="text-xs font-bold text-[#1D4B43] uppercase tracking-wider block">1. Nhận định từ chuyên gia</span>
+                    <div class="rounded-xl border border-gray-200/80 bg-[#F5FAFE] p-4 space-y-1.5">
+                        <span class="text-xs font-bold text-[#2D82C4] uppercase tracking-wider block">1. Nhận định từ chuyên gia</span>
                         <p class="text-[#334155] leading-relaxed">
                             {{ $rec->summary }}
                         </p>

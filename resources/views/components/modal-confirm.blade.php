@@ -88,40 +88,14 @@
      Container Alpine.js — quản lý trạng thái modal
      ──────────────────────────────────────────── --}}
 <div
-    x-data="{
-        {{ $modalVar }}: false,
-        reason: '',
-        submitting: false,
-
-        open()  { this.{{ $modalVar }} = true; this.$nextTick(() => this.$refs.cancelBtn?.focus()); },
-        close() { this.{{ $modalVar }} = false; this.reason = ''; this.submitting = false; },
-
-        confirmHandler() {
-            @if ($requireReason)
-            if (this.reason.trim() === '') {
-                this.$refs.reasonInput?.focus();
-                this.$refs.reasonInput?.setCustomValidity('Vui lòng nhập lý do.');
-                this.$refs.reasonInput?.reportValidity();
-                return;
-            }
-            this.$refs.reasonInput?.setCustomValidity('');
-            @endif
-            @if ($useForm)
-            this.submitting = true;
-            this.$refs.modalForm?.submit();
-            @else
-            this.$dispatch('modal-confirm-{{ $id }}', { reason: this.reason });
-            this.close();
-            @endif
-        }
-    }"
-    @open-modal-{{ $id }}.window="open()"
-    @close-modal-{{ $id }}.window="close()"
+    x-data="confirmModal({{ $requireReason ? 'true' : 'false' }}, {{ $useForm ? 'true' : 'false' }}, 'modal-confirm-{{ $id }}')"
+    @open-modal-{{ $id }}.window="openModal()"
+    @close-modal-{{ $id }}.window="closeModal()"
     {{ $attributes->only('class') }}>
 
     {{-- ── TRIGGER SLOT (nút / link mở modal) ── --}}
     @if (isset($trigger))
-    <div @click="{{ $modalVar }} = true">
+    <div @click="openModal()">
         {{ $trigger }}
     </div>
     @endif
@@ -130,7 +104,7 @@
          OVERLAY + MODAL DIALOG
          ════════════════════════════════════════ --}}
     <div
-        x-show="{{ $modalVar }}"
+        x-show="isOpen"
         x-cloak
         class="fixed inset-0 z-[60] flex items-center justify-center p-4"
         role="dialog"
@@ -146,7 +120,7 @@
 
         {{-- Backdrop --}}
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
-             @click="close()"
+             @click="closeModal()"
              aria-hidden="true"></div>
 
         {{-- Panel --}}
@@ -158,7 +132,7 @@
             x-transition:leave="ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-            @keydown.escape.window="close()">
+            @keydown.escape.window="closeModal()">
 
             {{-- ── Header modal ── --}}
             <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
@@ -180,9 +154,9 @@
                 </div>
                 {{-- Nút đóng (X) --}}
                 <button type="button"
-                        @click="close()"
+                        @click="closeModal()"
                         class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600
-                               focus:outline-none focus:ring-2 focus:ring-[#1D4B43] transition"
+                               focus:outline-none focus:ring-2 focus:ring-[#2D82C4] transition"
                         aria-label="Đóng hộp thoại">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -215,7 +189,7 @@
 
                     {{-- Slot chi tiết bổ sung (ví dụ bảng hoàn tiền, countdown) --}}
                     @if (isset($details))
-                    <div class="rounded-lg bg-[#F7FAFC] border border-gray-200 p-4 text-sm">
+                    <div class="rounded-lg bg-[#F5FAFE] border border-gray-200 p-4 text-sm">
                         {{ $details }}
                     </div>
                     @endif
@@ -242,7 +216,7 @@
                             required
                             class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                                    text-[#1A202C] placeholder-[#4A5568]
-                                   focus:border-[#1D4B43] focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/30
+                                   focus:border-[#2D82C4] focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/30
                                    resize-none transition"
                             placeholder="Nhập lý do…"
                             :aria-describedby="'{{ $reasonId }}-count'"></textarea>
@@ -270,7 +244,7 @@
                             maxlength="{{ $reasonMaxLen }}"
                             class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                                    text-[#1A202C] placeholder-[#4A5568]
-                                   focus:border-[#1D4B43] focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/30
+                                   focus:border-[#2D82C4] focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/30
                                    resize-none transition"
                             placeholder="Nhập lý do (tùy chọn)…"
                             :aria-describedby="'{{ $reasonId }}-count-opt'"></textarea>
@@ -293,7 +267,7 @@
                             @click="close()"
                             class="w-full rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium
                                    text-[#1A202C] hover:bg-gray-50
-                                   focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-1 transition
+                                   focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-1 transition
                                    sm:w-auto">
                         {{ e($cancelLabel) }}
                     </button>

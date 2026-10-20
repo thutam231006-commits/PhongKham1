@@ -19,8 +19,8 @@
          x-data="{ showPassword: false, email: '{{ old('email') }}', password: '' }">
 
         <div class="text-center">
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-                <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+                <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                 Cổng thông tin Mind Guide
             </span>
             <h1 class="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-[#0F172A]">
@@ -55,23 +55,23 @@
         @endif
 
         {{-- Khối thông tin tài khoản mẫu để trải nghiệm --}}
-        <div class="rounded-xl border border-teal-200 bg-[#E8F0EC]/60 p-4 text-xs text-[#1D4B43]">
+        <div class="rounded-xl border border-teal-200 bg-[#EAF4FB]/60 p-4 text-xs text-[#2D82C4]">
             <div class="flex items-center justify-between mb-2">
                 <span class="font-bold flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Tài khoản khách hàng demo
                 </span>
                 <button type="button"
                         @click="email = 'customer@mindguide.vn'; password = 'MindGuide@2026'"
-                        class="text-[11px] font-bold text-[#1D4B43] hover:underline bg-white px-2 py-0.5 rounded border border-teal-300 shadow-xs cursor-pointer">
+                        class="text-[11px] font-bold text-[#2D82C4] hover:underline bg-white px-2 py-0.5 rounded border border-teal-300 shadow-xs cursor-pointer">
                     ⚡ Điền nhanh
                 </button>
             </div>
             <div class="space-y-1 font-mono text-[11px] text-[#0F172A]">
-                <div>Email: <strong class="select-all text-[#1D4B43]">customer@mindguide.vn</strong></div>
-                <div>Mật khẩu: <strong class="select-all text-[#1D4B43]">MindGuide@2026</strong></div>
+                <div>Email: <strong class="select-all text-[#2D82C4]">customer@mindguide.vn</strong></div>
+                <div>Mật khẩu: <strong class="select-all text-[#2D82C4]">MindGuide@2026</strong></div>
             </div>
         </div>
 
@@ -93,7 +93,7 @@
                        required
                        autofocus
                        placeholder="email@example.com"
-                       class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                       class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
             </div>
 
             {{-- Mật khẩu có nút ẩn/hiện --}}
@@ -102,7 +102,7 @@
                     <label for="password" class="block text-xs font-bold text-[#0F172A]">
                         Mật khẩu <span class="text-red-500">*</span>
                     </label>
-                    <a href="{{ route('password.request') }}" class="text-xs font-semibold text-[#1D4B43] hover:underline">
+                    <a href="{{ route('password.request') }}" class="text-xs font-semibold text-[#2D82C4] hover:underline">
                         Quên mật khẩu?
                     </a>
                 </div>
@@ -113,10 +113,10 @@
                            x-model="password"
                            required
                            placeholder="••••••••"
-                           class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] pl-4 pr-11 py-2.5 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                           class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] pl-4 pr-11 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
                     <button type="button"
                             @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-[#1D4B43] focus:outline-none">
+                            class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-[#2D82C4] focus:outline-none">
                         <svg x-show="!showPassword" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -130,7 +130,7 @@
 
             {{-- Nút Đăng nhập --}}
             <button type="submit"
-                    class="w-full rounded-xl bg-[#1D4B43] py-3 text-sm font-bold text-white hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-2 transition shadow-xs">
+                    class="w-full rounded-xl bg-[#2D82C4] py-3 text-sm font-bold text-white hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-2 transition shadow-xs">
                 Đăng nhập
             </button>
         </form>
@@ -138,7 +138,7 @@
         {{-- Chuyển sang Đăng ký --}}
         <div class="text-center pt-4 border-t border-gray-100 text-xs text-[#4A5568]">
             <span>Chưa có tài khoản tại Mind Guide?</span>
-            <a href="{{ route('register') }}" class="font-bold text-[#1D4B43] hover:underline ml-1">
+            <a href="{{ route('register') }}" class="font-bold text-[#2D82C4] hover:underline ml-1">
                 Đăng ký tài khoản mới
             </a>
         </div>

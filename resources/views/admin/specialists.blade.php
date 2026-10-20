@@ -5,7 +5,7 @@
 @section('content')
 <div class="mx-auto max-w-screen-xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <h1 class="text-3xl font-black text-[#1D4B43]">Quản lý chuyên viên</h1>
+        <h1 class="text-3xl font-black text-[#2D82C4]">Quản lý chuyên viên</h1>
         <p class="mt-2 text-sm text-[#4A5568]">Kiểm tra dịch vụ, lịch làm việc và trạng thái sẵn sàng.</p>
     </div>
 
@@ -23,13 +23,13 @@
 
     <section class="rounded-xl border border-gray-200 bg-white p-5">
         <h2 class="text-lg font-bold">Tạo chuyên viên</h2>
-        <form method="POST" enctype="multipart/form-data" action="{{ route('admin.specialists.store') }}" class="mt-4 grid gap-3 sm:grid-cols-3">@csrf<input name="name" required placeholder="Họ tên" class="rounded-lg border-gray-300"><input name="email" type="email" required placeholder="Email" class="rounded-lg border-gray-300"><input name="title" required placeholder="Chức danh" class="rounded-lg border-gray-300"><input name="expertise" placeholder="Chuyên môn" class="rounded-lg border-gray-300"><input name="years_of_experience" type="number" min="0" max="70" placeholder="Số năm kinh nghiệm" class="rounded-lg border-gray-300"><input type="file" name="avatar" accept="image/*" class="rounded-lg border border-gray-300 p-2"><textarea name="bio" placeholder="Tiểu sử" class="rounded-lg border-gray-300 sm:col-span-2"></textarea><div class="rounded-lg border p-3"><p class="mb-2 text-xs font-bold">Dịch vụ phụ trách</p>@foreach($services as $service)<label class="block text-xs"><input type="checkbox" name="service_ids[]" value="{{ $service->id }}"> {{ $service->name }}</label>@endforeach</div><button class="rounded-lg bg-[#1D4B43] px-4 py-2 font-bold text-white">Tạo chuyên viên</button></form>
+        <form method="POST" enctype="multipart/form-data" action="{{ route('admin.specialists.store') }}" class="mt-4 grid gap-3 sm:grid-cols-3">@csrf<input name="name" required placeholder="Họ tên" class="rounded-lg border-gray-300"><input name="email" type="email" required placeholder="Email" class="rounded-lg border-gray-300"><input name="title" required placeholder="Chức danh" class="rounded-lg border-gray-300"><input name="expertise" placeholder="Chuyên môn" class="rounded-lg border-gray-300"><input name="years_of_experience" type="number" min="0" max="70" placeholder="Số năm kinh nghiệm" class="rounded-lg border-gray-300"><input type="file" name="avatar" accept="image/*" class="rounded-lg border border-gray-300 p-2"><textarea name="bio" placeholder="Tiểu sử" class="rounded-lg border-gray-300 sm:col-span-2"></textarea><div class="rounded-lg border p-3"><p class="mb-2 text-xs font-bold">Dịch vụ phụ trách</p>@foreach($services as $service)<label class="block text-xs"><input type="checkbox" name="service_ids[]" value="{{ $service->id }}"> {{ $service->name }}</label>@endforeach</div><button class="rounded-lg bg-[#2D82C4] px-4 py-2 font-bold text-white">Tạo chuyên viên</button></form>
     </section>
 
     <section class="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div class="overflow-x-auto">
             <table class="min-w-full text-left text-sm">
-                <thead class="bg-[#F7FAFC] text-xs uppercase text-[#4A5568]">
+                <thead class="bg-[#F5FAFE] text-xs uppercase text-[#4A5568]">
                     <tr>
                         <th class="px-5 py-3">Chuyên viên</th>
                         <th class="px-5 py-3">Dịch vụ</th>
@@ -51,7 +51,7 @@
                             <td class="px-5 py-4">
                                 <form method="POST" action="{{ route('admin.specialists.toggle', $specialist) }}">
                                     @csrf
-                                    <button class="rounded-lg bg-[#1D4B43] px-3 py-2 text-xs font-bold text-white">
+                                    <button class="rounded-lg bg-[#2D82C4] px-3 py-2 text-xs font-bold text-white">
                                         {{ $specialist->status === 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt' }}
                                     </button>
                                 </form>

@@ -16,11 +16,11 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li>
-            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#1D4B43] hover:underline transition">Khách hàng</a>
+            <a href="{{ route('customer.dashboard') }}" class="hover:text-[#2D82C4] hover:underline transition">Khách hàng</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Đánh giá & Phản hồi</li>
@@ -34,8 +34,8 @@
 
     {{-- Tiêu đề trang --}}
     <div>
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-            <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+            <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
             Chia sẻ trải nghiệm thân chủ (BR-047)
         </span>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-[#0F172A]">
@@ -83,7 +83,7 @@
                                     name="appointment_id"
                                     x-model="selectedAppId"
                                     required
-                                    class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-4 py-2.5 text-sm text-[#0F172A] font-medium focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20">
+                                    class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-4 py-2.5 text-sm text-[#0F172A] font-medium focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20">
                                 @foreach($pendingReviews as $p)
                                     <option value="{{ $p->id }}" {{ ($appointmentId == $p->id) ? 'selected' : '' }}>
                                         {{ $p->code }} — {{ $p->service_name }} ({{ $p->specialist_name }}, ngày {{ $p->date }})
@@ -114,7 +114,7 @@
                                     </button>
                                 </template>
 
-                                <span class="ml-2 text-xs font-bold text-[#1D4B43]"
+                                <span class="ml-2 text-xs font-bold text-[#2D82C4]"
                                       x-text="['Rất không hài lòng', 'Chưa hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng & Biết ơn'][selectedRating - 1]"></span>
                             </div>
                         </div>
@@ -129,12 +129,12 @@
                                       rows="5"
                                       maxlength="1000"
                                       placeholder="Hãy chia sẻ về sự lắng nghe của chuyên gia, cảm xúc sau buổi gặp hoặc những tiến bộ bạn cảm nhận được..."
-                                      class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] p-4 text-xs sm:text-sm text-[#0F172A] focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 leading-relaxed"></textarea>
+                                      class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] p-4 text-xs sm:text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 leading-relaxed"></textarea>
                         </div>
 
                         {{-- Lưu ý ẩn danh --}}
-                        <div class="rounded-xl border border-[#709782]/30 bg-[#E8F0EC]/50 p-4 text-xs text-[#334155] flex items-start gap-2.5">
-                            <svg class="h-4 w-4 text-[#1D4B43] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div class="rounded-xl border border-[#6FA6CF]/30 bg-[#EAF4FB]/50 p-4 text-xs text-[#334155] flex items-start gap-2.5">
+                            <svg class="h-4 w-4 text-[#2D82C4] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
                             </svg>
                             <span>
@@ -143,12 +143,12 @@
                         </div>
 
                         <button type="submit"
-                                class="rounded-xl bg-[#1D4B43] px-8 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                                class="rounded-xl bg-[#2D82C4] px-8 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                             Gửi đánh giá
                         </button>
                     </form>
                 @else
-                    <div class="p-8 text-center bg-[#F7FAFC] rounded-xl border border-dashed border-gray-300">
+                    <div class="p-8 text-center bg-[#F5FAFE] rounded-xl border border-dashed border-gray-300">
                         <p class="text-sm font-semibold text-[#0F172A]">Hiện bạn không có buổi tư vấn nào cần đánh giá.</p>
                         <p class="text-xs text-[#4A5568] mt-1">Các buổi tham vấn hoàn thành trong vòng 30 ngày sẽ xuất hiện tại đây.</p>
                     </div>
@@ -167,13 +167,13 @@
 
                 <div class="space-y-4">
                     @forelse($completedReviews as $cr)
-                        <div class="p-4 rounded-xl border border-gray-100 bg-[#F7FAFC] text-xs space-y-2">
+                        <div class="p-4 rounded-xl border border-gray-100 bg-[#F5FAFE] text-xs space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="font-bold text-[#0F172A]">{{ $cr->specialist_name }}</span>
                                 <span class="text-gray-400">{{ $cr->created_at }}</span>
                             </div>
 
-                            <p class="text-[#709782] font-semibold">{{ $cr->service_name }}</p>
+                            <p class="text-[#6FA6CF] font-semibold">{{ $cr->service_name }}</p>
 
                             <div class="flex text-amber-500 text-sm">
                                 @for($i = 0; $i < $cr->rating; $i++) ★ @endfor

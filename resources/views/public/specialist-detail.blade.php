@@ -18,11 +18,11 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li>
-            <a href="{{ route('specialists.index') }}" class="hover:text-[#1D4B43] hover:underline transition">Chuyên viên tâm lý</a>
+            <a href="{{ route('specialists.index') }}" class="hover:text-[#2D82C4] hover:underline transition">Chuyên viên tâm lý</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C] truncate max-w-[200px] sm:max-w-md" aria-current="page">
@@ -45,7 +45,7 @@
             <div class="rounded-2xl bg-white p-6 sm:p-8 border border-gray-200/80 shadow-xs">
                 <div class="flex flex-col sm:flex-row items-start gap-6">
                     {{-- Avatar lớn --}}
-                    <div class="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl bg-[#E8F0EC] text-[#1D4B43] flex items-center justify-center text-4xl font-black ring-4 ring-[#E8F0EC] shadow-xs flex-shrink-0">
+                    <div class="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl bg-[#EAF4FB] text-[#2D82C4] flex items-center justify-center text-4xl font-black ring-4 ring-[#EAF4FB] shadow-xs flex-shrink-0">
                         @php
                             $specialistImage = $specialist->avatar_url ?? [
                                 1 => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=640&q=85',
@@ -73,13 +73,13 @@
                             {{ $specialist->name }}
                         </h1>
 
-                        <p class="text-sm font-semibold text-[#1D4B43] mt-1">
+                        <p class="text-sm font-semibold text-[#2D82C4] mt-1">
                             {{ $specialist->title }}
                         </p>
 
                         <div class="mt-4 flex flex-wrap items-center gap-4 text-xs font-semibold text-[#4A5568]">
-                            <span class="flex items-center gap-1.5 bg-[#F7FAFC] px-3 py-1.5 rounded-lg border border-gray-200">
-                                <svg class="h-4 w-4 text-[#709782]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <span class="flex items-center gap-1.5 bg-[#F5FAFE] px-3 py-1.5 rounded-lg border border-gray-200">
+                                <svg class="h-4 w-4 text-[#6FA6CF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>
                                 <span>{{ is_numeric($specialist->experience_years ?? null) ? ($specialist->experience_years . ' năm kinh nghiệm lâm sàng') : ($specialist->experience ?? 'Nhiều năm kinh nghiệm') }}</span>
@@ -98,7 +98,7 @@
                 @if(!empty($specialist->specialization))
                 <div class="mt-6 pt-5 border-t border-gray-100">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-[#4A5568] mb-2">Thế mạnh & Lĩnh vực chuyên môn</h3>
-                    <p class="text-sm font-medium text-[#0F172A] leading-relaxed bg-[#F7FAFC] p-3.5 rounded-xl border border-gray-200/80">
+                    <p class="text-sm font-medium text-[#0F172A] leading-relaxed bg-[#F5FAFE] p-3.5 rounded-xl border border-gray-200/80">
                         {{ $specialist->specialization }}
                     </p>
                 </div>
@@ -126,13 +126,13 @@
                 <h2 class="text-xl font-bold text-[#0F172A] mb-4">Các dịch vụ chuyên viên phụ trách</h2>
                 <div class="grid gap-3 sm:grid-cols-2">
                     @forelse($providedServices as $ps)
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-[#F7FAFC] hover:border-[#709782] transition">
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-[#F5FAFE] hover:border-[#6FA6CF] transition">
                             <div>
                                 <h4 class="font-bold text-sm text-[#0F172A]">{{ $ps->name }}</h4>
                                 <span class="text-xs text-[#4A5568] block mt-0.5">Thời lượng: 60 - 90 phút</span>
                             </div>
                             <a href="{{ route('appointments.book', ['specialist' => $specialist->id, 'service' => $ps->id]) }}"
-                               class="text-xs font-bold text-[#1D4B43] bg-[#E8F0EC] px-3 py-1.5 rounded-lg hover:bg-[#1D4B43] hover:text-white transition flex-shrink-0">
+                               class="text-xs font-bold text-[#2D82C4] bg-[#EAF4FB] px-3 py-1.5 rounded-lg hover:bg-[#2D82C4] hover:text-white transition flex-shrink-0">
                                 Đặt gói này
                             </a>
                         </div>
@@ -153,8 +153,8 @@
                     </div>
 
                     {{-- Điểm trung bình to --}}
-                    <div class="flex items-center gap-3 bg-[#F7FAFC] px-4 py-2.5 rounded-xl border border-gray-200">
-                        <span class="text-3xl font-black text-[#1D4B43]">{{ number_format($specialist->average_rating ?? 5.0, 1) }}</span>
+                    <div class="flex items-center gap-3 bg-[#F5FAFE] px-4 py-2.5 rounded-xl border border-gray-200">
+                        <span class="text-3xl font-black text-[#2D82C4]">{{ number_format($specialist->average_rating ?? 5.0, 1) }}</span>
                         <div>
                             <div class="flex text-amber-500 text-sm">★★★★★</div>
                             <span class="text-[11px] text-[#4A5568] font-semibold">{{ $specialist->visible_reviews_count ?? count($reviews) }} lượt đánh giá</span>
@@ -165,12 +165,12 @@
                 {{-- Danh sách nhận xét ẩn danh --}}
                 <div class="mt-6 space-y-4">
                     @forelse($reviews as $rev)
-                        <div class="p-4 rounded-xl border border-gray-100 bg-[#F7FAFC]">
+                        <div class="p-4 rounded-xl border border-gray-100 bg-[#F5FAFE]">
                             <div class="flex items-center justify-between text-xs text-[#4A5568] mb-2">
                                 <div class="flex items-center gap-2">
                                     <span class="font-bold text-[#0F172A]">Khách hàng ẩn danh</span>
                                     <span class="inline-block h-1 w-1 rounded-full bg-gray-400"></span>
-                                    <span class="text-[#709782]">{{ $rev->appointment?->service?->name ?? 'Tham vấn tâm lý' }}</span>
+                                    <span class="text-[#6FA6CF]">{{ $rev->appointment?->service?->name ?? 'Tham vấn tâm lý' }}</span>
                                 </div>
                                 <span>{{ $rev->created_at?->format('d/m/Y') }}</span>
                             </div>
@@ -198,15 +198,15 @@
         {{-- CỘT PHẢI (4/12): THẺ ĐẶT LỊCH HẸN VỚI CHUYÊN GIA NÀY (STICKY) --}}
         <div class="lg:col-span-4 sticky top-20 space-y-6">
 
-            <div class="rounded-2xl border-2 border-[#1D4B43] bg-white p-6 shadow-md text-center">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#709782] block">Lựa chọn chuyên gia</span>
+            <div class="rounded-2xl border-2 border-[#2D82C4] bg-white p-6 shadow-md text-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-[#6FA6CF] block">Lựa chọn chuyên gia</span>
                 
                 <h3 class="mt-2 text-xl font-bold text-[#0F172A] leading-snug">
                     {{ $specialist->name }}
                 </h3>
                 <p class="text-xs text-[#4A5568] mt-1">{{ $specialist->title }}</p>
 
-                <div class="mt-5 py-4 bg-[#F7FAFC] rounded-xl border border-gray-100 text-left space-y-2 text-xs">
+                <div class="mt-5 py-4 bg-[#F5FAFE] rounded-xl border border-gray-100 text-left space-y-2 text-xs">
                     <div class="flex justify-between">
                         <span class="text-[#4A5568]">Kinh nghiệm:</span>
                         <strong class="text-[#0F172A]">{{ $specialist->experience_years ?? 8 }} năm</strong>
@@ -217,15 +217,15 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-[#4A5568]">Hình thức:</span>
-                        <strong class="text-[#1D4B43]">Trực tiếp / Trực tuyến</strong>
+                        <strong class="text-[#2D82C4]">Trực tiếp / Trực tuyến</strong>
                     </div>
                 </div>
 
                 {{-- NÚT CTA CHÍNH THEO SPEC SCR-PUB-05: MANG SẴN specialist_id SANG SCR-CUS-03 --}}
                 <div class="mt-6">
                     <a href="{{ route('appointments.book', ['specialist' => $specialist->id]) }}"
-                       class="block w-full rounded-xl bg-[#1D4B43] px-6 py-3.5 text-center text-base font-bold text-white
-                              hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-[#1D4B43] focus:ring-offset-2
+                       class="block w-full rounded-xl bg-[#2D82C4] px-6 py-3.5 text-center text-base font-bold text-white
+                              hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-[#2D82C4] focus:ring-offset-2
                               transition shadow-sm hover:-translate-y-0.5">
                         Đặt lịch với chuyên viên này
                     </a>
@@ -239,7 +239,7 @@
             {{-- Khối cam kết bảo mật thông tin thân chủ --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-5 text-xs text-[#334155] space-y-3 shadow-xs">
                 <h4 class="font-bold text-sm text-[#0F172A] flex items-center gap-1.5">
-                    <svg class="h-4 w-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-4 w-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
                     Bảo mật thông tin thân chủ (§1.7)

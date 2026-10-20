@@ -13,17 +13,17 @@
 
 @extends('layouts.app')
 
-@section('title', 'Chi Tiết Lịch Hẹn ' . $appointment->code . ' — Mind Guide')
+@section('title', 'Chi Tiết Lịch Hẹn ' . $appointment->code . ' | Mind Guide')
 
 @section('breadcrumb')
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li>
-            <a href="{{ route('customer.appointments') }}" class="hover:text-[#1D4B43] hover:underline transition">Lịch hẹn của tôi</a>
+            <a href="{{ route('customer.appointments') }}" class="hover:text-[#2D82C4] hover:underline transition">Lịch hẹn của tôi</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">{{ $appointment->code }}</li>
@@ -33,7 +33,6 @@
 
 @section('content')
 <div class="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8 space-y-8"
-     x-init="showCancelModal = false; showRescheduleModal = false; showEditNoteModal = false"
      x-data="{
         showCancelModal: false,
         showRescheduleModal: false,
@@ -98,9 +97,9 @@
             @endif
 
             {{-- Thanh toán lại khi PENDING --}}
-            @if($appointment->status === 'PENDING')
-                <a href="{{ route('appointments.book', ['service' => 1]) }}"
-                   class="rounded-xl bg-[#1D4B43] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+            @if($appointment->status === 'PENDING' && $appointment->payment_method === 'BANK_QR')
+                <a href="{{ route('booking.payment.show', ['appointment' => $appointment->id]) }}"
+                   class="rounded-xl bg-[#2D82C4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                     Thanh toán ngay (VietQR)
                 </a>
             @endif
@@ -108,7 +107,7 @@
             {{-- Đánh giá khi COMPLETED --}}
             @if($appointment->status === 'COMPLETED')
                 <a href="{{ route('customer.review', ['appointment_id' => $appointment->id]) }}"
-                   class="rounded-xl bg-[#1D4B43] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                   class="rounded-xl bg-[#2D82C4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                     Đánh giá buổi tư vấn
                 </a>
             @endif
@@ -131,7 +130,7 @@
                     <div>
                         <span class="text-xs text-[#4A5568] block">Gói dịch vụ đã chọn:</span>
                         <h3 class="text-base font-bold text-[#0F172A] mt-1">{{ $appointment->service_name }}</h3>
-                        <span class="text-xs text-[#709782] font-semibold mt-1 inline-block">Thời lượng: 60 - 90 phút</span>
+                        <span class="text-xs text-[#6FA6CF] font-semibold mt-1 inline-block">Thời lượng: 60 - 90 phút</span>
                     </div>
 
                     <div>
@@ -143,7 +142,7 @@
                     <div>
                         <span class="text-xs text-[#4A5568] block">Thời gian tư vấn:</span>
                         <div class="font-bold text-sm text-[#0F172A] flex items-center gap-1.5 mt-1">
-                            <svg class="h-4 w-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-4 w-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                             <span>{{ date('d/m/Y', strtotime($appointment->date)) }}</span>
@@ -156,7 +155,7 @@
                         <span class="text-xs text-[#4A5568] block">Địa điểm / Phòng hẹn:</span>
                         <strong class="font-bold text-sm text-[#0F172A] mt-1 block">{{ $appointment->location }}</strong>
                         @if($appointment->type === 'ONLINE' && !empty($appointment->meeting_url))
-                            <a href="{{ $appointment->meeting_url }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[#1D4B43] hover:underline">
+                            <a href="{{ $appointment->meeting_url }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[#2D82C4] hover:underline">
                                 <span>Vào phòng họp trực tuyến</span>
                                 <span>→</span>
                             </a>
@@ -175,12 +174,12 @@
                         </span>
 
                         @if(in_array($appointment->status, ['PENDING', 'CONFIRMED']))
-                            <button type="button" @click="showEditNoteModal = true" class="text-xs font-bold text-[#1D4B43] hover:underline">
+                            <button type="button" @click="showEditNoteModal = true" class="text-xs font-bold text-[#2D82C4] hover:underline">
                                 Sửa ghi chú
                             </button>
                         @endif
                     </div>
-                    <div class="rounded-xl bg-[#F7FAFC] p-4 text-xs text-[#334155] border border-gray-200/80 leading-relaxed italic">
+                    <div class="rounded-xl bg-[#F5FAFE] p-4 text-xs text-[#334155] border border-gray-200/80 leading-relaxed italic">
                         {{ $appointment->customer_note ?? 'Bạn chưa để lại ghi chú nào cho buổi tham vấn này.' }}
                     </div>
                 </div>
@@ -209,7 +208,7 @@
 
                     <div>
                         <span class="text-[#4A5568] block">Tổng số tiền:</span>
-                        <span class="text-base font-black text-[#1D4B43] mt-0.5 block">
+                        <span class="text-base font-black text-[#2D82C4] mt-0.5 block">
                             {{ number_format($appointment->amount ?? 500000, 0, ',', '.') }} đ
                         </span>
                     </div>
@@ -234,7 +233,7 @@
                 <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
                     @foreach($timeline as $t)
                         <div class="relative">
-                            <div class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#1D4B43] shadow-xs"></div>
+                            <div class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#2D82C4] shadow-xs"></div>
                             <div class="text-xs">
                                 <span class="font-bold text-[#0F172A]">{{ $t->label }}</span>
                                 <span class="text-gray-400 ml-2">{{ $t->time }} (bởi {{ $t->actor }})</span>
@@ -252,13 +251,13 @@
 
             {{-- Mã QR Check-in --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs text-center space-y-4">
-                <span class="inline-block rounded-full bg-[#E8F0EC] px-3 py-0.5 text-xs font-bold text-[#1D4B43]">
+                <span class="inline-block rounded-full bg-[#EAF4FB] px-3 py-0.5 text-xs font-bold text-[#2D82C4]">
                     Mã Check-in buổi hẹn
                 </span>
 
                 <div class="mx-auto w-44 h-44 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center p-3 relative shadow-2xs">
                     {{-- QR SVG Demo --}}
-                    <svg class="w-36 h-36 text-[#1D4B43]" viewBox="0 0 100 100" fill="currentColor">
+                    <svg class="w-36 h-36 text-[#2D82C4]" viewBox="0 0 100 100" fill="currentColor">
                         <path d="M10 10h30v30h-30z M15 15v20h20v-20z M20 20h10v10h-10z M60 10h30v30h-30z M65 15v20h20v-20z M70 20h10v10h-10z M10 60h30v30h-30z M15 65v20h20v-20z M20 70h10v10h-10z M45 10h10v20h-10z M10 45h20v10h-20z M45 45h10v10h-10z M60 45h20v10h-20z M45 60h10v30h-10z M60 60h10v10h-10z M75 60h15v15h-15z M60 75h10v15h-10z M75 80h15v10h-15z"/>
                     </svg>
                 </div>
@@ -272,7 +271,7 @@
             {{-- Hướng dẫn trước buổi hẹn --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-5 text-xs text-[#334155] space-y-3 shadow-xs">
                 <h4 class="font-bold text-[#0F172A] flex items-center gap-1.5">
-                    <svg class="h-4 w-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-4 w-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
                     </svg>
                     Lưu ý trước buổi tư vấn
@@ -420,7 +419,7 @@
                     <button type="button" data-modal-close="reschedule-appointment-modal" onclick="document.getElementById('reschedule-appointment-modal').style.display = 'none'; return false;" @click.stop="showRescheduleModal = false" class="relative z-10 cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700">
                         Hủy
                     </button>
-                    <button type="submit" class="rounded-xl bg-[#1D4B43] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#14352F]">
+                    <button type="submit" class="rounded-xl bg-[#2D82C4] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#23689C]">
                         Gửi yêu cầu đổi lịch
                     </button>
                 </div>

@@ -113,6 +113,8 @@ Route::middleware('auth')->group(function () {
     // SCR-CUS-03 — Tạo lịch hẹn tiền mặt trong MVP
     Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:booking')->name('appointments.store');
     Route::post('/booking/confirm', [BookingController::class, 'confirmBooking'])->middleware('throttle:booking')->name('booking.confirm.store');
+    Route::get('/booking/payment/{appointment}', [BookingController::class, 'payment'])->name('booking.payment.show');
+    Route::get('/booking/payment/{appointment}/status', [BookingController::class, 'paymentStatus'])->middleware('throttle:60,1')->name('booking.payment.status');
 
     // Đăng xuất
     Route::match(['get', 'post'], '/dang-xuat', function (Request $request) {

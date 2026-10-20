@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mx-auto max-w-lg px-4 py-10 sm:px-6">
-        <h1 class="text-3xl font-black text-[#1D4B43]">Đổi mật khẩu</h1>
+        <h1 class="text-3xl font-black text-[#2D82C4]">Đổi mật khẩu</h1>
 
         @if (session('success'))
             <div class="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -41,7 +41,7 @@
                        class="mt-2 w-full rounded-lg border-gray-300">
             </label>
 
-            <button type="submit" class="rounded-lg bg-[#1D4B43] px-5 py-3 text-sm font-bold text-white hover:bg-[#14352F]">
+            <button type="submit" class="rounded-lg bg-[#2D82C4] px-5 py-3 text-sm font-bold text-white hover:bg-[#23689C]">
                 Cập nhật mật khẩu
             </button>
         </form>

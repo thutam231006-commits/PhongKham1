@@ -12,7 +12,7 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Chính sách quyền riêng tư</li>
@@ -25,8 +25,8 @@
     <div class="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-2xl border border-gray-200/80 shadow-xs space-y-8">
 
         <div>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43] mb-3">
-                <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4] mb-3">
+                <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                 Cam kết y đức & Bảo vệ thân chủ
             </span>
             <h1 class="text-2xl sm:text-4xl font-black text-[#0F172A]">Chính Sách Quyền Riêng Tư</h1>

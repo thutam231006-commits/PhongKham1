@@ -90,6 +90,13 @@ class Appointment extends Model
 
     public function scopeHoldingSlot(Builder $query): Builder
     {
-        return $query->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS']);
+        return $query
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS'])
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('status', '!=', 'PENDING')
+                    ->orWhereNull('payment_expires_at')
+                    ->orWhere('payment_expires_at', '>', now());
+            });
     }
 }

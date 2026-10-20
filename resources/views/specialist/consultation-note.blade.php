@@ -5,18 +5,18 @@
 @section('content')
     <div class="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <a href="{{ route('specialist.appointments.detail', $appointment->id) }}"
-           class="text-sm font-semibold text-[#1D4B43] hover:underline">
+           class="text-sm font-semibold text-[#2D82C4] hover:underline">
             ← Quay lại lịch hẹn
         </a>
 
         <div>
-            <h1 class="text-3xl font-black text-[#1D4B43]">Hồ sơ buổi tư vấn</h1>
+            <h1 class="text-3xl font-black text-[#2D82C4]">Hồ sơ buổi tư vấn</h1>
             <p class="mt-2 text-sm text-[#4A5568]">
                 {{ $appointment->appointment_code }} · {{ $appointment->customer->name }} · {{ $appointment->service->name }}
             </p>
         </div>
 
-        <div class="rounded-lg border border-[#709782]/30 bg-[#E8F0EC] px-4 py-3 text-sm text-[#1D4B43]">
+        <div class="rounded-lg border border-[#6FA6CF]/30 bg-[#EAF4FB] px-4 py-3 text-sm text-[#2D82C4]">
             Nội dung được mã hóa và chỉ chuyên viên phụ trách xem được. Mọi lần xem và sửa cần được ghi nhận.
         </div>
 
@@ -58,11 +58,11 @@
                 <input type="hidden" name="follow_up_needed" value="0">
                 <input type="checkbox" name="follow_up_needed" value="1"
                        @checked(old('follow_up_needed', $appointment->consultationRecord?->follow_up_needed))
-                       class="rounded border-gray-300 text-[#1D4B43]">
+                       class="rounded border-gray-300 text-[#2D82C4]">
                 Cần theo dõi tiếp
             </label>
 
-            <button type="submit" class="rounded-lg bg-[#1D4B43] px-5 py-3 text-sm font-bold text-white hover:bg-[#14352F]">
+            <button type="submit" class="rounded-lg bg-[#2D82C4] px-5 py-3 text-sm font-bold text-white hover:bg-[#23689C]">
                 Lưu hồ sơ an toàn
             </button>
         </form>

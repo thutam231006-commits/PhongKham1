@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>document.documentElement.classList.add('js');</script>
 
     {{-- Tiêu đề trang — mỗi view con nên @section('title', '...') --}}
-    <title>@yield('title', 'Mind Guide') — Phòng Khám Tâm Lý</title>
+    <title>@yield('title', 'Mind Guide') | Phòng khám Tâm lý</title>
 
     {{-- Vite: Tailwind CSS + App JS --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,42 +17,46 @@
 </head>
 
 {{--
-    Nền toàn trang: mg-bg = #F7FAFC (Warm Off-White, NFR thiết kế)
+    Nền toàn trang: mg-bg = #F5FAFE (Warm Off-White, NFR thiết kế)
     Text chính:     mg-text = #1A202C (Dark Slate)
 --}}
-<body class="h-full flex flex-col bg-[#F7FAFC] text-[#1A202C] antialiased">
+<body class="mg-app h-full flex flex-col bg-[#F5FAFE] text-[#102A43] antialiased">
+    <a href="#main-content" class="mg-skip-link">Chuyển đến nội dung chính</a>
 
     {{-- =========================================================
          HEADER (SCR chung — mục 1.2 ThietKeGiaoDien.md)
-         Nền: mg-primary (#1D4B43 — Deep Teal)
+         Nền: mg-primary (#2D82C4 — Deep Teal)
          ========================================================= --}}
     @php
         $isAdmin = auth()->check() && auth()->user()->role === 'admin';
     @endphp
 
-    <header class="sticky top-0 z-50 bg-[#1D4B43] text-white shadow-md">
+    <header class="mg-site-header sticky top-0 z-50 bg-[#2D82C4] text-white">
         @if (! $isAdmin)
             {{-- Hàng tiện ích theo cấu trúc cổng thông tin: thương hiệu, tìm kiếm, hỗ trợ và đặt lịch. --}}
-            <div class="border-b border-[#E5ECE8] bg-white text-[#1D4B43]">
-                <div class="mx-auto flex min-h-20 max-w-screen-xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <div class="border-b border-[#E5F0F7] bg-white text-[#2D82C4]">
+                <div class="mx-auto flex min-h-[76px] max-w-screen-xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
                     <a href="{{ url('/') }}"
-                       class="flex shrink-0 items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-[#709782]"
+                       class="flex shrink-0 items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]"
                        aria-label="Mind Guide — Về trang chủ">
                         <svg class="h-9 w-9" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                            <circle cx="16" cy="16" r="14" fill="#709782" />
+                            <circle cx="16" cy="16" r="14" fill="#6FA6CF" />
                             <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                             <circle cx="16" cy="12" r="3" fill="white"/>
                         </svg>
-                        <span class="text-xl font-bold tracking-tight">Mind Guide</span>
+                        <span>
+                            <strong class="block text-xl font-extrabold leading-none tracking-tight">Mind Guide</strong>
+                            <small class="mt-1 hidden text-[11px] font-semibold text-[#52637A] sm:block">Tâm lý và sức khỏe tinh thần</small>
+                        </span>
                     </a>
 
                     <form action="{{ route('services.index') }}" method="GET" class="ml-auto hidden min-w-0 max-w-sm flex-1 md:flex">
                         <label for="site-search" class="sr-only">Tìm kiếm dịch vụ</label>
-                        <div class="flex w-full items-center rounded-full border border-[#D8E3DD] bg-[#F7FAFC] px-4 shadow-sm focus-within:border-[#709782] focus-within:ring-2 focus-within:ring-[#709782]/30">
+                        <div class="flex w-full items-center rounded-full border border-[#D7E8F3] bg-[#F5FAFE] px-4 shadow-sm focus-within:border-[#6FA6CF] focus-within:ring-2 focus-within:ring-[#6FA6CF]/30">
                             <input id="site-search" name="q" type="search" value="{{ request('q') }}"
                                    placeholder="Tìm kiếm dịch vụ"
                                    class="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1A202C] placeholder:text-[#718096] focus:outline-none focus:ring-0">
-                            <button type="submit" class="rounded-full p-1 text-[#1D4B43] hover:bg-[#E8F0EC]" aria-label="Tìm kiếm">
+                            <button type="submit" class="rounded-full p-1 text-[#2D82C4] hover:bg-[#EAF4FB]" aria-label="Tìm kiếm">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"/>
                                 </svg>
@@ -60,17 +65,17 @@
                     </form>
 
                     <div class="hidden items-center gap-3 lg:flex">
-                        <svg class="h-7 w-7 text-[#709782]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <svg class="h-7 w-7 text-[#6FA6CF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5.5A2.5 2.5 0 0 1 5.5 3H7l2 5-2 1.5A13 13 0 0 0 14.5 17L16 15l5 2v1.5a2.5 2.5 0 0 1-2.5 2.5C10.492 21 3 13.508 3 5.5Z"/>
                         </svg>
                         <div class="leading-tight">
                             <span class="block text-xs text-[#4A5568]">Tư vấn và hỗ trợ</span>
-                            <strong class="text-lg text-[#1D4B43]">1900 1567</strong>
+                            <strong class="text-lg text-[#2D82C4]">1900 1567</strong>
                         </div>
                     </div>
 
                     <a href="{{ route('appointments.book') }}"
-                       class="hidden shrink-0 rounded-full border-2 border-[#1D4B43] px-4 py-2 text-sm font-bold text-[#1D4B43] transition hover:bg-[#1D4B43] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#709782] sm:inline-flex">
+                       class="inline-flex shrink-0 rounded-full border-2 border-[#2D82C4] px-3 py-2 text-xs font-extrabold text-[#2D82C4] transition hover:bg-[#2D82C4] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF] sm:px-4 sm:py-2 sm:text-sm">
                         Đặt lịch
                     </a>
                 </div>
@@ -78,15 +83,15 @@
         @endif
 
         <div class="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-            <div class="flex {{ $isAdmin ? 'h-16' : 'min-h-14' }} items-center justify-between gap-4">
+            <div class="flex {{ $isAdmin ? 'h-16' : 'min-h-16' }} items-center justify-between gap-4">
 
                 {{-- Logo / Tên thương hiệu --}}
                 <a href="{{ url('/') }}"
-                   class="{{ $isAdmin ? 'flex' : 'hidden' }} items-center gap-2 rounded text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1D4B43]"
+                   class="{{ $isAdmin ? 'flex' : 'hidden' }} items-center gap-2 rounded text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#2D82C4]"
                    aria-label="Mind Guide — Về trang chủ">
                     {{-- Thay bằng <img src="..." alt="Mind Guide"> khi có file logo --}}
                     <svg class="h-8 w-8 flex-shrink-0" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                        <circle cx="16" cy="16" r="14" fill="#709782" />
+                        <circle cx="16" cy="16" r="14" fill="#6FA6CF" />
                         <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                         <circle cx="16" cy="12" r="3" fill="white"/>
                     </svg>
@@ -95,16 +100,33 @@
 
                 {{-- ── MENU ĐIỀU HƯỚNG THEO VAI TRÒ (mục 1.9) ── --}}
                 {{-- Desktop nav --}}
-                <nav aria-label="Menu chính" class="hidden lg:flex items-center gap-1">
+                <nav aria-label="Menu chính" class="hidden flex-1 items-center justify-center gap-2 lg:flex">
 
                     @guest
                         {{-- Vai trò: Khách (Guest) --}}
                         <x-nav-link href="{{ url('/') }}">Trang chủ</x-nav-link>
-                        <x-nav-link href="{{ route('services.index') }}">Dịch vụ</x-nav-link>
+                        @php
+                            try {
+                                $serviceMenuItems = \App\Models\Service::query()->where('status', 'ACTIVE')->orderBy('display_order')->limit(9)->get(['id', 'name']);
+                            } catch (\Throwable) {
+                                $serviceMenuItems = collect();
+                            }
+                        @endphp
+                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @focusin="open = true" @focusout="open = false">
+                            <button type="button" @keydown.escape="open = false" class="flex items-center gap-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-[#23689C]" :aria-expanded="open.toString()">
+                                Dịch vụ <span class="text-xs transition-transform" :class="{ 'rotate-180': open }" aria-hidden="true">⌄</span>
+                            </button>
+                            <div x-show="open" x-cloak x-transition class="absolute left-0 top-full z-[60] mt-2 w-80 rounded-xl border border-[#D7E8F3] bg-white p-2 shadow-2xl">
+                                <a href="{{ route('services.index') }}" class="mb-1 block rounded-lg px-4 py-3 text-sm font-black text-[#2D82C4] hover:bg-[#EAF4FB]">Xem tất cả 9 gói dịch vụ</a>
+                                @foreach($serviceMenuItems as $menuService)
+                                    <a href="{{ route('services.show', ['service' => $menuService->id]) }}" class="block rounded-lg px-4 py-2.5 text-sm font-semibold text-[#334E68] hover:bg-[#EAF4FB] hover:text-[#2D82C4]">{{ $menuService->name }}</a>
+                                @endforeach
+                            </div>
+                        </div>
                         <x-nav-link href="{{ route('specialists.index') }}">Chuyên viên</x-nav-link>
                         <x-nav-link href="{{ route('login') }}">Đăng nhập</x-nav-link>
                         <a href="{{ route('register') }}"
-                           class="ml-2 rounded-md bg-[#709782] px-4 py-2 text-sm font-medium text-white hover:bg-[#5a7d6b] focus:outline-none focus:ring-2 focus:ring-white transition">
+                           class="ml-2 rounded-lg bg-[#6FA6CF] px-5 py-2.5 text-sm font-extrabold text-white shadow-sm hover:bg-[#5A94BC] focus:outline-none focus:ring-2 focus:ring-white transition">
                             Đăng ký
                         </a>
                     @endguest
@@ -141,7 +163,7 @@
                         {{-- Admin --}}
                         @if ($role === 'admin')
                             <div x-data="{ open: null }" @click.outside="open = null" class="hidden lg:flex items-center gap-1">
-                                <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#14352F]">Tổng quan</a>
+                                <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#23689C]">Tổng quan</a>
                                 @foreach ([
                                     'operations' => ['label' => 'Vận hành', 'items' => [['Lịch hẹn', 'admin.appointments'], ['Lịch và ngày lễ', 'admin.schedule'], ['Thanh toán và hoàn tiền', 'admin.payments'], ['Kiểm duyệt đánh giá', 'admin.reviews'], ['Thông báo', 'admin.notifications']]],
                                     'catalog' => ['label' => 'Danh mục', 'items' => [['Chuyên viên', 'admin.specialists'], ['Dịch vụ', 'admin.services'], ['Danh mục dịch vụ', 'admin.categories'], ['Người dùng', 'admin.users']]],
@@ -149,12 +171,12 @@
                                     'system' => ['label' => 'Hệ thống', 'items' => [['Cấu hình', 'admin.settings'], ['Vai trò và quyền', 'admin.roles'], ['Nhật ký audit', 'admin.audit-logs']]],
                                 ] as $key => $group)
                                     <div class="relative">
-                                        <button type="button" @click="open = open === '{{ $key }}' ? null : '{{ $key }}'" class="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#14352F]">
+                                        <button type="button" @click="open = open === '{{ $key }}' ? null : '{{ $key }}'" class="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#23689C]">
                                             {{ $group['label'] }} <span aria-hidden="true">⌄</span>
                                         </button>
                                         <div x-show="open === '{{ $key }}'" x-cloak class="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border border-gray-200 bg-white p-1 shadow-xl">
                                             @foreach ($group['items'] as $item)
-                                                <a href="{{ route($item[1]) }}" class="block rounded-md px-3 py-2 text-sm font-medium text-[#1A202C] hover:bg-[#E8F0EC] hover:text-[#1D4B43]">{{ $item[0] }}</a>
+                                                <a href="{{ route($item[1]) }}" class="block rounded-md px-3 py-2 text-sm font-medium text-[#1A202C] hover:bg-[#EAF4FB] hover:text-[#2D82C4]">{{ $item[0] }}</a>
                                             @endforeach
                                         </div>
                                     </div>
@@ -165,12 +187,12 @@
                 </nav>
 
                 {{-- ── CÁC ĐIỀU KHIỂN BÊN PHẢI HEADER ── --}}
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 {{ $isAdmin ? '' : 'mr-auto lg:mr-0' }}">
 
                     @auth
                         {{-- Chuông thông báo kèm số chưa đọc (mục 1.2) --}}
                         <a href="{{ route('notifications.index') }}"
-                           class="relative rounded-full p-2 text-white hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-white transition"
+                           class="relative rounded-full p-2 text-white hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-white transition"
                            aria-label="Thông báo">
                             {{-- Icon chuông --}}
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -191,13 +213,13 @@
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open"
                                     @keydown.escape="open = false"
-                                    class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-white hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-white transition"
+                                    class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-white hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-white transition"
                                     aria-haspopup="true" :aria-expanded="open.toString()">
                                 <span class="hidden sm:block max-w-[120px] truncate" aria-hidden="true">
                                     {{ auth()->user()->name }}
                                 </span>
                                 {{-- Avatar fallback chữ cái đầu --}}
-                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#709782] text-sm font-bold uppercase"
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#6FA6CF] text-sm font-bold uppercase"
                                       aria-hidden="true">
                                     {{ mb_substr(auth()->user()->name, 0, 1) }}
                                 </span>
@@ -228,14 +250,14 @@
                                 {{-- Hồ sơ cá nhân --}}
                                 @if (auth()->user()->role === 'customer')
                                     <a href="{{ route('customer.profile') }}"
-                                       class="block px-4 py-2 text-sm text-[#1A202C] hover:bg-[#F7FAFC]" role="menuitem">
+                                       class="block px-4 py-2 text-sm text-[#1A202C] hover:bg-[#F5FAFE]" role="menuitem">
                                         Hồ sơ cá nhân
                                     </a>
                                 @endif
 
                                 {{-- Đổi mật khẩu --}}
                                 <a href="{{ route('password.change') }}"
-                                   class="block px-4 py-2 text-sm text-[#1A202C] hover:bg-[#F7FAFC]" role="menuitem">
+                                   class="block px-4 py-2 text-sm text-[#1A202C] hover:bg-[#F5FAFE]" role="menuitem">
                                     Đổi mật khẩu
                                 </a>
 
@@ -255,7 +277,7 @@
                     @endauth
 
                     {{-- Nút hamburger — mobile --}}
-                    <button class="lg:hidden rounded-md p-2 text-white hover:bg-[#14352F] focus:outline-none focus:ring-2 focus:ring-white transition"
+                    <button class="mr-auto lg:hidden rounded-md p-2 text-white hover:bg-[#23689C] focus:outline-none focus:ring-2 focus:ring-white transition"
                             x-data
                             @click="$dispatch('toggle-mobile-menu')"
                             aria-controls="mobile-menu"
@@ -271,7 +293,7 @@
 
         {{-- ── MOBILE MENU ── --}}
         <div id="mobile-menu"
-             class="lg:hidden border-t border-[#14352F]"
+             class="lg:hidden border-t border-[#23689C]"
              x-data="{ open: false }"
              @toggle-mobile-menu.window="open = !open"
              x-show="open"
@@ -281,7 +303,7 @@
              x-transition:leave="transition ease-in duration-100"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2">
-            <nav class="px-4 py-3 space-y-1" aria-label="Menu di động">
+            <nav class="mx-auto max-w-screen-xl space-y-1 px-4 py-4" aria-label="Menu di động">
 
                 @guest
                     <x-mobile-nav-link href="{{ url('/') }}">Trang chủ</x-mobile-nav-link>
@@ -335,13 +357,13 @@
                     @endif
 
                     {{-- Thông báo + Đổi MK + Đăng xuất trên mobile --}}
-                    <div class="border-t border-[#14352F] pt-3 mt-3 space-y-1">
+                    <div class="border-t border-[#23689C] pt-3 mt-3 space-y-1">
                         <x-mobile-nav-link href="{{ route('notifications.index') }}">Thông báo</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('password.change') }}">Đổi mật khẩu</x-mobile-nav-link>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit"
-                                    class="w-full text-left rounded-md px-3 py-2 text-sm font-medium text-red-300 hover:bg-[#14352F] hover:text-red-200 transition">
+                                    class="w-full text-left rounded-md px-3 py-2 text-sm font-medium text-red-300 hover:bg-[#23689C] hover:text-red-200 transition">
                                 Đăng xuất
                             </button>
                         </form>
@@ -483,7 +505,7 @@
 
     {{-- =========================================================
          VÙNG NỘI DUNG CHÍNH
-         Nền: bg-[#F7FAFC] (mg-bg) — kế thừa từ <body>
+         Nền: bg-[#F5FAFE] (mg-bg) — kế thừa từ <body>
          ========================================================= --}}
     <main id="main-content"
           class="flex-1 w-full"
@@ -517,22 +539,22 @@
     @endphp
 
     @if ($showPublicFooter)
-    <footer class="mt-auto border-t border-gray-200 bg-white">
+    <footer class="mt-auto border-t border-[#D7E8F3] bg-[#EDF6FC]">
         <div class="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-10">
             <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
 
                 {{-- Thương hiệu --}}
                 <div class="col-span-1 sm:col-span-2 lg:col-span-1">
-                    <a href="{{ url('/') }}" class="flex items-center gap-2 text-[#1D4B43] font-semibold text-lg">
+                    <a href="{{ url('/') }}" class="flex items-center gap-2 text-[#2D82C4] font-semibold text-lg">
                         <svg class="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                            <circle cx="16" cy="16" r="14" fill="#709782" />
+                            <circle cx="16" cy="16" r="14" fill="#6FA6CF" />
                             <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                             <circle cx="16" cy="12" r="3" fill="white"/>
                         </svg>
                         Mind Guide
                     </a>
-                    <p class="mt-3 text-sm text-[#4A5568] leading-relaxed">
-                        Phòng khám tâm lý — đồng hành cùng bạn trên hành trình chăm sóc sức khỏe tinh thần.
+                    <p class="mt-3 text-sm text-[#52637A] leading-relaxed">
+                        Phòng khám tâm lý đồng hành cùng bạn trên hành trình chăm sóc sức khỏe tinh thần.
                     </p>
                 </div>
 
@@ -540,9 +562,9 @@
                 <div>
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-[#1A202C]">Khám phá</h3>
                     <ul class="mt-4 space-y-2">
-                        <li><a href="{{ route('services.index') }}" class="text-sm text-[#4A5568] hover:text-[#1D4B43] transition">Dịch vụ</a></li>
-                        <li><a href="{{ route('specialists.index') }}" class="text-sm text-[#4A5568] hover:text-[#1D4B43] transition">Chuyên viên</a></li>
-                        <li><a href="{{ route('appointments.book') }}" class="text-sm text-[#4A5568] hover:text-[#1D4B43] transition">Đặt lịch</a></li>
+                        <li><a href="{{ route('services.index') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Dịch vụ</a></li>
+                        <li><a href="{{ route('specialists.index') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Chuyên viên</a></li>
+                        <li><a href="{{ route('appointments.book') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Đặt lịch</a></li>
                     </ul>
                 </div>
 
@@ -550,16 +572,16 @@
                 <div>
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-[#1A202C]">Liên hệ</h3>
                     <address class="mt-4 not-italic space-y-2 text-sm text-[#4A5568]">
-                        <p>Địa chỉ: [Địa chỉ phòng khám]</p>
+                        <p>Tư vấn trực tuyến và trực tiếp tại phòng khám.</p>
                         <p>
                             Điện thoại:
-                            <a href="tel:" class="hover:text-[#1D4B43] transition">[SĐT phòng khám]</a>
+                            <a href="tel:19001567" class="font-semibold hover:text-[#2D82C4] transition">1900 1567</a>
                         </p>
                         <p>
                             Email:
-                            <a href="mailto:" class="hover:text-[#1D4B43] transition">[Email phòng khám]</a>
+                            <a href="mailto:hotro@mindguide.vn" class="hover:text-[#2D82C4] transition">hotro@mindguide.vn</a>
                         </p>
-                        <p>Giờ làm việc: [Giờ làm việc]</p>
+                        <p>Giờ hỗ trợ: 08:00 - 21:00 mỗi ngày</p>
                     </address>
                 </div>
 
@@ -569,13 +591,13 @@
                     <ul class="mt-4 space-y-2">
                         <li>
                             <a href="{{ route('privacy') }}"
-                               class="text-sm text-[#4A5568] hover:text-[#1D4B43] transition">
+                               class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">
                                 Chính sách quyền riêng tư
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('terms') }}"
-                               class="text-sm text-[#4A5568] hover:text-[#1D4B43] transition">
+                               class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">
                                 Điều khoản sử dụng
                             </a>
                         </li>
@@ -590,7 +612,7 @@
             --}}
             <div class="mt-8 rounded-lg border border-[#FED7AA] bg-[#FFEDD5] px-4 py-3">
                 <p class="text-xs text-[#7C2D12] leading-relaxed">
-                    <strong>⚠ Lưu ý quan trọng:</strong>
+                    <strong>Lưu ý quan trọng:</strong>
                     Dịch vụ tư vấn của Mind Guide <strong>không</strong> thay thế can thiệp y tế khẩn cấp.
                     Nếu bạn hoặc người thân đang trong tình trạng nguy hiểm, hãy gọi ngay
                     <a href="tel:115" class="font-bold underline hover:opacity-80">115</a>

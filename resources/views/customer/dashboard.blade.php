@@ -17,7 +17,7 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Tổng quan tài khoản</li>
@@ -31,8 +31,8 @@
     {{-- ── 1. LỜI CHÀO & TÓM TẮT TRẠNG THÁI ── --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-                <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+                <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                 Mã khách hàng: {{ $user->code }}
             </span>
             <h1 class="mt-2 text-2xl sm:text-3xl font-black text-[#0F172A]">
@@ -46,7 +46,7 @@
         {{-- Lối tắt Đặt lịch mới ngay lập tức --}}
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('appointments.book') }}"
-               class="inline-flex items-center gap-2 rounded-xl bg-[#1D4B43] px-6 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+               class="inline-flex items-center gap-2 rounded-xl bg-[#2D82C4] px-6 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -58,7 +58,7 @@
     {{-- ── 2. CÁC THẺ THỐNG KÊ NHANH ── --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs flex items-center gap-4">
-            <div class="h-12 w-12 rounded-xl bg-[#E8F0EC] flex items-center justify-center text-[#1D4B43]">
+            <div class="h-12 w-12 rounded-xl bg-[#EAF4FB] flex items-center justify-center text-[#2D82C4]">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
@@ -106,17 +106,17 @@
                         <h2 class="text-lg font-bold text-[#0F172A]">Lịch hẹn sắp tới</h2>
                         <p class="text-xs text-[#4A5568] mt-0.5">Các buổi tham vấn đang hoạt động gần nhất của bạn.</p>
                     </div>
-                    <a href="{{ route('customer.appointments') }}" class="text-xs font-bold text-[#1D4B43] hover:underline">
+                    <a href="{{ route('customer.appointments') }}" class="text-xs font-bold text-[#2D82C4] hover:underline">
                         Xem tất cả lịch hẹn →
                     </a>
                 </div>
 
                 <div class="mt-6 space-y-4">
                     @forelse($upcomingAppointments as $app)
-                        <div class="rounded-2xl border border-gray-200/90 bg-[#F7FAFC] p-5 hover:border-[#709782] transition shadow-2xs">
+                        <div class="rounded-2xl border border-gray-200/90 bg-[#F5FAFE] p-5 hover:border-[#6FA6CF] transition shadow-2xs">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200/80 pb-3">
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-xs font-bold text-[#1D4B43] bg-[#E8F0EC] px-2.5 py-0.5 rounded-md">
+                                    <span class="font-mono text-xs font-bold text-[#2D82C4] bg-[#EAF4FB] px-2.5 py-0.5 rounded-md">
                                         {{ $app->code }}
                                     </span>
                                     <span class="text-xs font-semibold text-[#4A5568]">
@@ -135,13 +135,13 @@
                                 <div>
                                     <span class="text-xs text-[#4A5568] block">Gói dịch vụ:</span>
                                     <h4 class="font-bold text-[#0F172A] mt-0.5">{{ $app->service_name }}</h4>
-                                    <p class="text-xs text-[#709782] mt-0.5">Chuyên gia: <strong>{{ $app->specialist_name }}</strong></p>
+                                    <p class="text-xs text-[#6FA6CF] mt-0.5">Chuyên gia: <strong>{{ $app->specialist_name }}</strong></p>
                                 </div>
 
                                 <div>
                                     <span class="text-xs text-[#4A5568] block">Thời gian tư vấn:</span>
                                     <div class="font-bold text-[#0F172A] flex items-center gap-1.5 mt-0.5">
-                                        <svg class="h-4 w-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="h-4 w-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                         </svg>
                                         <span>{{ date('d/m/Y', strtotime($app->date)) }}</span>
@@ -179,10 +179,10 @@
                         </div>
                     @empty
                         {{-- Trạng thái rỗng --}}
-                        <div class="p-8 text-center bg-[#F7FAFC] rounded-2xl border border-dashed border-gray-300">
+                        <div class="p-8 text-center bg-[#F5FAFE] rounded-2xl border border-dashed border-gray-300">
                             <p class="text-sm font-semibold text-[#0F172A]">Bạn chưa có lịch hẹn sắp tới nào.</p>
                             <p class="text-xs text-[#4A5568] mt-1">Hãy bắt đầu lựa chọn chuyên gia và thời gian thích hợp để chăm sóc sức khỏe tinh thần của bạn.</p>
-                            <a href="{{ route('appointments.book') }}" class="mt-4 inline-block rounded-xl bg-[#1D4B43] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                            <a href="{{ route('appointments.book') }}" class="mt-4 inline-block rounded-xl bg-[#2D82C4] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                                 Đặt lịch tư vấn ngay
                             </a>
                         </div>
@@ -192,20 +192,20 @@
 
             {{-- LỐI TẮT CHỨC NĂNG NHANH (SCR-CUS-01 KHỐI 3) --}}
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <a href="{{ route('services.index') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#709782] transition shadow-2xs block">
-                    <span class="text-xs font-bold text-[#1D4B43] block">Khám phá</span>
+                <a href="{{ route('services.index') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#6FA6CF] transition shadow-2xs block">
+                    <span class="text-xs font-bold text-[#2D82C4] block">Khám phá</span>
                     <h4 class="font-bold text-sm text-[#0F172A] mt-1">Danh mục dịch vụ</h4>
                     <p class="text-xs text-[#4A5568] mt-1">Xem đầy đủ 9 gói tư vấn chuyên sâu của phòng khám.</p>
                 </a>
 
-                <a href="{{ route('customer.medical-history') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#709782] transition shadow-2xs block">
-                    <span class="text-xs font-bold text-[#1D4B43] block">Hồ sơ</span>
+                <a href="{{ route('customer.medical-history') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#6FA6CF] transition shadow-2xs block">
+                    <span class="text-xs font-bold text-[#2D82C4] block">Hồ sơ</span>
                     <h4 class="font-bold text-sm text-[#0F172A] mt-1">Lịch sử & Lời dặn</h4>
                     <p class="text-xs text-[#4A5568] mt-1">Xem ghi chú tóm tắt và bài tập từ chuyên viên.</p>
                 </a>
 
-                <a href="{{ route('customer.review') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#709782] transition shadow-2xs block">
-                    <span class="text-xs font-bold text-[#1D4B43] block">Phản hồi</span>
+                <a href="{{ route('customer.review') }}" class="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#6FA6CF] transition shadow-2xs block">
+                    <span class="text-xs font-bold text-[#2D82C4] block">Phản hồi</span>
                     <h4 class="font-bold text-sm text-[#0F172A] mt-1">Đánh giá chuyên gia</h4>
                     <p class="text-xs text-[#4A5568] mt-1">Gửi nhận xét ẩn danh sau buổi tham vấn.</p>
                 </a>
@@ -219,7 +219,7 @@
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
                 <div class="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
                     <h3 class="text-base font-bold text-[#0F172A] flex items-center gap-2">
-                        <svg class="h-5 w-5 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-5 w-5 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                         <span>Thông báo mới</span>

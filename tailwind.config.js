@@ -9,18 +9,18 @@ export default {
     extend: {
       colors: {
         mg: {
-          primary: '#1D4B43',        // Deep Teal
-          'primary-hover': '#14352F',
-          secondary: '#709782',      // Sage Green
-          'secondary-light': '#E8F0EC',
-          bg: '#F7FAFC',             // Warm Off-White
+          primary: '#2D82C4',        // Deep Teal
+          'primary-hover': '#23689C',
+          secondary: '#6FA6CF',      // Sage Green
+          'secondary-light': '#EAF4FB',
+          bg: '#F5FAFE',             // Warm Off-White
           surface: '#FFFFFF',
           text: '#1A202C',
           'text-muted': '#4A5568',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['Inter', 'Arial', 'sans-serif'],
       }
     },
   },

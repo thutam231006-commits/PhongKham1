@@ -9,6 +9,7 @@ use App\Models\ScheduleException;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Services\AppointmentBookingService;
+use App\Services\PaymentService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -142,10 +143,71 @@ class BookingController extends Controller
         $data = $request->validate(['payment_method' => ['required', 'in:CASH,BANK_QR']]);
         abort_unless($request->user(), 401);
         $booking = session('booking', []);
-        $appointment = $bookingService->create($request->user(), ['service_id' => $booking['service_id'], 'specialist_id' => $booking['specialist_id'], 'date' => $booking['date'], 'time' => $booking['time'], 'customer_note' => $booking['customer_note'] ?? null, 'payment_method' => $data['payment_method'], 'idempotency_key' => 'web-'.$request->session()->getId().'-'.sha1(json_encode($booking))]);
+        if (! isset($booking['service_id'], $booking['specialist_id'], $booking['date'], $booking['time'])) {
+            return redirect()->route('appointments.book')->with('error', 'Thông tin đặt lịch chưa đầy đủ. Vui lòng thực hiện lại các bước.');
+        }
+
+        try {
+            $appointment = $bookingService->create($request->user(), [
+                'service_id' => $booking['service_id'],
+                'specialist_id' => $booking['specialist_id'],
+                'date' => $booking['date'],
+                'time' => $booking['time'],
+                'customer_note' => $booking['customer_note'] ?? null,
+                'payment_method' => $data['payment_method'],
+                'idempotency_key' => 'web-'.$request->session()->getId().'-'.sha1(json_encode($booking)),
+            ]);
+        } catch (BookingSlotUnavailable $exception) {
+            return redirect()->route('booking.confirm')->withInput()->with('error', $exception->getMessage());
+        }
+
         session()->forget('booking');
 
+        if ($appointment->payment_method === 'BANK_QR' && $appointment->payment_status === 'UNPAID') {
+            return redirect()->route('booking.payment.show', $appointment);
+        }
+
         return redirect()->route('customer.appointments.detail', $appointment->id)->with('success', 'Đặt lịch thành công. Mã lịch: '.$appointment->appointment_code);
+    }
+
+    public function payment(Request $request, Appointment $appointment, PaymentService $payments): View|RedirectResponse
+    {
+        abort_unless((int) $appointment->customer_id === (int) $request->user()?->id, 403);
+        abort_unless($appointment->payment_method === 'BANK_QR', 404);
+
+        $appointment = $payments->expirePendingPayment($appointment);
+        if ($appointment->payment_status === 'PAID') {
+            return redirect()->route('customer.appointments.detail', $appointment)->with('success', 'Thanh toán đã được xác nhận.');
+        }
+        if ($appointment->status === 'CANCELLED_BY_CLINIC') {
+            return redirect()->route('customer.appointments.detail', $appointment)->with('error', 'Mã thanh toán đã hết hạn và khung giờ không còn được giữ. Vui lòng đặt lịch mới.');
+        }
+
+        $appointment->load(['service', 'specialistProfile.user']);
+
+        return view('booking.payment', [
+            'appointment' => $appointment,
+            'payment' => $payments->paymentInstructions($appointment),
+        ]);
+    }
+
+    public function paymentStatus(Request $request, Appointment $appointment, PaymentService $payments): JsonResponse
+    {
+        abort_unless((int) $appointment->customer_id === (int) $request->user()?->id, 403);
+        $appointment = $payments->expirePendingPayment($appointment);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'payment_status' => $appointment->payment_status,
+                'appointment_status' => $appointment->status,
+                'expires_at' => $appointment->payment_expires_at?->toIso8601String(),
+                'redirect_url' => $appointment->payment_status === 'PAID'
+                    ? route('customer.appointments.detail', $appointment)
+                    : null,
+            ],
+            'error' => null,
+        ]);
     }
 
     /** @return array<int, array{start:string,end:string}> */

@@ -18,7 +18,7 @@
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Đặt lịch tư vấn</li>
@@ -256,11 +256,11 @@
                         Đặt lịch thành công! Vui lòng đến trước 10 phút để thực hiện dịch vụ.
                     </h2>
                     <p class="mt-2 text-sm text-[#4A5568]">
-                        Mã lịch hẹn của bạn là: <strong class="text-[#1D4B43] text-base" x-text="bookingCode"></strong>.
+                        Mã lịch hẹn của bạn là: <strong class="text-[#2D82C4] text-base" x-text="bookingCode"></strong>.
                         Lịch hẹn đã được hệ thống ghi nhận ở trạng thái đã xác nhận (CONFIRMED).
                     </p>
 
-                    <div class="mt-8 rounded-xl border border-gray-200 bg-[#F7FAFC] p-6 text-left space-y-3">
+                    <div class="mt-8 rounded-xl border border-gray-200 bg-[#F5FAFE] p-6 text-left space-y-3">
                         <div class="flex justify-between border-b border-gray-200 pb-2 text-sm">
                             <span class="text-[#4A5568]">Dịch vụ:</span>
                             <span class="font-bold text-[#0F172A]" x-text="getSelectedService().name"></span>
@@ -275,16 +275,16 @@
                         </div>
                         <div class="flex justify-between border-b border-gray-200 pb-2 text-sm">
                             <span class="text-[#4A5568]">Phương thức:</span>
-                            <span class="font-bold text-[#1D4B43]">Tiền mặt tại quầy</span>
+                            <span class="font-bold text-[#2D82C4]">Tiền mặt tại quầy</span>
                         </div>
                         <div class="flex justify-between text-base pt-1">
                             <span class="font-bold text-[#0F172A]">Số tiền cần thanh toán tại quầy:</span>
-                            <span class="font-black text-[#1D4B43] text-lg" x-text="formatMoney(getSelectedService().price)"></span>
+                            <span class="font-black text-[#2D82C4] text-lg" x-text="formatMoney(getSelectedService().price)"></span>
                         </div>
                     </div>
 
                     <div class="mt-8 flex flex-wrap justify-center gap-4">
-                        <a href="{{ url('/') }}" class="rounded-xl bg-[#1D4B43] px-6 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                        <a href="{{ url('/') }}" class="rounded-xl bg-[#2D82C4] px-6 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                             Về trang chủ
                         </a>
                         <a href="{{ route('customer.appointments') }}" class="rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">
@@ -319,7 +319,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-[#F7FAFC] p-6 rounded-2xl border border-gray-200">
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-[#F5FAFE] p-6 rounded-2xl border border-gray-200">
                         {{-- Cột QR động --}}
                         <div class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-xs border border-gray-200">
                             <img :src="`https://img.vietqr.io/image/{{ config('services.vietqr.bank_id') }}-{{ config('services.vietqr.account_number') }}-compact2.png?amount=${getSelectedService().price}&addInfo=${encodeURIComponent('DATLICH' + bookingCode)}&accountName=${encodeURIComponent(@js(config('services.vietqr.account_name')))}`" alt="Mã VietQR thanh toán lịch hẹn" class="h-56 w-56 rounded-lg border object-contain">
@@ -339,7 +339,7 @@
                                     <span class="text-xs text-[#4A5568] block">Số tài khoản:</span>
                                     <span class="font-mono font-bold text-[#0F172A] text-base">{{ config('services.vietqr.account_number') }}</span>
                                 </div>
-                                <button type="button" @click="copyToClipboard(@js(config('services.vietqr.account_number')))" class="text-xs font-bold text-[#1D4B43] hover:underline bg-[#E8F0EC] px-2.5 py-1 rounded-md">
+                                <button type="button" @click="copyToClipboard(@js(config('services.vietqr.account_number')))" class="text-xs font-bold text-[#2D82C4] hover:underline bg-[#EAF4FB] px-2.5 py-1 rounded-md">
                                     Sao chép
                                 </button>
                             </div>
@@ -350,18 +350,18 @@
                             <div class="border-b border-gray-200 pb-2 flex justify-between items-center">
                                 <div>
                                     <span class="text-xs text-[#4A5568] block">Số tiền thanh toán:</span>
-                                    <span class="font-mono font-black text-[#1D4B43] text-lg" x-text="formatMoney(getSelectedService().price)"></span>
+                                    <span class="font-mono font-black text-[#2D82C4] text-lg" x-text="formatMoney(getSelectedService().price)"></span>
                                 </div>
-                                <button type="button" @click="copyToClipboard(getSelectedService().price)" class="text-xs font-bold text-[#1D4B43] hover:underline bg-[#E8F0EC] px-2.5 py-1 rounded-md">
+                                <button type="button" @click="copyToClipboard(getSelectedService().price)" class="text-xs font-bold text-[#2D82C4] hover:underline bg-[#EAF4FB] px-2.5 py-1 rounded-md">
                                     Sao chép
                                 </button>
                             </div>
                             <div class="flex justify-between items-center bg-amber-50 p-3 rounded-xl border border-amber-200">
                                 <div>
                                     <span class="text-xs font-bold text-amber-900 block">Nội dung chuyển khoản (bắt buộc):</span>
-                                    <span class="font-mono font-black text-[#1D4B43] text-base" x-text="'DATLICH' + bookingCode"></span>
+                                    <span class="font-mono font-black text-[#2D82C4] text-base" x-text="'DATLICH' + bookingCode"></span>
                                 </div>
-                                <button type="button" @click="copyToClipboard('DATLICH' + bookingCode)" class="text-xs font-bold text-white bg-[#1D4B43] px-3 py-1.5 rounded-lg hover:bg-[#14352F] transition">
+                                <button type="button" @click="copyToClipboard('DATLICH' + bookingCode)" class="text-xs font-bold text-white bg-[#2D82C4] px-3 py-1.5 rounded-lg hover:bg-[#23689C] transition">
                                     Sao chép
                                 </button>
                             </div>
@@ -373,7 +373,7 @@
                     </p>
 
                     <div class="mt-8 flex flex-wrap justify-center gap-4">
-                        <button type="button" @click="alert('Hệ thống đang kiểm tra giao dịch với ngân hàng...')" class="rounded-xl bg-[#1D4B43] px-6 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                        <button type="button" @click="alert('Hệ thống đang kiểm tra giao dịch với ngân hàng...')" class="rounded-xl bg-[#2D82C4] px-6 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                             Tôi đã chuyển tiền thành công
                         </button>
                         <a href="{{ route('customer.appointments') }}" class="rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">
@@ -390,8 +390,8 @@
 
             {{-- Tiêu đề quy trình --}}
             <div class="max-w-2xl mb-8">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-                    <span class="h-2 w-2 rounded-full bg-[#709782]"></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
+                    <span class="h-2 w-2 rounded-full bg-[#6FA6CF]"></span>
                     Đặt lịch tư vấn tâm lý trực tuyến
                 </span>
                 <h1 class="mt-2 text-3xl font-black tracking-tight text-[#0F172A] sm:text-4xl">
@@ -411,7 +411,7 @@
                     {{-- Thanh tiến trình (Progress Bar) --}}
                     <div class="rounded-2xl bg-white p-5 border border-gray-200/80 shadow-xs">
                         <div class="flex items-center justify-between mb-3 text-xs font-bold text-[#4A5568]">
-                            <span>Bước <strong class="text-[#1D4B43] text-sm" x-text="step"></strong> / 6</span>
+                            <span>Bước <strong class="text-[#2D82C4] text-sm" x-text="step"></strong> / 6</span>
                             <span x-text="[
                                 '1. Chọn gói dịch vụ',
                                 '2. Chọn chuyên viên',
@@ -419,11 +419,11 @@
                                 '4. Ghi chú cá nhân',
                                 '5. Phương thức thanh toán',
                                 '6. Tóm tắt & Xác nhận'
-                            ][step - 1]" class="text-[#1D4B43] text-sm font-bold"></span>
+                            ][step - 1]" class="text-[#2D82C4] text-sm font-bold"></span>
                         </div>
 
                         <div class="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
-                            <div class="bg-[#1D4B43] h-2.5 rounded-full transition-all duration-300"
+                            <div class="bg-[#2D82C4] h-2.5 rounded-full transition-all duration-300"
                                  :style="'width: ' + ((step / totalSteps) * 100) + '%'"></div>
                         </div>
 
@@ -434,7 +434,7 @@
                                         @click="goToStep(idx + 1)"
                                         :disabled="idx + 1 > step"
                                         class="py-1 px-2 rounded-md transition text-left sm:text-center truncate"
-                                        :class="step > idx + 1 ? 'text-[#1D4B43] font-bold hover:bg-[#E8F0EC]' : (step === idx + 1 ? 'text-[#0F172A] font-extrabold border-b-2 border-[#1D4B43]' : 'text-gray-400 cursor-not-allowed')">
+                                        :class="step > idx + 1 ? 'text-[#2D82C4] font-bold hover:bg-[#EAF4FB]' : (step === idx + 1 ? 'text-[#0F172A] font-extrabold border-b-2 border-[#2D82C4]' : 'text-gray-400 cursor-not-allowed')">
                                     <span x-text="(idx + 1) + '. ' + stName"></span>
                                 </button>
                             </template>
@@ -454,13 +454,13 @@
                             <div class="mt-6 grid gap-4 sm:grid-cols-2">
                                 <template x-for="svc in servicesData" :key="svc.id">
                                     <label class="relative flex flex-col p-5 rounded-xl border-2 cursor-pointer transition select-none"
-                                           :class="selectedServiceId == svc.id ? 'border-[#1D4B43] bg-[#E8F0EC]/40 shadow-xs ring-1 ring-[#1D4B43]' : 'border-gray-200 hover:border-[#709782] bg-white'">
+                                           :class="selectedServiceId == svc.id ? 'border-[#2D82C4] bg-[#EAF4FB]/40 shadow-xs ring-1 ring-[#2D82C4]' : 'border-gray-200 hover:border-[#6FA6CF] bg-white'">
                                         <input type="radio" name="service" :value="svc.id" x-model="selectedServiceId" @change="ensureSpecialistCompatibility()" class="sr-only">
                                         
                                         <div class="flex items-center justify-between gap-2 mb-2">
-                                            <span class="inline-block text-[11px] font-bold text-[#1D4B43] bg-[#E8F0EC] px-2.5 py-0.5 rounded-full" x-text="svc.category_name"></span>
+                                            <span class="inline-block text-[11px] font-bold text-[#2D82C4] bg-[#EAF4FB] px-2.5 py-0.5 rounded-full" x-text="svc.category_name"></span>
                                             <div class="h-4 w-4 rounded-full border flex items-center justify-center"
-                                                 :class="selectedServiceId == svc.id ? 'border-[#1D4B43] bg-[#1D4B43]' : 'border-gray-300'">
+                                                 :class="selectedServiceId == svc.id ? 'border-[#2D82C4] bg-[#2D82C4]' : 'border-gray-300'">
                                                 <div class="h-1.5 w-1.5 rounded-full bg-white" x-show="selectedServiceId == svc.id"></div>
                                             </div>
                                         </div>
@@ -469,12 +469,12 @@
 
                                         <div class="mt-4 pt-3 border-t border-gray-100/80 flex items-center justify-between text-xs font-semibold">
                                             <span class="text-[#4A5568] flex items-center gap-1">
-                                                <svg class="h-3.5 w-3.5 text-[#709782]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg class="h-3.5 w-3.5 text-[#6FA6CF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
                                                 <span x-text="svc.duration_minutes + ' phút'"></span>
                                             </span>
-                                            <span class="text-[#1D4B43] text-sm font-black" x-text="svc.price_label"></span>
+                                            <span class="text-[#2D82C4] text-sm font-black" x-text="svc.price_label"></span>
                                         </div>
                                     </label>
                                 </template>
@@ -486,17 +486,17 @@
                             <div class="pb-4 border-b border-gray-100">
                                 <h2 class="text-xl font-bold text-[#0F172A]">Bước 2: Chọn chuyên viên tâm lý</h2>
                                 <p class="mt-0.5 text-sm text-[#4A5568]">
-                                    Đang lọc chuyên gia phụ trách gói: <strong class="text-[#1D4B43]" x-text="getSelectedService().name"></strong>
+                                    Đang lọc chuyên gia phụ trách gói: <strong class="text-[#2D82C4]" x-text="getSelectedService().name"></strong>
                                 </p>
                             </div>
 
                             <div class="mt-6 grid gap-4 sm:grid-cols-2">
                                 <template x-for="spc in filteredSpecialists()" :key="spc.id">
                                     <label class="relative flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition select-none"
-                                           :class="selectedSpecialistId == spc.id ? 'border-[#1D4B43] bg-[#E8F0EC]/40 shadow-xs ring-1 ring-[#1D4B43]' : 'border-gray-200 hover:border-[#709782] bg-white'">
+                                           :class="selectedSpecialistId == spc.id ? 'border-[#2D82C4] bg-[#EAF4FB]/40 shadow-xs ring-1 ring-[#2D82C4]' : 'border-gray-200 hover:border-[#6FA6CF] bg-white'">
                                         <input type="radio" name="specialist" :value="spc.id" x-model="selectedSpecialistId" class="sr-only">
                                         
-                                        <div class="h-14 w-14 rounded-full bg-[#E8F0EC] text-[#1D4B43] font-bold text-lg flex items-center justify-center flex-shrink-0 ring-2 ring-[#709782]/30"
+                                        <div class="h-14 w-14 rounded-full bg-[#EAF4FB] text-[#2D82C4] font-bold text-lg flex items-center justify-center flex-shrink-0 ring-2 ring-[#6FA6CF]/30"
                                              x-text="spc.name.charAt(0)">
                                         </div>
 
@@ -504,7 +504,7 @@
                                             <div class="flex items-center justify-between gap-1">
                                                 <span class="text-base font-bold text-[#0F172A] truncate" x-text="spc.name"></span>
                                                 <div class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
-                                                     :class="selectedSpecialistId == spc.id ? 'border-[#1D4B43] bg-[#1D4B43]' : 'border-gray-300'">
+                                                     :class="selectedSpecialistId == spc.id ? 'border-[#2D82C4] bg-[#2D82C4]' : 'border-gray-300'">
                                                     <div class="h-1.5 w-1.5 rounded-full bg-white" x-show="selectedSpecialistId == spc.id"></div>
                                                 </div>
                                             </div>
@@ -532,16 +532,16 @@
                             <div class="pb-4 border-b border-gray-100">
                                 <h2 class="text-xl font-bold text-[#0F172A]">Bước 3: Chọn ngày & khung giờ tư vấn</h2>
                                 <p class="mt-0.5 text-sm text-[#4A5568]">
-                                    Lịch hẹn cùng chuyên viên: <strong class="text-[#1D4B43]" x-text="getSelectedSpecialist().name"></strong>
+                                    Lịch hẹn cùng chuyên viên: <strong class="text-[#2D82C4]" x-text="getSelectedSpecialist().name"></strong>
                                 </p>
                             </div>
 
                             <div class="mt-6 space-y-6">
                                 {{-- 1. KHU VỰC CHỌN NGÀY HIỆN ĐẠI --}}
-                                <div class="rounded-2xl border border-gray-200 bg-[#F7FAFC] p-5">
+                                <div class="rounded-2xl border border-gray-200 bg-[#F5FAFE] p-5">
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                                         <label for="booking-date" class="flex items-center gap-2 text-sm font-bold text-[#0F172A]">
-                                            <svg class="h-5 w-5 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg class="h-5 w-5 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                             </svg>
                                             <span>Chọn ngày tư vấn:</span>
@@ -551,15 +551,15 @@
                                         <div class="flex items-center gap-1.5 text-xs font-semibold">
                                             <span class="text-[#4A5568] mr-1">Gợi ý:</span>
                                             <button type="button" @click="setDate(1)"
-                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#1D4B43] border border-gray-200 hover:bg-[#E8F0EC] transition shadow-2xs">
+                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#2D82C4] border border-gray-200 hover:bg-[#EAF4FB] transition shadow-2xs">
                                                 Ngày mai
                                             </button>
                                             <button type="button" @click="setDate(2)"
-                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#1D4B43] border border-gray-200 hover:bg-[#E8F0EC] transition shadow-2xs">
+                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#2D82C4] border border-gray-200 hover:bg-[#EAF4FB] transition shadow-2xs">
                                                 Ngày kia
                                             </button>
                                             <button type="button" @click="setDate(3)"
-                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#1D4B43] border border-gray-200 hover:bg-[#E8F0EC] transition shadow-2xs">
+                                                    class="rounded-lg bg-white px-2.5 py-1 text-[#2D82C4] border border-gray-200 hover:bg-[#EAF4FB] transition shadow-2xs">
                                                 Sau 3 ngày
                                             </button>
                                         </div>
@@ -571,11 +571,11 @@
                                                x-model="selectedDate"
                                                min="{{ date('Y-m-d') }}"
                                                max="{{ date('Y-m-d', strtotime('+30 days')) }}"
-                                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-bold text-[#0F172A] shadow-xs focus:border-[#1D4B43] focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                                               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-bold text-[#0F172A] shadow-xs focus:border-[#2D82C4] focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
                                     </div>
 
                                     <div class="mt-2.5 flex items-center justify-between text-xs text-[#4A5568]">
-                                        <span>Ngày đang chọn: <strong class="text-[#1D4B43] font-bold" x-text="formatDisplayDate(selectedDate)"></strong></span>
+                                        <span>Ngày đang chọn: <strong class="text-[#2D82C4] font-bold" x-text="formatDisplayDate(selectedDate)"></strong></span>
                                         <span>* Hỗ trợ đặt trước từ 2 giờ đến tối đa 30 ngày.</span>
                                     </div>
                                 </div>
@@ -584,7 +584,7 @@
                                 <div>
                                     <div class="flex items-center justify-between mb-3">
                                         <label class="flex items-center gap-2 text-sm font-bold text-[#0F172A]">
-                                            <svg class="h-5 w-5 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg class="h-5 w-5 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
                                             <span>Khung giờ khả dụng trong ngày:</span>
@@ -599,7 +599,7 @@
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         @foreach(['08:00 - 09:00', '09:30 - 10:30', '11:00 - 12:00', '13:30 - 14:30', '15:00 - 16:00', '16:30 - 17:30', '18:00 - 19:00', '19:30 - 20:30'] as $slot)
                                             <label class="relative flex flex-col items-center justify-center p-3.5 rounded-xl border-2 cursor-pointer font-bold text-xs sm:text-sm transition select-none shadow-2xs"
-                                                   :class="selectedTime == '{{ $slot }}' ? 'border-[#1D4B43] bg-[#1D4B43] text-white shadow-md ring-2 ring-[#1D4B43]/30 scale-[1.02]' : 'border-gray-200 text-[#0F172A] hover:border-[#709782] bg-white hover:bg-gray-50'">
+                                                   :class="selectedTime == '{{ $slot }}' ? 'border-[#2D82C4] bg-[#2D82C4] text-white shadow-md ring-2 ring-[#2D82C4]/30 scale-[1.02]' : 'border-gray-200 text-[#0F172A] hover:border-[#6FA6CF] bg-white hover:bg-gray-50'">
                                                 <input type="radio" name="time" value="{{ $slot }}" x-model="selectedTime" class="sr-only">
                                                 <span class="tracking-tight whitespace-nowrap">{{ $slot }}</span>
                                                 <span class="text-[10px] font-normal mt-1 flex items-center gap-1"
@@ -632,7 +632,7 @@
                                           rows="5"
                                           maxlength="500"
                                           placeholder="Ví dụ: Dạo gần đây tôi hay bị mất ngủ, căng thẳng vì áp lực công việc hoặc cần tham vấn về mối quan hệ..."
-                                          class="w-full rounded-xl border border-gray-300 p-4 text-sm text-[#0F172A] focus:border-[#1D4B43] focus:ring-2 focus:ring-[#1D4B43]/20 bg-[#F7FAFC] leading-relaxed"></textarea>
+                                          class="w-full rounded-xl border border-gray-300 p-4 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20 bg-[#F5FAFE] leading-relaxed"></textarea>
                                 
                                 <div class="mt-2 flex items-center justify-between text-xs text-[#4A5568]">
                                     <span class="flex items-center gap-1 text-emerald-700 font-semibold">
@@ -656,12 +656,12 @@
                             </div>
 
                             <div class="mt-6 space-y-4">
-                                <label class="flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition select-none" :class="paymentMethod === 'BANK_QR' ? 'border-[#1D4B43] bg-[#E8F0EC]/40 shadow-xs ring-1 ring-[#1D4B43]' : 'border-gray-200 hover:border-[#709782] bg-white'">
+                                <label class="flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition select-none" :class="paymentMethod === 'BANK_QR' ? 'border-[#2D82C4] bg-[#EAF4FB]/40 shadow-xs ring-1 ring-[#2D82C4]' : 'border-gray-200 hover:border-[#6FA6CF] bg-white'">
                                     <input type="radio" name="paymentMethod" value="BANK_QR" x-model="paymentMethod" class="mt-1">
                                     <div class="flex-1">
                                         <div class="flex items-center justify-between">
                                             <span class="font-bold text-[#0F172A] text-base">Chuyển khoản QR (VietQR)</span>
-                                            <span class="text-xs font-bold text-[#1D4B43] bg-[#E8F0EC] px-2 py-0.5 rounded">Xác nhận tự động</span>
+                                            <span class="text-xs font-bold text-[#2D82C4] bg-[#EAF4FB] px-2 py-0.5 rounded">Xác nhận tự động</span>
                                         </div>
                                         <p class="text-xs text-[#4A5568] mt-1 leading-relaxed">
                                             Giữ chỗ 10 phút. Vui lòng chuyển đúng số tiền và nội dung để hệ thống đối soát tự động.
@@ -670,7 +670,7 @@
                                 </label>
 
                                 <label class="flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition select-none"
-                                       :class="paymentMethod === 'CASH' ? 'border-[#1D4B43] bg-[#E8F0EC]/40 shadow-xs ring-1 ring-[#1D4B43]' : 'border-gray-200 hover:border-[#709782] bg-white'">
+                                       :class="paymentMethod === 'CASH' ? 'border-[#2D82C4] bg-[#EAF4FB]/40 shadow-xs ring-1 ring-[#2D82C4]' : 'border-gray-200 hover:border-[#6FA6CF] bg-white'">
                                     <input type="radio" name="paymentMethod" value="CASH" x-model="paymentMethod" class="mt-1">
                                     <div class="flex-1">
                                         <span class="font-bold text-[#0F172A] text-base">Tiền mặt tại quầy lễ tân</span>
@@ -710,7 +710,7 @@
                                 <p class="mt-0.5 text-sm text-[#4A5568]">Vui lòng rà soát lại thông tin trước khi nhấn nút xác nhận đặt lịch.</p>
                             </div>
 
-                            <div class="mt-6 rounded-2xl border border-gray-200 bg-[#F7FAFC] p-6 space-y-3.5">
+                            <div class="mt-6 rounded-2xl border border-gray-200 bg-[#F5FAFE] p-6 space-y-3.5">
                                 <div class="flex justify-between items-center border-b border-gray-200 pb-2.5 text-sm">
                                     <span class="text-[#4A5568]">Gói dịch vụ:</span>
                                     <span class="font-bold text-[#0F172A]" x-text="getSelectedService().name"></span>
@@ -729,26 +729,26 @@
                                 </div>
                                 <div class="flex justify-between items-center border-b border-gray-200 pb-2.5 text-sm">
                                     <span class="text-[#4A5568]">Hình thức thanh toán:</span>
-                                    <span class="font-bold text-[#1D4B43]" x-text="paymentMethod === 'BANK_QR' ? 'Chuyển khoản QR (VietQR)' : 'Tiền mặt tại quầy'"></span>
+                                    <span class="font-bold text-[#2D82C4]" x-text="paymentMethod === 'BANK_QR' ? 'Chuyển khoản QR (VietQR)' : 'Tiền mặt tại quầy'"></span>
                                 </div>
                                 <div class="flex justify-between items-center pt-1 text-base">
                                     <span class="font-bold text-[#0F172A]">Tổng thanh toán:</span>
-                                    <span class="font-black text-[#1D4B43] text-xl" x-text="formatMoney(getSelectedService().price)"></span>
+                                    <span class="font-black text-[#2D82C4] text-xl" x-text="formatMoney(getSelectedService().price)"></span>
                                 </div>
                             </div>
 
                             {{-- Checkbox đồng ý điều khoản & chính sách --}}
                             <div class="mt-6 space-y-3">
                                 <label class="flex items-start gap-3 cursor-pointer">
-                                    <input type="checkbox" x-model="agreeTerms" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#1D4B43] focus:ring-[#1D4B43]">
+                                    <input type="checkbox" x-model="agreeTerms" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2D82C4] focus:ring-[#2D82C4]">
                                     <span class="text-xs text-[#334155] leading-relaxed">
-                                        Tôi đồng ý với <a href="{{ route('terms') }}" target="_blank" class="font-bold text-[#1D4B43] underline">Điều khoản sử dụng</a> và
-                                        <a href="{{ route('privacy') }}" target="_blank" class="font-bold text-[#1D4B43] underline">Chính sách quyền riêng tư</a> của Mind Guide.
+                                        Tôi đồng ý với <a href="{{ route('terms') }}" target="_blank" class="font-bold text-[#2D82C4] underline">Điều khoản sử dụng</a> và
+                                        <a href="{{ route('privacy') }}" target="_blank" class="font-bold text-[#2D82C4] underline">Chính sách quyền riêng tư</a> của Mind Guide.
                                     </span>
                                 </label>
 
                                 <label class="flex items-start gap-3 cursor-pointer">
-                                    <input type="checkbox" x-model="agreeRefundPolicy" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#1D4B43] focus:ring-[#1D4B43]">
+                                    <input type="checkbox" x-model="agreeRefundPolicy" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#2D82C4] focus:ring-[#2D82C4]">
                                     <span class="text-xs text-[#334155] leading-relaxed">
                                         Tôi đã đọc và hiểu rõ <strong class="text-amber-900">Chính sách hủy & hoàn tiền</strong> theo 3 mốc thời gian quy định.
                                     </span>
@@ -769,7 +769,7 @@
                             <button type="button"
                                     x-show="step < totalSteps"
                                     @click="nextStep()"
-                                    class="rounded-xl bg-[#1D4B43] px-8 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs flex items-center gap-2">
+                                    class="rounded-xl bg-[#2D82C4] px-8 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs flex items-center gap-2">
                                 <span>Tiếp tục</span>
                                 <span>→</span>
                             </button>
@@ -777,7 +777,7 @@
                             <button type="button"
                                     x-show="step === totalSteps"
                                     :disabled="!agreeTerms || !agreeRefundPolicy || isSubmitting"
-                                    :class="(!agreeTerms || !agreeRefundPolicy || isSubmitting) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#1D4B43] hover:bg-[#14352F] shadow-md'"
+                                    :class="(!agreeTerms || !agreeRefundPolicy || isSubmitting) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#2D82C4] hover:bg-[#23689C] shadow-md'"
                                     @click="confirmBooking()"
                                     class="rounded-xl px-8 py-3 text-sm font-bold text-white transition">
                                 <span x-text="isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt lịch ngay'"></span>
@@ -793,7 +793,7 @@
                 <div class="lg:col-span-4 sticky top-20 space-y-4">
                     <div class="rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs">
                         <div class="flex items-center gap-2 pb-3.5 border-b border-gray-100 text-[#0F172A]">
-                            <svg class="h-5 w-5 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-5 w-5 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                             <h3 class="text-base font-bold text-[#0F172A]">Tóm tắt lịch hẹn</h3>
@@ -804,7 +804,7 @@
                             <div class="py-3">
                                 <span class="text-xs text-[#4A5568] block">Gói dịch vụ:</span>
                                 <strong class="text-sm text-[#0F172A] leading-snug block mt-0.5" x-text="getSelectedService().name"></strong>
-                                <span class="text-xs text-[#709782] font-semibold mt-1 inline-block" x-text="'Thời lượng: ' + getSelectedService().duration_minutes + ' phút'"></span>
+                                <span class="text-xs text-[#6FA6CF] font-semibold mt-1 inline-block" x-text="'Thời lượng: ' + getSelectedService().duration_minutes + ' phút'"></span>
                             </div>
 
                             {{-- Chuyên viên --}}
@@ -818,12 +818,12 @@
                             <div class="py-3">
                                 <span class="text-xs text-[#4A5568] block">Thời gian tư vấn:</span>
                                 <div class="mt-1 flex items-center gap-1.5 text-sm font-bold text-[#0F172A]">
-                                    <svg class="h-4 w-4 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg class="h-4 w-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
                                     <span x-text="formatDisplayDate(selectedDate)"></span>
                                 </div>
-                                <div class="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#1D4B43]">
+                                <div class="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#2D82C4]">
                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
@@ -834,14 +834,14 @@
                             {{-- Phương thức --}}
                             <div class="py-3">
                                 <span class="text-xs text-[#4A5568] block">Hình thức thanh toán:</span>
-                                <span class="text-xs font-bold text-[#1D4B43] mt-0.5 block" x-text="paymentMethod === 'BANK_QR' ? 'Chuyển khoản QR (VietQR)' : 'Tiền mặt tại quầy'"></span>
+                                <span class="text-xs font-bold text-[#2D82C4] mt-0.5 block" x-text="paymentMethod === 'BANK_QR' ? 'Chuyển khoản QR (VietQR)' : 'Tiền mặt tại quầy'"></span>
                             </div>
 
                             {{-- Tổng tiền --}}
                             <div class="pt-3.5 pb-1">
                                 <div class="flex items-baseline justify-between">
                                     <span class="text-sm font-bold text-[#0F172A]">Tổng chi phí:</span>
-                                    <span class="text-xl font-black text-[#1D4B43]" x-text="formatMoney(getSelectedService().price)"></span>
+                                    <span class="text-xl font-black text-[#2D82C4]" x-text="formatMoney(getSelectedService().price)"></span>
                                 </div>
                                 <span class="text-[11px] text-[#4A5568] block mt-1">* Đã bao gồm phí tham vấn & tài liệu theo dõi</span>
                             </div>
@@ -849,8 +849,8 @@
                     </div>
 
                     {{-- Khối thông tin bảo mật & hoàn tiền cam kết --}}
-                    <div class="rounded-2xl border border-[#709782]/30 bg-[#E8F0EC]/50 p-4 text-xs text-[#334155] space-y-2">
-                        <div class="flex items-center gap-2 font-bold text-[#1D4B43]">
+                    <div class="rounded-2xl border border-[#6FA6CF]/30 bg-[#EAF4FB]/50 p-4 text-xs text-[#334155] space-y-2">
+                        <div class="flex items-center gap-2 font-bold text-[#2D82C4]">
                             <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                             </svg>

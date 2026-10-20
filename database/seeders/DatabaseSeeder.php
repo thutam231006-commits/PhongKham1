@@ -92,8 +92,23 @@ class DatabaseSeeder extends Seeder
             ['key' => 'corporate', 'category' => 'corporate', 'name' => 'Đánh giá Sức khỏe Tinh thần Doanh nghiệp', 'duration' => 60, 'price' => 1200000, 'image' => 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=85', 'audience' => 'Doanh nghiệp muốn khảo sát rủi ro tâm lý, sức khỏe tinh thần và nhu cầu hỗ trợ của nhân viên.', 'process' => 'Xác định mục tiêu; khảo sát bảo mật; phân tích tổng hợp và đề xuất chương trình hỗ trợ phù hợp văn hóa tổ chức.'],
         ];
 
+        $renamedNames = [
+            'Tư vấn Lo âu & Cân bằng cảm xúc' => 'Rối loạn Lo âu',
+            'Đồng hành cùng Trầm cảm & Kiệt sức' => 'Trầm cảm',
+            'Trị liệu Nhận thức Hành vi CBT' => 'Rối loạn Cảm xúc & Điều hòa cảm xúc',
+            'Tham vấn Cặp đôi & Hôn nhân' => 'Hòa hợp Mối quan hệ',
+            'Trị liệu Hệ thống Gia đình' => 'Tư vấn Gia đình',
+            'Tâm lý Học đường & Tuổi teen' => 'Hỗ trợ Tâm lý Học đường',
+            'Đánh giá & Hỗ trợ Tâm lý Trẻ em' => 'Đồng hành Học sinh & Tuổi teen',
+            'Đánh giá Sức khỏe Tinh thần Doanh nghiệp' => 'Tìm điểm Cân bằng trong Cuộc sống',
+        ];
+        foreach ($renamedNames as $oldName => $newName) {
+            Service::query()->where('name', $oldName)->update(['name' => $newName]);
+        }
+
         $models = [];
         foreach ($services as $index => $serviceData) {
+            $serviceData['name'] = $renamedNames[$serviceData['name']] ?? $serviceData['name'];
             $models[$serviceData['key']] = Service::updateOrCreate(
                 ['category_id' => $categoryModels[$serviceData['category']]->id, 'name' => $serviceData['name']],
                 [
@@ -109,6 +124,24 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        $catalog = [
+            'individual_anxiety' => ['name' => 'Rối loạn Lo âu', 'audience' => 'Đồng hành với cảm giác lo lắng kéo dài, hồi hộp, bất an, suy nghĩ quá mức và những phản ứng khiến sinh hoạt hằng ngày trở nên nặng nề.', 'process' => 'Đánh giá bối cảnh và mức độ lo âu; nhận diện vòng lặp suy nghĩ - cảm xúc - hành vi; thực hành kỹ năng điều hòa và xây dựng kế hoạch theo dõi cá nhân.'],
+            'individual_depression' => ['name' => 'Trầm cảm', 'audience' => 'Hỗ trợ người đang trải qua buồn bã kéo dài, giảm năng lượng, mất hứng thú, tự trách hoặc khó duy trì nhịp sống thường ngày.', 'process' => 'Lắng nghe an toàn; sàng lọc nhu cầu và rủi ro; xác định mục tiêu nhỏ có thể thực hiện; theo dõi tiến triển và phối hợp chuyển tuyến khi cần.'],
+            'cbt' => ['name' => 'Rối loạn Cảm xúc & Điều hòa cảm xúc', 'audience' => 'Dành cho người gặp khó khăn trong việc nhận diện, diễn đạt và điều chỉnh cảm xúc hoặc thường phản ứng quá mạnh trước áp lực.', 'process' => 'Nhận diện tác nhân; quan sát phản ứng cơ thể; luyện kỹ thuật CBT và điều hòa cảm xúc; xây dựng bài tập ứng phó phù hợp.'],
+            'couple' => ['name' => 'Hòa hợp Mối quan hệ', 'audience' => 'Hỗ trợ cặp đôi và người thân cải thiện giao tiếp, xử lý xung đột, khác biệt kỳ vọng và những tổn thương trong mối quan hệ.', 'process' => 'Thiết lập nguyên tắc đối thoại; làm rõ nhu cầu của mỗi bên; nhận diện chu kỳ xung đột; thực hành cách lắng nghe và phản hồi an toàn.'],
+            'family' => ['name' => 'Tư vấn Gia đình', 'audience' => 'Dành cho gia đình đang gặp khó khăn trong giao tiếp, nuôi dạy con, thay đổi vai trò hoặc thích nghi sau biến cố.', 'process' => 'Khám phá hệ thống quan hệ; xác định nguồn lực; tạo không gian để các thành viên được lắng nghe; thống nhất thay đổi nhỏ tại nhà.'],
+            'teen' => ['name' => 'Hỗ trợ Tâm lý Học đường', 'audience' => 'Đồng hành với học sinh trước áp lực thi cử, học tập, bạn bè, tự tin, thay đổi tâm sinh lý và định hướng tương lai.', 'process' => 'Tạo không gian không phán xét; lắng nghe góc nhìn của học sinh; hỗ trợ phụ huynh giao tiếp hiệu quả; thống nhất kế hoạch theo dõi.'],
+            'child' => ['name' => 'Đồng hành Học sinh & Tuổi teen', 'audience' => 'Hỗ trợ trẻ và thanh thiếu niên có thay đổi về cảm xúc, hành vi, giấc ngủ, học tập hoặc khó thích nghi với môi trường mới.', 'process' => 'Trao đổi với người chăm sóc; đánh giá phù hợp lứa tuổi; xác định yếu tố bảo vệ; đưa ra hướng dẫn thực hành cho trẻ và gia đình.'],
+            'corporate' => ['name' => 'Tìm điểm Cân bằng trong Cuộc sống', 'audience' => 'Dành cho người đang mất cân bằng giữa công việc, học tập, gia đình và nhu cầu chăm sóc bản thân.', 'process' => 'Nhìn lại ưu tiên; nhận diện nguồn gây quá tải; thiết kế nhịp sinh hoạt bền vững; xây dựng ranh giới và kế hoạch phục hồi năng lượng.'],
+        ];
+        foreach ($models as $key => $model) {
+            $content = $catalog[$key];
+            $model->update(['name' => $content['name'], 'description' => $content['audience'], 'target_audience' => $content['audience'], 'session_process' => $content['process']]);
+        }
+        $models['sleep'] = Service::updateOrCreate(['name' => 'Mất ngủ & Phục hồi giấc ngủ'], ['category_id' => $categoryModels['individual']->id, 'description' => 'Hỗ trợ người khó đi vào giấc ngủ, ngủ không sâu, thức giấc nhiều lần hoặc mệt mỏi do nhịp ngủ bị xáo trộn.', 'image_url' => 'https://images.unsplash.com/photo-1515894203077-9cd36032142f?auto=format&fit=crop&w=1200&q=85', 'target_audience' => 'Người trưởng thành đang gặp khó khăn với giấc ngủ hoặc lịch sinh hoạt thất thường.', 'session_process' => 'Tìm hiểu nhịp ngủ và thói quen liên quan; nhận diện lo âu trước khi ngủ; thiết kế vệ sinh giấc ngủ và kế hoạch theo dõi.', 'duration_minutes' => 60, 'buffer_minutes' => 10, 'price' => 600000, 'status' => 'ACTIVE', 'display_order' => 9]);
+        $activeNames = collect($catalog)->pluck('name')->push('Mất ngủ & Phục hồi giấc ngủ')->all();
+        Service::query()->whereNotIn('name', $activeNames)->update(['status' => 'INACTIVE']);
 
         return $models;
     }

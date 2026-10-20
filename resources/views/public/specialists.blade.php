@@ -8,18 +8,18 @@
       - Bộ lọc theo dịch vụ tư vấn (Dropdown + Quick tags).
       - BẢO MẬT TUYỆT ĐỐI §1.7: KHÔNG hiển thị license_number, internal_note, email, SĐT chuyên viên.
       - Đủ 4 trạng thái theo §1.4: Đang tải (Skeleton), Rỗng ("Chưa có chuyên viên phù hợp."), Lỗi, Hiển thị.
-      - Giao diện Soft Medical / Healing Minimalist với tông màu chuẩn Deep Teal (#1D4B43).
+      - Giao diện Soft Medical / Healing Minimalist với tông màu chuẩn Deep Teal (#2D82C4).
 --}}
 
 @extends('layouts.app')
 
-@section('title', 'Đội ngũ Chuyên viên Tâm lý — Mind Guide')
+@section('title', 'Đội ngũ Chuyên viên Tâm lý | Mind Guide')
 
 @section('breadcrumb')
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
     <ol class="flex items-center gap-2 text-xs text-[#4A5568]">
         <li>
-            <a href="{{ url('/') }}" class="hover:text-[#1D4B43] hover:underline transition">Trang chủ</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
         <li class="font-semibold text-[#1A202C]" aria-current="page">Chuyên viên tâm lý</li>
@@ -31,11 +31,8 @@
 <div class="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8" x-data="{ loading: false }">
 
     {{-- ── 1. TIÊU ĐỀ TRANG & GIỚI THIỆU ── --}}
-    <div class="max-w-3xl">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3.5 py-1 text-xs font-bold text-[#1D4B43]">
-            <span class="h-2 w-2 rounded-full bg-[#709782] animate-pulse"></span>
-            Chuyên gia giàu y đức & kinh nghiệm lâm sàng
-        </span>
+    <div class="mg-reveal max-w-3xl">
+        <p class="mg-section-kicker">Chuyên gia giàu y đức và kinh nghiệm lâm sàng</p>
         <h1 class="mt-3 text-3xl font-black tracking-tight text-[#0F172A] sm:text-4xl">
             Đội ngũ Chuyên viên Tâm lý
         </h1>
@@ -75,8 +72,8 @@
                         <select id="service-filter"
                                 name="service"
                                 onchange="document.getElementById('specialistFilterForm').submit()"
-                                class="w-full rounded-xl border border-gray-300 bg-[#F7FAFC] px-3.5 py-2.5 text-sm font-medium text-[#0F172A]
-                                       focus:border-[#1D4B43] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4B43]/20 transition">
+                                class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] px-3.5 py-2.5 text-sm font-medium text-[#0F172A]
+                                       focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
                             <option value="">Tất cả dịch vụ tư vấn</option>
                             @foreach($services as $s)
                                 <option value="{{ $s->id }}" {{ $serviceFilter == $s->id ? 'selected' : '' }}>
@@ -89,7 +86,7 @@
 
                 <div class="flex gap-2 w-full sm:w-auto sm:self-end">
                     <button type="submit"
-                            class="flex-1 sm:flex-none rounded-xl bg-[#1D4B43] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                            class="flex-1 sm:flex-none rounded-xl bg-[#2D82C4] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                         Lọc chuyên viên
                     </button>
                     @if(!empty($serviceFilter))
@@ -111,8 +108,8 @@
                 <a href="{{ route('specialists.index') }}"
                    class="rounded-full px-3 py-1 text-xs font-semibold transition
                           {{ empty($serviceFilter)
-                              ? 'bg-[#1D4B43] text-white shadow-xs'
-                              : 'bg-gray-100 text-[#4A5568] hover:bg-[#E8F0EC] hover:text-[#1D4B43]' }}">
+                              ? 'bg-[#2D82C4] text-white shadow-xs'
+                              : 'bg-gray-100 text-[#4A5568] hover:bg-[#EAF4FB] hover:text-[#2D82C4]' }}">
                     Tất cả chuyên viên
                 </a>
 
@@ -120,8 +117,8 @@
                     <a href="{{ route('specialists.index', ['service' => $s->id]) }}"
                        class="rounded-full px-3 py-1 text-xs font-semibold transition
                               {{ $serviceFilter == $s->id
-                                  ? 'bg-[#1D4B43] text-white shadow-xs'
-                                  : 'bg-gray-100 text-[#4A5568] hover:bg-[#E8F0EC] hover:text-[#1D4B43]' }}">
+                                  ? 'bg-[#2D82C4] text-white shadow-xs'
+                                  : 'bg-gray-100 text-[#4A5568] hover:bg-[#EAF4FB] hover:text-[#2D82C4]' }}">
                         {{ $s->name }}
                     </a>
                 @endforeach
@@ -169,9 +166,10 @@
     {{-- ── 6. LƯỚI CHUYÊN VIÊN HOẶC TRẠNG THÁI RỖNG ── --}}
     <div x-show="!loading">
         @if($specialists->isNotEmpty())
-            <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mg-stagger mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($specialists as $specialist)
                     <x-specialist-card
+                        style="--mg-index: {{ $loop->index }}"
                         :id="$specialist->id"
                         :name="$specialist->name"
                         :title="$specialist->title"
@@ -196,8 +194,8 @@
         @else
             {{-- ── TRẠNG THÁI RỖNG THEO ĐẶC TẢ §1.4 & SCR-PUB-04 ── --}}
             <div class="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-xs">
-                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F0EC]">
-                    <svg class="h-8 w-8 text-[#1D4B43]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4FB]">
+                    <svg class="h-8 w-8 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
@@ -210,7 +208,7 @@
 
                 <div class="mt-6 flex flex-wrap gap-3">
                     <a href="{{ route('specialists.index') }}"
-                       class="rounded-xl bg-[#1D4B43] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs">
+                       class="rounded-xl bg-[#2D82C4] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs">
                         Xem tất cả chuyên viên
                     </a>
                     <a href="{{ url('/') }}"
@@ -223,10 +221,10 @@
     </div>
 
     {{-- ── 7. KHỐI THÔNG TIN HỖ TRỢ & KẾT NỐI CHUYÊN GIA ── --}}
-    <div class="mt-16 rounded-2xl bg-[#E8F0EC]/60 border border-[#709782]/20 p-6 sm:p-8">
+    <div class="mt-16 rounded-2xl bg-[#EAF4FB]/60 border border-[#6FA6CF]/20 p-6 sm:p-8">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="space-y-1">
-                <h3 class="text-base font-bold text-[#1D4B43]">
+                <h3 class="text-base font-bold text-[#2D82C4]">
                     Cần hỗ trợ lựa chọn chuyên viên phù hợp?
                 </h3>
                 <p class="text-sm text-[#334155]">
@@ -234,7 +232,7 @@
                 </p>
             </div>
             <a href="tel:19001567"
-               class="inline-flex items-center gap-2 rounded-xl bg-[#1D4B43] px-6 py-3 text-sm font-bold text-white hover:bg-[#14352F] transition shadow-xs flex-shrink-0">
+               class="inline-flex items-center gap-2 rounded-xl bg-[#2D82C4] px-6 py-3 text-sm font-bold text-white hover:bg-[#23689C] transition shadow-xs flex-shrink-0">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>

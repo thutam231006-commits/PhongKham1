@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\User;
@@ -98,6 +99,79 @@ class BookingFlowTest extends TestCase
         $this->getJson(route('api.specialists.index', ['service_id' => $otherService->id]))
             ->assertOk()
             ->assertJsonMissing(['id' => $specialist->id]);
+    }
+
+    public function test_booking_limit_error_returns_to_confirmation_with_a_friendly_message(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(4)->setTime(10, 0);
+        WorkingSchedule::query()->where('specialist_profile_id', $specialist->id)->update([
+            'day_of_week' => $date->isoWeekday(),
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+        ]);
+
+        Appointment::factory()->count(3)->sequence(
+            ['start_at' => now()->addDay()->setTime(8, 0), 'end_at' => now()->addDay()->setTime(9, 0)],
+            ['start_at' => now()->addDays(2)->setTime(8, 0), 'end_at' => now()->addDays(2)->setTime(9, 0)],
+            ['start_at' => now()->addDays(3)->setTime(8, 0), 'end_at' => now()->addDays(3)->setTime(9, 0)],
+        )->create([
+            'customer_id' => $customer->id,
+            'created_by' => $customer->id,
+            'specialist_profile_id' => $specialist->id,
+            'service_id' => $service->id,
+            'status' => 'CONFIRMED',
+            'slot_lock_key' => null,
+        ]);
+
+        $booking = [
+            'service_id' => $service->id,
+            'specialist_id' => $specialist->id,
+            'date' => $date->toDateString(),
+            'time' => '10:00',
+            'start_at' => $date->format('Y-m-d H:i:s'),
+        ];
+
+        $this->actingAs($customer)
+            ->withSession(['booking' => $booking])
+            ->post(route('booking.confirm.store'), ['payment_method' => 'BANK_QR'])
+            ->assertRedirect(route('booking.confirm'))
+            ->assertSessionHas('error', 'Bạn đã đạt giới hạn 3 lịch hẹn đang hoạt động.');
+
+        $this->assertDatabaseCount('appointments', 3);
+    }
+
+    public function test_bank_qr_booking_redirects_to_sepay_payment_page(): void
+    {
+        config([
+            'services.sepay.bank_account' => '104603996207',
+            'services.sepay.bank_code' => 'VietinBank',
+            'services.sepay.account_name' => 'KHUAT THU TAM',
+        ]);
+        $customer = User::factory()->create(['role' => 'customer']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+
+        $response = $this->actingAs($customer)
+            ->withSession(['booking' => [
+                'service_id' => $service->id,
+                'specialist_id' => $specialist->id,
+                'date' => $date->toDateString(),
+                'time' => '10:00',
+                'start_at' => $date->format('Y-m-d H:i:s'),
+                'customer_note' => 'Thanh toán qua SePay.',
+            ]])
+            ->post(route('booking.confirm.store'), ['payment_method' => 'BANK_QR']);
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+        $response->assertRedirect(route('booking.payment.show', $appointment));
+        $this->actingAs($customer)
+            ->get(route('booking.payment.show', $appointment))
+            ->assertOk()
+            ->assertSee('SEVQR DATLICH'.$appointment->appointment_code)
+            ->assertSee('104603996207')
+            ->assertSee('KHUAT THU TAM');
     }
 
     /** @return array{0: Service, 1: SpecialistProfile} */

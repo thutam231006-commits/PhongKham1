@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
-use App\Models\Specialist;
+use App\Models\SpecialistProfile;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -89,27 +89,26 @@ class HomeController extends Controller
      */
     private function getFeaturedSpecialists(): Collection
     {
-        if (! class_exists(Specialist::class)) {
-            return $this->getSampleSpecialists();
-        }
-
         try {
-            $specialists = Specialist::query()
+            $specialists = SpecialistProfile::query()
                 ->where('status', 'ACTIVE')
-                // Đếm số đánh giá VISIBLE
-                ->withCount([
-                    'reviews as visible_reviews_count' => fn ($q) => $q->where('status', 'VISIBLE'),
-                ])
-                // Điểm trung bình từ đánh giá VISIBLE
-                ->withAvg(
-                    ['reviews as average_rating' => fn ($q) => $q->where('status', 'VISIBLE')],
-                    'rating',
-                )
+                ->with(['user', 'services'])
+                ->withCount(['reviews as visible_reviews_count' => fn ($q) => $q->where('status', 'VISIBLE')])
+                ->withAvg(['reviews as average_rating' => fn ($q) => $q->where('status', 'VISIBLE')], 'rating')
                 ->orderByDesc('average_rating')
                 ->orderByDesc('visible_reviews_count')
-                ->orderBy('name')
+                ->orderBy('display_order')
                 ->limit(self::FEATURED_SPECIALISTS_LIMIT)
-                ->get();
+                ->get()
+                ->map(fn (SpecialistProfile $profile): object => (object) [
+                    'id' => $profile->id,
+                    'name' => $profile->user->name,
+                    'title' => $profile->title,
+                    'experience_years' => $profile->years_of_experience,
+                    'average_rating' => (float) ($profile->average_rating ?? 0),
+                    'visible_reviews_count' => $profile->visible_reviews_count,
+                    'avatar_url' => $profile->avatar_url,
+                ]);
 
             return $specialists->isNotEmpty() ? $specialists : $this->getSampleSpecialists();
         } catch (\Throwable) {

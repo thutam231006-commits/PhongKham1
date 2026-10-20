@@ -4,14 +4,18 @@ return [
 
     'sepay' => [
         'webhook_secret' => env('SEPAY_WEBHOOK_SECRET'),
+        'webhook_api_key' => env('SEPAY_WEBHOOK_API_KEY', env('SEPAY_API_KEY')),
         'api_key' => env('SEPAY_API_KEY'),
         'bank_account' => env('SEPAY_BANK_ACCOUNT'),
+        'bank_code' => env('SEPAY_BANK_CODE', 'VietinBank'),
+        'account_name' => env('SEPAY_ACCOUNT_NAME'),
+        'qr_base_url' => env('SEPAY_QR_BASE_URL', 'https://vietqr.app/img'),
     ],
 
     'vietqr' => [
-        'bank_id' => env('VIETQR_BANK_ID', 'MB'),
-        'account_number' => env('VIETQR_ACCOUNT_NUMBER', '0987654321'),
-        'account_name' => env('VIETQR_ACCOUNT_NAME', 'PHONG KHAM TAM LY MIND GUIDE'),
+        'bank_id' => env('VIETQR_BANK_ID', env('SEPAY_BANK_CODE', 'VietinBank')),
+        'account_number' => env('VIETQR_ACCOUNT_NUMBER', env('SEPAY_BANK_ACCOUNT')),
+        'account_name' => env('VIETQR_ACCOUNT_NAME', env('SEPAY_ACCOUNT_NAME')),
     ],
 
     /*
