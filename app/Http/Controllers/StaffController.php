@@ -13,7 +13,9 @@ use App\Models\User;
 use App\Services\AppointmentBookingService;
 use App\Services\AppointmentWorkflowService;
 use App\Services\AuditService;
+use App\Services\NotificationService;
 use App\Services\PaymentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,24 +25,60 @@ use Illuminate\View\View;
 
 class StaffController extends Controller
 {
-    public function dashboard(): View
+    public function dashboard(Request $request, NotificationService $notifications): View
     {
-        $today = Appointment::query()->whereDate('start_at', today())->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at')->get();
+        $date = $request->date('date')?->toDateString() ?? today()->toDateString();
+        $today = Appointment::query()->whereDate('start_at', $date)->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at')->get();
         $cashToCollect = Appointment::query()->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->count();
         $needsAttention = Appointment::query()->where('needs_attention', true)->count();
-        $pending = Appointment::query()->where('status', 'PENDING')->count();
+        $pendingAppointments = Appointment::query()->where('status', 'PENDING')->with(['customer', 'service', 'specialistProfile.user'])->oldest('created_at')->get();
+        $pending = $pendingAppointments->count();
+        $staffRecipients = User::query()->whereIn('role', ['staff', 'admin'])->where('status', 'ACTIVE')->get();
+        foreach ($pendingAppointments as $appointment) {
+            foreach ($staffRecipients as $recipient) {
+                $alreadyNotified = $recipient->notifications()->where('data->appointment_id', $appointment->id)->where('data->type', 'appointment.attention')->exists();
+                if (! $alreadyNotified) {
+                    $notifications->send($recipient, 'Lịch mới chờ xác nhận', $appointment->customer->name.' vừa đặt lịch '.$appointment->service->name.' lúc '.$appointment->start_at->format('d/m/Y H:i').'.', 'appointment.attention', route('staff.appointments'), $appointment);
+                }
+            }
+        }
+        $pendingCheckins = Appointment::query()->whereDate('start_at', $date)->where('status', 'CONFIRMED')->whereNull('checked_in_at')->where('consultation_type', 'OFFLINE')->count();
+        $rescheduleRequests = RescheduleRequest::query()->where('status', 'PENDING')->count();
+        $refundsPending = RefundRequest::query()->where('status', 'PENDING')->count();
+        $newCustomers = User::query()->where('role', 'customer')->where('created_at', '>=', now()->subDays(7))->count();
+        $unreadNotifications = $request->user()->unreadNotifications()->count();
+        $notifications = $request->user()->notifications()->latest()->limit(8)->get();
+        $urgentAppointments = Appointment::query()->whereIn('status', ['PENDING', 'RESCHEDULE_REQUESTED'])->with(['customer', 'service', 'specialistProfile.user'])->orderBy('created_at')->limit(8)->get();
 
-        return view('staff.dashboard', compact('today', 'cashToCollect', 'needsAttention', 'pending'));
+        return view('staff.dashboard', compact('date', 'today', 'cashToCollect', 'needsAttention', 'pending', 'pendingCheckins', 'rescheduleRequests', 'refundsPending', 'newCustomers', 'unreadNotifications', 'notifications', 'urgentAppointments'));
     }
 
     public function checkin(Request $request): View
     {
-        $query = Appointment::query()->whereDate('start_at', today())->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at');
+        $data = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'name' => ['nullable', 'string', 'max:100'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $date = $data['date'] ?? today()->toDateString();
+        $query = Appointment::query()
+            ->whereDate('start_at', $date)
+            ->with(['customer.customerProfile', 'specialistProfile.user', 'service'])
+            ->orderBy('start_at');
+
+        foreach (['name', 'email', 'phone'] as $field) {
+            if ($request->filled($field)) {
+                $query->whereHas('customer', fn ($customer) => $customer->where($field, 'like', '%'.trim($data[$field]).'%'));
+            }
+        }
         if ($request->filled('q')) {
-            $term = $request->string('q')->toString();
+            $term = trim($data['q']);
             $query->where(function ($builder) use ($term): void {
-                $builder->where('appointment_code', 'like', "%{$term}%")
-                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
+                $builder->whereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"))
+                    ->orWhereHas('customer.customerProfile', fn ($profile) => $profile->where('customer_code', 'like', "%{$term}%"));
             });
         }
         $appointments = $query->paginate(20)->withQueryString();
@@ -48,19 +86,71 @@ class StaffController extends Controller
         return view('staff.checkin', compact('appointments'));
     }
 
+    public function appointmentList(Request $request): View
+    {
+        $data = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_CLINIC'])],
+            'specialist_id' => ['nullable', 'integer', 'exists:specialist_profiles,id'],
+            'service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+        $query = Appointment::query()->with(['customer', 'specialistProfile.user', 'service', 'consultationRoom'])->orderByDesc('start_at');
+        $query->when($data['status'] ?? null, fn ($builder, string $status) => $builder->where('status', $status));
+        $query->when($data['specialist_id'] ?? null, fn ($builder, int $specialistId) => $builder->where('specialist_profile_id', $specialistId));
+        $query->when($data['service_id'] ?? null, fn ($builder, int $serviceId) => $builder->where('service_id', $serviceId));
+        $query->when($data['date'] ?? null, fn ($builder, string $date) => $builder->whereDate('start_at', $date));
+        $query->when($data['q'] ?? null, function ($builder, string $term): void {
+            $builder->where(function ($nested) use ($term): void {
+                $nested->where('appointment_code', 'like', "%{$term}%")
+                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
+            });
+        });
+        $appointments = $query->paginate(30)->withQueryString();
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
+        $services = Service::query()->active()->orderBy('display_order')->get();
+
+        return view('staff.appointment-list', compact('appointments', 'specialists', 'services', 'data'));
+    }
+
     public function appointments(Request $request): View
     {
-        $query = Appointment::query()->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at');
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status')->toString());
+        $data = $request->validate([
+            'view' => ['nullable', Rule::in(['day', 'week', 'month'])],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'status' => ['nullable', Rule::in(['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_CLINIC'])],
+            'specialist_id' => ['nullable', 'integer', 'exists:specialist_profiles,id'],
+            'service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'attention' => ['nullable', 'boolean'],
+        ]);
+        $view = $data['view'] ?? ($request->routeIs('staff.appointments.pending') ? 'month' : 'week');
+        $selectedStatus = $data['status'] ?? ($request->routeIs('staff.appointments.pending') ? 'PENDING' : null);
+        $selectedDate = CarbonImmutable::parse($data['date'] ?? today()->toDateString());
+        $rangeStart = match ($view) {
+            'day' => $selectedDate->startOfDay(),
+            'month' => $selectedDate->startOfMonth()->startOfWeek(),
+            default => $selectedDate->startOfWeek(),
+        };
+        $rangeEnd = match ($view) {
+            'day' => $selectedDate->endOfDay(),
+            'month' => $selectedDate->endOfMonth()->endOfWeek(),
+            default => $selectedDate->endOfWeek(),
+        };
+        $query = Appointment::query()->with(['customer', 'specialistProfile.user', 'service', 'consultationRoom'])->whereBetween('start_at', [$rangeStart, $rangeEnd])->orderBy('start_at');
+        $query->when($selectedStatus, fn ($builder, string $status) => $builder->where('status', $status));
+        $query->when($data['specialist_id'] ?? null, fn ($builder, int $specialistId) => $builder->where('specialist_profile_id', $specialistId));
+        $query->when($data['service_id'] ?? null, fn ($builder, int $serviceId) => $builder->where('service_id', $serviceId));
+        $query->when($request->boolean('attention'), fn ($builder) => $builder->where('needs_attention', true));
+        $appointments = $query->get();
+        $calendarDays = [];
+        for ($day = $rangeStart->startOfDay(); $day->lte($rangeEnd->startOfDay()); $day = $day->addDay()) {
+            $calendarDays[] = $day;
         }
-        if ($request->boolean('attention')) {
-            $query->where('needs_attention', true);
-        }
-        $appointments = $query->paginate(30)->withQueryString();
-        $rescheduleRequests = RescheduleRequest::query()->where('status', 'PENDING')->with(['appointment.customer', 'appointment.specialistProfile.user'])->latest()->get();
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
+        $services = Service::query()->active()->orderBy('display_order')->get();
+        $rescheduleRequests = RescheduleRequest::query()->where('status', 'PENDING')->with(['appointment.customer', 'appointment.service', 'appointment.specialistProfile.user'])->latest()->get();
 
-        return view('staff.appointments', compact('appointments', 'rescheduleRequests'));
+        return view('staff.appointments', compact('appointments', 'rescheduleRequests', 'specialists', 'services', 'calendarDays', 'selectedDate', 'view', 'rangeStart', 'rangeEnd', 'data'));
     }
 
     public function markCheckin(int $id): RedirectResponse
@@ -131,6 +221,14 @@ class StaffController extends Controller
         $workflow->confirm($appointment, auth()->user());
 
         return back()->with('success', 'Đã xác nhận lịch hẹn.');
+    }
+
+    public function reassignAppointment(Request $request, Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
+    {
+        $data = $request->validate(['specialist_id' => ['required', 'integer', 'exists:specialist_profiles,id']]);
+        $workflow->reassignSpecialist($appointment, SpecialistProfile::query()->findOrFail($data['specialist_id']), $request->user());
+
+        return back()->with('success', 'Đã chuyển lịch sang chuyên viên mới và gửi thông báo liên quan.');
     }
 
     public function cancelAppointment(Request $request, Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse

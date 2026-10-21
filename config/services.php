@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'google_meet' => [
+        'url' => env('GOOGLE_MEET_URL', 'https://meet.google.com/new'),
+    ],
 
     'sepay' => [
         'webhook_secret' => env('SEPAY_WEBHOOK_SECRET'),

@@ -6,6 +6,7 @@ use App\Models\CustomerProfile;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\NotificationService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -106,7 +107,7 @@ class AuthController extends Controller
     /**
      * POST /dang-ky (xử lý đăng ký)
      */
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, NotificationService $notifications): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|min:2|max:100',
@@ -138,6 +139,13 @@ class AuthController extends Controller
             'email_verified_at' => SystemSetting::valueOf('email_verification_required', false) ? null : now(),
         ]);
         CustomerProfile::query()->create(['user_id' => $user->id, 'customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $request->date('dob'), 'privacy_policy_version' => '2026-01', 'consented_at' => now()]);
+        $notifications->sendMany(
+            User::query()->whereIn('role', ['staff', 'admin'])->where('status', 'ACTIVE')->get(),
+            'Khách hàng mới đăng ký',
+            'Khách mới đăng ký: '.$user->name,
+            'customer.registered',
+            route('staff.customers')
+        );
 
         if (SystemSetting::valueOf('email_verification_required', false)) {
             $user->sendEmailVerificationNotification();

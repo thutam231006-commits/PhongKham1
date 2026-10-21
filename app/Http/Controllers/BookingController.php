@@ -124,7 +124,7 @@ class BookingController extends Controller
         $data = $request->validate(['date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i']]);
         $service = Service::query()->active()->findOrFail(session('booking.service_id'));
         $specialist = SpecialistProfile::query()->where('status', 'ACTIVE')->findOrFail(session('booking.specialist_id'));
-        abort_unless(collect($this->availableSlots($specialist, $service, $data['date']))->contains('start', $data['time']), 422, 'Khung giờ đã chọn không còn khả dụng.');
+        abort_unless(collect($this->availableSlots($specialist, $service, $data['date']))->contains(fn (array $slot): bool => $slot['start'] === $data['time'] && $slot['available']), 422, 'Khung giờ đã chọn không còn khả dụng.');
         session(['booking' => [...session('booking', []), 'date' => $data['date'], 'time' => $data['time'], 'start_at' => $data['date'].' '.$data['time']]]);
 
         return redirect()->route('booking.note');
@@ -140,7 +140,10 @@ class BookingController extends Controller
 
     public function confirmBooking(Request $request, AppointmentBookingService $bookingService): RedirectResponse
     {
-        $data = $request->validate(['payment_method' => ['required', 'in:CASH,BANK_QR']]);
+        $data = $request->validate([
+            'payment_method' => ['required', 'in:CASH,BANK_QR'],
+            'consultation_type' => ['nullable', 'in:ONLINE,OFFLINE'],
+        ]);
         abort_unless($request->user(), 401);
         $booking = session('booking', []);
         if (! isset($booking['service_id'], $booking['specialist_id'], $booking['date'], $booking['time'])) {
@@ -155,7 +158,8 @@ class BookingController extends Controller
                 'time' => $booking['time'],
                 'customer_note' => $booking['customer_note'] ?? null,
                 'payment_method' => $data['payment_method'],
-                'idempotency_key' => 'web-'.$request->session()->getId().'-'.sha1(json_encode($booking)),
+                'consultation_type' => $data['consultation_type'] ?? 'OFFLINE',
+                'idempotency_key' => 'web-'.hash('sha256', $request->session()->getId().'|'.json_encode($booking)),
             ]);
         } catch (BookingSlotUnavailable $exception) {
             return redirect()->route('booking.confirm')->withInput()->with('error', $exception->getMessage());
@@ -210,7 +214,7 @@ class BookingController extends Controller
         ]);
     }
 
-    /** @return array<int, array{start:string,end:string}> */
+    /** @return array<int, array{start:string,end:string,available:bool}> */
     private function availableSlots(SpecialistProfile $specialist, Service $service, string $date): array
     {
         $day = CarbonImmutable::parse($date);
@@ -238,8 +242,12 @@ class BookingController extends Controller
                     return $cursor->lt($blockedEnd) && $end->gt($blockedStart);
                 });
                 $conflict = $appointments->contains(fn (Appointment $appointment): bool => $cursor->lt($appointment->end_at->copy()->addMinutes($appointment->buffer_minutes)) && $end->gt($appointment->start_at->copy()->subMinutes($service->buffer_minutes)));
-                if (! $blocked && ! $conflict && $cursor->gte(now()->addHours(2))) {
-                    $slots[] = ['start' => $cursor->format('H:i'), 'end' => $end->format('H:i')];
+                if ($cursor->gte(now()->addHours(2))) {
+                    $slots[] = [
+                        'start' => $cursor->format('H:i'),
+                        'end' => $end->format('H:i'),
+                        'available' => ! $blocked && ! $conflict,
+                    ];
                 }
                 $cursor = $cursor->addMinutes($service->duration_minutes + $service->buffer_minutes);
             }

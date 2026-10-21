@@ -23,6 +23,7 @@ class Appointment extends Model
         'created_by', 'slot_lock_key', 'needs_attention', 'confirmed_at', 'started_at', 'completed_at',
         'cancelled_at', 'cancel_reason',
         'checked_in_at', 'checked_in_by', 'collected_at', 'collected_by', 'payment_reference',
+        'consultation_type', 'consultation_room_id', 'meeting_url',
     ];
 
     protected function casts(): array
@@ -81,6 +82,11 @@ class Appointment extends Model
     public function paymentTransactions(): HasMany
     {
         return $this->hasMany(PaymentTransaction::class);
+    }
+
+    public function consultationRoom(): BelongsTo
+    {
+        return $this->belongsTo(ConsultationRoom::class);
     }
 
     public function rescheduledFrom(): BelongsTo

@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Exceptions\BookingSlotUnavailable;
 use App\Models\Appointment;
+use App\Models\ConsultationRoom;
 use App\Models\RefundRequest;
 use App\Models\RescheduleRequest;
+use App\Models\ScheduleException;
+use App\Models\SpecialistProfile;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +25,53 @@ class AppointmentWorkflowService
         return DB::transaction(function () use ($appointment, $actor): Appointment {
             $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
             abort_unless($appointment->status === 'PENDING', 409, 'Chỉ lịch đang chờ mới có thể xác nhận.');
-            $this->transition($appointment, 'CONFIRMED', 'confirm', $actor, ['confirmed_at' => now()]);
-            $this->notifications->send($appointment->customer, 'Lịch hẹn đã được xác nhận', 'Lịch '.$appointment->appointment_code.' đã được xác nhận.', 'appointment.confirmed', route('customer.appointments.detail', $appointment), $appointment);
+            $appointment->load(['customer', 'specialistProfile.user']);
+            $details = $appointment->consultation_type === 'ONLINE'
+                ? ['meeting_url' => config('services.google_meet.url', 'https://meet.google.com/new'), 'consultation_room_id' => null]
+                : ['consultation_room_id' => $this->findAvailableRoom($appointment)->id, 'meeting_url' => null];
+            $this->transition($appointment, 'CONFIRMED', 'confirm', $actor, [...$details, 'confirmed_at' => now(), 'payment_expires_at' => null]);
+            $this->notifications->send($appointment->customer, 'Lịch hẹn đã được xác nhận', 'Lịch '.$appointment->appointment_code.' đã được xác nhận. Vui lòng xem thông tin phòng hoặc link Google Meet trong chi tiết lịch.', 'appointment.confirmed', route('customer.appointments.detail', $appointment), $appointment);
+            $this->notifications->send($appointment->specialistProfile->user, 'Có lịch hẹn mới', 'Lịch '.$appointment->appointment_code.' đã được xác nhận với khách '.$appointment->customer->name.'.', 'appointment.confirmed', route('specialist.appointments.detail', $appointment), $appointment);
+
+            return $appointment->refresh();
+        });
+    }
+
+    public function reassignSpecialist(Appointment $appointment, SpecialistProfile $specialist, User $actor): Appointment
+    {
+        return DB::transaction(function () use ($appointment, $specialist, $actor): Appointment {
+            $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
+            abort_unless($appointment->status === 'PENDING', 409, 'Chỉ lịch đang chờ xác nhận mới có thể chuyển chuyên viên.');
+
+            $specialist = SpecialistProfile::query()->where('status', 'ACTIVE')->with('services')->lockForUpdate()->findOrFail($specialist->id);
+            abort_unless($specialist->services->contains('id', $appointment->service_id), 422, 'Chuyên viên mới không cung cấp dịch vụ đã chọn.');
+            $this->assertSpecialistWorking($specialist, $appointment);
+
+            $conflict = Appointment::query()
+                ->where('specialist_profile_id', $specialist->id)
+                ->whereKeyNot($appointment->id)
+                ->holdingSlot()
+                ->where('start_at', '<', $appointment->end_at->copy()->addMinutes($appointment->buffer_minutes))
+                ->where('end_at', '>', $appointment->start_at->copy()->subMinutes($appointment->buffer_minutes))
+                ->exists();
+            abort_unless(! $conflict, 409, 'Chuyên viên mới đã có lịch trùng khung giờ.');
+
+            $oldSpecialist = $appointment->specialistProfile()->with('user')->first();
+            $appointment->update([
+                'specialist_profile_id' => $specialist->id,
+                'slot_lock_key' => $specialist->id.'|'.$appointment->start_at->format('Y-m-d H:i:s'),
+            ]);
+            $appointment->statusHistory()->create([
+                'from_status' => 'PENDING',
+                'to_status' => 'PENDING',
+                'action' => 'reassign_specialist',
+                'actor_id' => $actor->id,
+                'actor_role' => strtoupper((string) $actor->role),
+                'reason' => 'Chuyển từ '.($oldSpecialist?->user?->name ?? 'chuyên viên cũ').' sang '.$specialist->user->name,
+            ]);
+            $this->audit->record('appointment.reassign_specialist', $appointment, old: ['specialist_profile_id' => $oldSpecialist?->id], new: ['specialist_profile_id' => $specialist->id], actor: $actor);
+            $this->notifications->send($appointment->customer, 'Lịch đã được điều phối lại', 'Phòng khám đã chuyển lịch '.$appointment->appointment_code.' sang chuyên viên '.$specialist->user->name.'.', 'appointment.reassigned', route('customer.appointments.detail', $appointment), $appointment);
+            $this->notifications->send($specialist->user, 'Có lịch hẹn chờ xác nhận', 'Lịch '.$appointment->appointment_code.' đang chờ xác nhận với bạn lúc '.$appointment->start_at->format('d/m/Y H:i').'.', 'appointment.attention', route('specialist.appointments.detail', $appointment), $appointment);
 
             return $appointment->refresh();
         });
@@ -147,6 +195,61 @@ class AppointmentWorkflowService
         $appointment->update([...$attributes, 'status' => $to]);
         $appointment->statusHistory()->create(['from_status' => $from, 'to_status' => $to, 'action' => $action, 'actor_id' => $actor->id, 'actor_role' => strtoupper($actor->role), 'reason' => $reason]);
         $this->audit->record('appointment.'.$action, $appointment, old: ['status' => $from], new: ['status' => $to]);
+    }
+
+    private function findAvailableRoom(Appointment $appointment): ConsultationRoom
+    {
+        $room = ConsultationRoom::query()
+            ->where('is_active', true)
+            ->whereDoesntHave('appointments', function ($query) use ($appointment): void {
+                $query->whereKeyNot($appointment->id)
+                    ->holdingSlot()
+                    ->where('start_at', '<', $appointment->end_at)
+                    ->where('end_at', '>', $appointment->start_at);
+            })
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first();
+
+        abort_unless($room, 409, 'Hiện không còn phòng tư vấn trống trong khung giờ này.');
+
+        return $room;
+    }
+
+    private function assertSpecialistWorking(SpecialistProfile $specialist, Appointment $appointment): void
+    {
+        $blocked = ScheduleException::query()
+            ->where(function ($query) use ($specialist): void {
+                $query->whereNull('specialist_profile_id')->orWhere('specialist_profile_id', $specialist->id);
+            })
+            ->whereDate('start_date', '<=', $appointment->start_at)
+            ->whereDate('end_date', '>=', $appointment->start_at)
+            ->get()
+            ->contains(function (ScheduleException $exception) use ($appointment): bool {
+                if (! $exception->start_time || ! $exception->end_time) {
+                    return true;
+                }
+
+                $blockedStart = CarbonImmutable::parse($appointment->start_at->format('Y-m-d').' '.$exception->start_time);
+                $blockedEnd = CarbonImmutable::parse($appointment->start_at->format('Y-m-d').' '.$exception->end_time);
+
+                return $appointment->start_at->lt($blockedEnd) && $appointment->end_at->gt($blockedStart);
+            });
+        abort_unless(! $blocked, 409, 'Chuyên viên mới nghỉ hoặc bị khóa trong khung giờ này.');
+
+        $working = $specialist->workingSchedules()
+            ->where('day_of_week', $appointment->start_at->isoWeekday())
+            ->where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('effective_from')->orWhereDate('effective_from', '<=', $appointment->start_at))
+            ->where(fn ($query) => $query->whereNull('effective_to')->orWhereDate('effective_to', '>=', $appointment->start_at))
+            ->get()
+            ->contains(function ($schedule) use ($appointment): bool {
+                $start = CarbonImmutable::parse($appointment->start_at->format('Y-m-d').' '.$schedule->start_time);
+                $end = CarbonImmutable::parse($appointment->start_at->format('Y-m-d').' '.$schedule->end_time);
+
+                return $appointment->start_at->gte($start) && $appointment->end_at->lte($end);
+            });
+        abort_unless($working, 409, 'Chuyên viên mới không làm việc trong khung giờ này.');
     }
 
     private function assertSlotAvailable(Appointment $appointment, CarbonImmutable $startAt, CarbonImmutable $endAt): void

@@ -24,7 +24,7 @@ class AppointmentBookingService
     ) {}
 
     /**
-     * @param  array{service_id:int, specialist_id:int, date:string, time:string, customer_note?:string|null, payment_method:string}  $data
+     * @param  array{service_id:int, specialist_id:int, date:string, time:string, customer_note?:string|null, payment_method:string, consultation_type?:string, idempotency_key?:string|null}  $data
      */
     public function create(User $customer, array $data, ?User $actor = null): Appointment
     {
@@ -85,7 +85,8 @@ class AppointmentBookingService
             }
 
             $isOperatorBooking = in_array(strtolower((string) $actor->role), ['staff', 'admin'], true);
-            $status = $isOperatorBooking || $data['payment_method'] === 'CASH' ? 'CONFIRMED' : 'PENDING';
+            $consultationType = $data['consultation_type'] ?? 'OFFLINE';
+            $status = $isOperatorBooking ? 'CONFIRMED' : 'PENDING';
             $appointment = Appointment::query()->create([
                 'appointment_code' => $this->generateAppointmentCode(),
                 'customer_id' => $customer->id,
@@ -99,9 +100,10 @@ class AppointmentBookingService
                 'status' => $status,
                 'payment_status' => 'UNPAID',
                 'payment_method' => $data['payment_method'],
-                'payment_expires_at' => $status === 'PENDING' ? now()->addMinutes(10) : null,
+                'payment_expires_at' => null,
                 'idempotency_key' => $data['idempotency_key'] ?? null,
                 'source' => $isOperatorBooking ? 'ONSITE' : 'ONLINE',
+                'consultation_type' => $consultationType,
                 'customer_note' => $data['customer_note'] ?? null,
                 'created_by' => $actor->id,
                 'slot_lock_key' => $specialist->id.'|'.$startAt->format('Y-m-d H:i:s'),
@@ -115,7 +117,12 @@ class AppointmentBookingService
             ]);
 
             $this->audit->record('appointment.created', $appointment, new: ['status' => $status, 'payment_method' => $data['payment_method']], actor: $actor);
-            $this->notifications->send($customer, $status === 'PENDING' ? 'Chờ thanh toán lịch hẹn' : 'Đặt lịch thành công', 'Mã lịch của bạn: '.$appointment->appointment_code.'.', 'appointment.created', route('customer.appointments.detail', $appointment), $appointment);
+            if ($isOperatorBooking) {
+                $this->notifications->send($customer, 'Đặt lịch thành công', 'Mã lịch của bạn: '.$appointment->appointment_code.'.', 'appointment.created', route('customer.appointments.detail', $appointment), $appointment);
+            } else {
+                $this->notifications->send($customer, 'Đã tiếp nhận yêu cầu đặt lịch', 'Phòng khám sẽ gọi điện cho bạn trong vòng 24 giờ để xác nhận lịch '.$appointment->appointment_code.'.', 'appointment.pending_confirmation', route('customer.appointments.detail', $appointment), $appointment);
+                $this->notifications->sendMany(User::query()->whereIn('role', ['staff', 'admin'])->where('status', 'ACTIVE')->get(), 'Lịch mới chờ xác nhận', 'Lịch '.$appointment->appointment_code.' của '.$customer->name.' đang chờ gọi xác nhận.', 'appointment.attention', route('staff.appointments'), $appointment);
+            }
 
             return $appointment->load(['service', 'specialistProfile.user']);
         }, 3);

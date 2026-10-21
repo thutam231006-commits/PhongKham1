@@ -16,7 +16,7 @@
 @section('content')
 <div class="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
     <div class="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 border border-gray-200/80 shadow-sm"
-         x-data="{ showPassword: false, email: '{{ old('email') }}', password: '' }">
+         x-data="{ showPassword: false }">
 
         <div class="text-center">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF4FB] px-3.5 py-1 text-xs font-bold text-[#2D82C4]">
@@ -54,27 +54,6 @@
             </div>
         @endif
 
-        {{-- Khối thông tin tài khoản mẫu để trải nghiệm --}}
-        <div class="rounded-xl border border-teal-200 bg-[#EAF4FB]/60 p-4 text-xs text-[#2D82C4]">
-            <div class="flex items-center justify-between mb-2">
-                <span class="font-bold flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-[#2D82C4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Tài khoản khách hàng demo
-                </span>
-                <button type="button"
-                        @click="email = 'customer@mindguide.vn'; password = 'MindGuide@2026'"
-                        class="text-[11px] font-bold text-[#2D82C4] hover:underline bg-white px-2 py-0.5 rounded border border-teal-300 shadow-xs cursor-pointer">
-                    ⚡ Điền nhanh
-                </button>
-            </div>
-            <div class="space-y-1 font-mono text-[11px] text-[#0F172A]">
-                <div>Email: <strong class="select-all text-[#2D82C4]">customer@mindguide.vn</strong></div>
-                <div>Mật khẩu: <strong class="select-all text-[#2D82C4]">MindGuide@2026</strong></div>
-            </div>
-        </div>
-
         <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
             @csrf
             @if(!empty($intended))
@@ -89,7 +68,7 @@
                 <input type="email"
                        id="email"
                        name="email"
-                       x-model="email"
+                       value="{{ old('email') }}"
                        required
                        autofocus
                        placeholder="email@example.com"
@@ -110,7 +89,6 @@
                     <input :type="showPassword ? 'text' : 'password'"
                            id="password"
                            name="password"
-                           x-model="password"
                            required
                            placeholder="••••••••"
                            class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] pl-4 pr-11 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">

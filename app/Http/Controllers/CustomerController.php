@@ -34,7 +34,7 @@ class CustomerController extends Controller
         $profile = $userModel->customerProfile;
         $user = (object) ['id' => $userModel->id, 'name' => $userModel->name, 'email' => $userModel->email, 'phone' => $userModel->phone, 'code' => $profile?->customer_code ?? 'KH-'.str_pad((string) $userModel->id, 5, '0', STR_PAD_LEFT), 'dob' => $profile?->date_of_birth?->format('d/m/Y'), 'created_at' => $userModel->created_at?->format('d/m/Y')];
         $appointmentQuery = Appointment::query()->where('customer_id', $userModel->id);
-        $upcomingAppointments = (clone $appointmentQuery)->holdingSlot()->where('start_at', '>=', now())->with(['service', 'specialistProfile.user'])->orderBy('start_at')->limit(3)->get()->map(fn (Appointment $appointment): object => $this->toViewAppointment($appointment));
+        $upcomingAppointments = (clone $appointmentQuery)->holdingSlot()->where('start_at', '>=', now())->with(['service', 'specialistProfile.user', 'consultationRoom'])->orderBy('start_at')->limit(3)->get()->map(fn (Appointment $appointment): object => $this->toViewAppointment($appointment));
         $notifications = $userModel->notifications()->latest()->limit(5)->get()->map(fn ($notification): object => (object) ['id' => $notification->id, 'title' => $notification->data['title'] ?? 'Thông báo', 'content' => $notification->data['message'] ?? '', 'time' => $notification->created_at?->diffForHumans(), 'is_read' => $notification->read_at !== null]);
         $stats = ['total_appointments' => (clone $appointmentQuery)->count(), 'completed_appointments' => (clone $appointmentQuery)->where('status', 'COMPLETED')->count(), 'pending_reviews' => (clone $appointmentQuery)->where('status', 'COMPLETED')->whereDoesntHave('review')->count()];
 
@@ -48,7 +48,7 @@ class CustomerController extends Controller
     {
         $tab = $request->query('tab', 'upcoming');
 
-        $query = Appointment::query()->where('customer_id', auth()->id())->with(['service', 'specialistProfile.user'])->orderByDesc('start_at');
+        $query = Appointment::query()->where('customer_id', auth()->id())->with(['service', 'specialistProfile.user', 'consultationRoom'])->orderByDesc('start_at');
 
         // Lọc theo tab
         if ($tab === 'upcoming') {
@@ -69,7 +69,7 @@ class CustomerController extends Controller
      */
     public function appointmentDetail(int|string $id): View
     {
-        $appointmentModel = Appointment::query()->where('customer_id', auth()->id())->with(['service', 'specialistProfile.user', 'statusHistory', 'refundRequest'])->findOrFail($id);
+        $appointmentModel = Appointment::query()->where('customer_id', auth()->id())->with(['service', 'specialistProfile.user', 'consultationRoom', 'statusHistory', 'refundRequest'])->findOrFail($id);
         $appointment = $this->toViewAppointment($appointmentModel);
         $timeline = $appointmentModel->statusHistory->map(fn ($history): object => (object) ['status' => $history->to_status, 'label' => AppointmentStatus::label($history->to_status), 'time' => $history->created_at?->format('H:i d/m/Y'), 'actor' => $history->actor_role, 'desc' => $history->reason]);
 
@@ -337,10 +337,12 @@ class CustomerController extends Controller
             'payment_status' => $appointment->payment_status,
             'payment_method' => $appointment->payment_method,
             'amount' => (int) $appointment->price,
-            'type' => $appointment->source === 'ONLINE' ? 'ONLINE' : 'OFFLINE',
+            'type' => $appointment->consultation_type ?? 'OFFLINE',
             'customer_note' => $appointment->customer_note,
-            'location' => 'Phòng khám Mind Guide',
-            'meeting_url' => null,
+            'location' => $appointment->consultation_type === 'ONLINE'
+                ? 'Tư vấn trực tuyến qua Google Meet'
+                : ($appointment->consultationRoom?->name ?? ($appointment->status === 'PENDING' ? 'Sẽ được xếp phòng khi xác nhận' : 'Phòng khám Mind Guide')),
+            'meeting_url' => $appointment->meeting_url,
             'can_reschedule' => $appointment->status === 'CONFIRMED' && $appointment->start_at->gte(now()->addHours(24)) && $appointment->reschedule_count < 2,
             'reschedule_count' => $appointment->reschedule_count,
             'refund_amount' => (int) ($appointment->refund_amount ?? 0),

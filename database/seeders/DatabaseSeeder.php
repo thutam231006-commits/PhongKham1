@@ -38,13 +38,16 @@ class DatabaseSeeder extends Seeder
             'customer@mindguide.vn' => ['name' => 'Nguyễn Minh Anh', 'role' => 'customer', 'phone' => '0909123456', 'password' => 'MindGuide@2026'],
             'khachhang@mindguide.vn' => ['name' => 'Nguyễn Văn An', 'role' => 'customer', 'phone' => '0909012345', 'password' => 'Customer@2026'],
             'test@example.com' => ['name' => 'Test Customer', 'role' => 'customer', 'phone' => '0909000000', 'password' => 'TestUser@2026'],
-            'specialist@mindguide.vn' => ['name' => 'TS.BS Nguyễn Văn An', 'role' => 'specialist', 'phone' => '0909234567', 'password' => 'Therapy@2026'],
-            'mai@mindguide.vn' => ['name' => 'ThS. Chuyên gia Tâm lý Vũ Thị Mai', 'role' => 'specialist', 'phone' => '0909678901', 'password' => 'Specialist@2026'],
-            'nam@mindguide.vn' => ['name' => 'BS. CKI Lê Hoàng Nam', 'role' => 'specialist', 'phone' => '0909789012', 'password' => 'Doctor@2026'],
-            'ha@mindguide.vn' => ['name' => 'TS. Nguyễn Thu Hà', 'role' => 'specialist', 'phone' => '0909890123', 'password' => 'Counselor@2026'],
-            'khoa@mindguide.vn' => ['name' => 'ThS. Trần Minh Khoa', 'role' => 'specialist', 'phone' => '0909901234', 'password' => 'Therapy@2026!'],
-            'hung@mindguide.vn' => ['name' => 'TS. Trần Văn Hưng', 'role' => 'specialist', 'phone' => '0909912345', 'password' => 'Expert@2026'],
+            'huong.tran@mindguide.vn' => ['name' => 'Trần Thị Hương', 'role' => 'specialist', 'phone' => '0909234567', 'password' => 'Specialist@2026'],
+            'cuong.nguyen@mindguide.vn' => ['name' => 'Nguyễn Mạnh Cường', 'role' => 'specialist', 'phone' => '0909678901', 'password' => 'Specialist@2026'],
+            'ha.vo@mindguide.vn' => ['name' => 'Võ Kim Hà', 'role' => 'specialist', 'phone' => '0909789012', 'password' => 'Specialist@2026'],
+            'hanh.pham@mindguide.vn' => ['name' => 'Phạm Thị Mỹ Hạnh', 'role' => 'specialist', 'phone' => '0909890123', 'password' => 'Specialist@2026'],
+            'long.pham@mindguide.vn' => ['name' => 'Phạm Hoàng Long', 'role' => 'specialist', 'phone' => '0909901234', 'password' => 'Specialist@2026'],
+            'nga.le@mindguide.vn' => ['name' => 'Lê Thị Nga', 'role' => 'specialist', 'phone' => '0909912345', 'password' => 'Specialist@2026'],
             'staff@mindguide.vn' => ['name' => 'Lê Thu Hương', 'role' => 'staff', 'phone' => '0909345678', 'password' => 'Reception@2026'],
+            'thuy.le@mindguide.vn' => ['name' => 'Lê Minh Thùy', 'role' => 'staff', 'phone' => '0909345679', 'password' => 'Reception@2026'],
+            'minh.nguyen@mindguide.vn' => ['name' => 'Nguyễn Hoàng Minh', 'role' => 'staff', 'phone' => '0909345680', 'password' => 'Reception@2026'],
+            'anh.tran@mindguide.vn' => ['name' => 'Trần Ngọc Anh', 'role' => 'staff', 'phone' => '0909345681', 'password' => 'Reception@2026'],
             'admin@mindguide.vn' => ['name' => 'Mind Guide Admin', 'role' => 'admin', 'phone' => '0909456789', 'password' => 'Admin@2026!'],
             'customer2@mindguide.vn' => ['name' => 'Trần Ngọc Linh', 'role' => 'customer', 'phone' => '0909567890', 'password' => 'Customer2@2026'],
         ];
@@ -150,11 +153,96 @@ class DatabaseSeeder extends Seeder
     private function seedSpecialists(array $users, array $services): array
     {
         $profiles = [
-            ['key' => 'nguyen_van_an', 'email' => 'specialist@mindguide.vn', 'name' => 'TS.BS Nguyễn Văn An', 'title' => 'Tiến sĩ Tâm lý lâm sàng', 'expertise' => 'Lo âu, trầm cảm, sang chấn tâm lý và CBT', 'credentials' => 'Tiến sĩ Tâm lý lâm sàng - Đại học Quốc gia; Chứng chỉ Trị liệu Nhận thức Hành vi CBT; Thành viên Hội Tâm lý học Việt Nam.', 'bio' => 'TS.BS Nguyễn Văn An theo đuổi phong cách tư vấn điềm tĩnh, khoa học và thân chủ trọng tâm. Anh có hơn 12 năm làm việc trong lĩnh vực tâm lý lâm sàng, đặc biệt với lo âu, trầm cảm và sang chấn. Tâm niệm của anh là mỗi thay đổi bền vững đều bắt đầu từ một cuộc trò chuyện an toàn và không phán xét.', 'years' => 12, 'rating' => 4.9, 'completed' => 1280, 'fee' => 800000, 'services' => ['individual_anxiety', 'individual_depression', 'cbt']],
-            ['key' => 'vu_thi_mai', 'email' => 'mai@mindguide.vn', 'name' => 'ThS. Chuyên gia Tâm lý Vũ Thị Mai', 'title' => 'Thạc sĩ Tâm lý học tham vấn', 'expertise' => 'Tâm lý phụ nữ, cân bằng cảm xúc và kiệt sức nghề nghiệp', 'credentials' => 'Thạc sĩ Tâm lý học tham vấn; Chứng chỉ Tham vấn Khủng hoảng; Đào tạo chuyên sâu về Mindfulness và trị liệu thân chủ trọng tâm.', 'bio' => 'ThS. Vũ Thị Mai tạo dựng không gian nhẹ nhàng, nơi khách hàng có thể chậm lại và gọi tên điều mình đang trải qua. Chị có hơn 10 năm kinh nghiệm đồng hành với người trưởng thành, phụ nữ sau biến cố và người đang kiệt sức. Chị tin rằng sự tử tế với chính mình là bước đầu tiên của quá trình hồi phục.', 'years' => 10, 'rating' => 5.0, 'completed' => 960, 'fee' => 700000, 'services' => ['individual_anxiety', 'individual_depression', 'teen']],
-            ['key' => 'le_hoang_nam', 'email' => 'nam@mindguide.vn', 'name' => 'BS. CKI Lê Hoàng Nam', 'title' => 'Bác sĩ Chuyên khoa I Tâm thần', 'expertise' => 'Đánh giá sức khỏe tinh thần, mất ngủ và rối loạn cảm xúc', 'credentials' => 'Bác sĩ Chuyên khoa I Tâm thần; Chứng chỉ Đánh giá lâm sàng sức khỏe tinh thần; 11 năm công tác tại bệnh viện chuyên khoa.', 'bio' => 'BS. CKI Lê Hoàng Nam kết hợp tư duy y khoa với cách giải thích rõ ràng, tôn trọng và dễ hiểu. Anh có thế mạnh trong đánh giá ban đầu, mất ngủ, rối loạn cảm xúc và định hướng phối hợp chăm sóc khi cần. Quan điểm làm việc của anh là trao cho khách hàng thông tin đủ rõ để chủ động lựa chọn bước tiếp theo.', 'years' => 11, 'rating' => 4.8, 'completed' => 1430, 'fee' => 900000, 'services' => ['individual_depression', 'cbt', 'corporate']],
-            ['key' => 'nguyen_thu_ha', 'email' => 'ha@mindguide.vn', 'name' => 'TS. Nguyễn Thu Hà', 'title' => 'Tiến sĩ Tâm lý Trẻ em & Gia đình', 'expertise' => 'Trẻ em, tuổi teen, nuôi dạy con và trị liệu hệ thống gia đình', 'credentials' => 'Tiến sĩ Tâm lý học phát triển; Chứng chỉ Trị liệu Hệ thống Gia đình; Chứng chỉ Can thiệp Tâm lý Trẻ em và Tuổi teen.', 'bio' => 'TS. Nguyễn Thu Hà làm việc gần gũi với trẻ em, phụ huynh và cả hệ thống gia đình xung quanh trẻ. Chị có hơn 9 năm kinh nghiệm trong tâm lý học đường, khó khăn hành vi và các giai đoạn chuyển tiếp của gia đình. Chị luôn bắt đầu bằng việc lắng nghe điều trẻ muốn nói theo cách riêng của mình.', 'years' => 9, 'rating' => 4.9, 'completed' => 740, 'fee' => 650000, 'services' => ['couple', 'family', 'teen', 'child']],
-            ['key' => 'tran_minh_khoa', 'email' => 'khoa@mindguide.vn', 'name' => 'ThS. Trần Minh Khoa', 'title' => 'Chuyên gia Tâm lý Cặp đôi & Hôn nhân', 'expertise' => 'Giao tiếp cặp đôi, xung đột hôn nhân và phục hồi niềm tin', 'credentials' => 'Thạc sĩ Tâm lý học gia đình; Chứng chỉ Trị liệu Cặp đôi Gottman; Chứng chỉ Trị liệu Hệ thống Gia đình.', 'bio' => 'ThS. Trần Minh Khoa tập trung giúp các cặp đôi chuyển từ tranh luận sang đối thoại có trách nhiệm. Anh có 8 năm thực hành với xung đột hôn nhân, khác biệt nuôi dạy con và phục hồi niềm tin. Tâm niệm của anh là mối quan hệ không cần hoàn hảo, nhưng cần đủ an toàn để hai người tiếp tục học cách hiểu nhau.', 'years' => 8, 'rating' => 4.9, 'completed' => 520, 'fee' => 950000, 'services' => ['couple', 'family']],
+            [
+                'key' => 'tran_thi_huong',
+                'email' => 'huong.tran@mindguide.vn',
+                'name' => 'Trần Thị Hương',
+                'title' => 'Chuyên gia Tâm lý - Trưởng ban Kết nối Yêu thương',
+                'expertise' => 'Tham vấn, trị liệu stress, trầm cảm, lo âu, hàn gắn quan hệ gia đình & nuôi dạy con',
+                'credentials' => 'Chứng chỉ Nhà thôi miên trị liệu (ABH); Nhà thực hành Timeline Therapy; Hoàn thành đào tạo ACT cho thanh thiếu niên (Viện Tâm lý Việt - Pháp).',
+                'bio' => 'Chuyên gia Trần Thị Hương hiện là Trưởng ban Kết nối Yêu thương tại Trung tâm Tâm lý NHC Việt Nam. Với phương châm "Bởi vì tôi ở đây nên bạn sẽ ổn thôi", chị luôn đồng hành tận tâm, tạo không gian an toàn để thân chủ giải tỏa cảm xúc và hàn gắn các mối quan hệ rạn nứt.',
+                'years' => 9,
+                'rating' => 4.9,
+                'completed' => 860,
+                'fee' => 750000,
+                'avatar' => '/images/specialists/tran-thi-huong.png',
+                'services' => ['individual_anxiety', 'individual_depression', 'couple', 'family'],
+            ],
+            [
+                'key' => 'nguyen_manh_cuong',
+                'email' => 'cuong.nguyen@mindguide.vn',
+                'name' => 'Nguyễn Mạnh Cường',
+                'title' => 'Chuyên gia Tâm lý - Trưởng Dự án Cai nghiện Thế giới Ảo',
+                'expertise' => 'Cai nghiện game & cá độ online, trầm cảm, rối loạn lo âu, căng thẳng thanh thiếu niên',
+                'credentials' => 'Chứng chỉ Nhà thôi miên trị liệu (ABH); Nhà thực hành Liệu pháp Dòng thời gian (TLTA); Master Practitioner NLP (ABNLP).',
+                'bio' => 'Chuyên gia Nguyễn Mạnh Cường phụ trách dự án chuyên sâu hỗ trợ người nghiện game trực tuyến, cá độ online và khủng hoảng thế giới số. Anh kết hợp liệu pháp tâm lý hiện đại giúp thân chủ tái thiết lập mục tiêu sống lành mạnh.',
+                'years' => 8,
+                'rating' => 4.9,
+                'completed' => 740,
+                'fee' => 800000,
+                'avatar' => '/images/specialists/nguyen-manh-cuong.png',
+                'services' => ['individual_anxiety', 'individual_depression', 'teen', 'child', 'corporate'],
+            ],
+            [
+                'key' => 'vo_kim_ha',
+                'email' => 'ha.vo@mindguide.vn',
+                'name' => 'Võ Kim Hà',
+                'title' => 'Chuyên gia Tâm lý Trị liệu',
+                'expertise' => 'Trầm cảm, rối loạn lo âu, khủng hoảng tâm lý hiện sinh, mâu thuẫn mối quan hệ',
+                'credentials' => 'Chứng nhận Tư vấn Trị liệu Chuyên nghiệp Quốc tế (ICTA); Chứng chỉ Bồi dưỡng Tâm lý học Lâm sàng (ĐH Sư phạm TP.HCM).',
+                'bio' => 'Với triết lý "Sự chân thành sẽ chạm trái tim", Chuyên gia Võ Kim Hà có bề dày trải nghiệm và sự thấu cảm sâu sắc, hỗ trợ khách hàng giải tỏa những nút thắt tâm lý sâu kín và tìm lại bình an nội tại.',
+                'years' => 12,
+                'rating' => 5.0,
+                'completed' => 1120,
+                'fee' => 850000,
+                'avatar' => '/images/specialists/vo-kim-ha.png',
+                'services' => ['individual_anxiety', 'individual_depression', 'cbt', 'couple', 'corporate'],
+            ],
+            [
+                'key' => 'pham_thi_my_hanh',
+                'email' => 'hanh.pham@mindguide.vn',
+                'name' => 'Phạm Thị Mỹ Hạnh',
+                'title' => 'Chuyên gia Tâm lý - Coach Chữa lành & Tái tạo Cảm xúc',
+                'expertise' => 'Quản trị cảm xúc, lo âu, chữa lành tổn thương tâm lý tuổi trẻ, phát triển cá nhân',
+                'credentials' => 'Chứng chỉ Nhà Huấn luyện Quốc tế Master Coach NLP (ABNLP); Đào tạo Chuyên sâu về Tâm lý Tham vấn & Chữa lành.',
+                'bio' => 'Theo đuổi phương châm "Định nghĩa lại trải nghiệm. Khai mở tâm thức. Tái thiết kế cuộc đời", Chuyên gia Phạm Thị Mỹ Hạnh mang đến nguồn năng lượng chuyển hóa tích cực, giúp người trẻ vượt qua bế tắc và tự tin làm chủ cuộc sống.',
+                'years' => 7,
+                'rating' => 4.9,
+                'completed' => 620,
+                'fee' => 700000,
+                'avatar' => '/images/specialists/pham-thi-my-hanh.png',
+                'services' => ['individual_anxiety', 'cbt', 'teen', 'corporate'],
+            ],
+            [
+                'key' => 'pham_hoang_long',
+                'email' => 'long.pham@mindguide.vn',
+                'name' => 'Phạm Hoàng Long',
+                'title' => 'Chuyên gia Tâm lý - Chuyên gia Tham vấn Song ngữ',
+                'expertise' => 'Trầm cảm, rối loạn lo âu, mất ngủ, khủng hoảng người trẻ, hòa hợp mối quan hệ (Việt - Anh)',
+                'credentials' => 'Học viên Thạc sĩ Tâm lý học; Chứng chỉ Nhà thôi miên trị liệu (ABH); Timeline Therapy (TLTA); NLP Practitioner (ABNLP); Giảng dạy Kỹ năng sống (ĐH KHXH&NV TP.HCM).',
+                'bio' => 'Chuyên gia Phạm Hoàng Long đồng hành cùng thân chủ tuổi từ 14-60, đặc biệt thanh niên đối diện với tự ti, mất động lực và sợ giao tiếp xã hội. Triết lý: "Chỉ cần một người để có mối quan hệ hòa hợp và thành công!". Hỗ trợ song ngữ Anh - Việt.',
+                'years' => 8,
+                'rating' => 4.9,
+                'completed' => 890,
+                'fee' => 750000,
+                'avatar' => '/images/specialists/pham-hoang-long.png',
+                'services' => ['individual_anxiety', 'individual_depression', 'cbt', 'couple', 'corporate', 'sleep'],
+            ],
+            [
+                'key' => 'le_thi_nga',
+                'email' => 'nga.le@mindguide.vn',
+                'name' => 'Lê Thị Nga',
+                'title' => 'Chuyên gia Tâm lý Trị liệu',
+                'expertise' => 'Trầm cảm, lo âu kéo dài, trị liệu dòng thời gian, hàn gắn tổn thương gia đình',
+                'credentials' => 'Chứng chỉ Nhà thôi miên trị liệu (ABH); Nhà thực hành Timeline Therapy (TLTA); Đào tạo chuyên gia trị liệu tâm lý phát triển con người.',
+                'bio' => 'Triết lý hành nghề: "Tình yêu thương, lòng biết ơn và sự hiểu biết đúng là nguồn sức mạnh vô hình, phá bỏ mọi giới hạn". Chuyên gia Lê Thị Nga đem lại không gian thấu hiểu sâu sắc, giúp thân chủ giải tỏa âu lo và chuyển hóa cuộc sống.',
+                'years' => 9,
+                'rating' => 4.9,
+                'completed' => 910,
+                'fee' => 750000,
+                'avatar' => '/images/specialists/le-thi-nga.png',
+                'services' => ['individual_anxiety', 'individual_depression', 'couple', 'family', 'corporate'],
+            ],
         ];
 
         $models = [];
@@ -163,7 +251,7 @@ class DatabaseSeeder extends Seeder
             $specialist = SpecialistProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'avatar_url' => $this->avatarUrl($index),
+                    'avatar_url' => $profile['avatar'],
                     'title' => $profile['title'],
                     'expertise' => $profile['expertise'],
                     'credentials' => $profile['credentials'],
@@ -207,14 +295,16 @@ class DatabaseSeeder extends Seeder
     {
         $staff = $users['staff@mindguide.vn'];
         $appointments = [
-            ['code' => 'MG-DEMO-PENDING', 'customer' => 'customer@mindguide.vn', 'specialist' => 'nguyen_van_an', 'service' => 'individual_anxiety', 'days' => 2, 'hour' => 9, 'status' => 'PENDING', 'payment_status' => 'UNPAID', 'payment_method' => 'BANK_QR', 'note' => 'Muốn trao đổi về tình trạng mất ngủ và lo âu gần đây.'],
-            ['code' => 'MG-DEMO-CONFIRMED', 'customer' => 'customer@mindguide.vn', 'specialist' => 'vu_thi_mai', 'service' => 'individual_depression', 'days' => 4, 'hour' => 14, 'status' => 'CONFIRMED', 'payment_status' => 'UNPAID', 'payment_method' => 'CASH', 'note' => 'Đây là buổi tư vấn đầu tiên của tôi.'],
-            ['code' => 'MG-DEMO-COMPLETED', 'customer' => 'customer2@mindguide.vn', 'specialist' => 'le_hoang_nam', 'service' => 'cbt', 'days' => -5, 'hour' => 10, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'CASH', 'note' => null],
-            ['code' => 'MG-DEMO-CANCELLED', 'customer' => 'customer2@mindguide.vn', 'specialist' => 'tran_minh_khoa', 'service' => 'couple', 'days' => -8, 'hour' => 15, 'status' => 'CANCELLED_BY_CUSTOMER', 'payment_status' => 'REFUNDED', 'payment_method' => 'BANK_QR', 'note' => 'Khách có việc đột xuất và xin hủy lịch.'],
-            ['code' => 'MG-DEMO-NOSHOW', 'customer' => 'customer@mindguide.vn', 'specialist' => 'nguyen_thu_ha', 'service' => 'teen', 'days' => -12, 'hour' => 18, 'status' => 'NO_SHOW', 'payment_status' => 'UNPAID', 'payment_method' => 'CASH', 'note' => null],
+            ['code' => 'MG-HIST-001', 'customer' => 'customer@mindguide.vn', 'specialist' => 'tran_thi_huong', 'service' => 'individual_anxiety', 'days' => -2, 'hour' => 9, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'BANK_QR', 'note' => 'Buổi tư vấn về tình trạng mất ngủ và lo âu.'],
+            ['code' => 'MG-HIST-002', 'customer' => 'customer@mindguide.vn', 'specialist' => 'cuong.nguyen', 'specialist_key' => 'nguyen_manh_cuong', 'service' => 'individual_depression', 'days' => -4, 'hour' => 14, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'CASH', 'note' => 'Đánh giá ban đầu.'],
+            ['code' => 'MG-HIST-003', 'customer' => 'customer2@mindguide.vn', 'specialist_key' => 'vo_kim_ha', 'service' => 'cbt', 'days' => -5, 'hour' => 10, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'CASH', 'note' => null],
+            ['code' => 'MG-HIST-004', 'customer' => 'customer2@mindguide.vn', 'specialist_key' => 'pham_thi_my_hanh', 'service' => 'couple', 'days' => -8, 'hour' => 15, 'status' => 'CANCELLED_BY_CUSTOMER', 'payment_status' => 'REFUNDED', 'payment_method' => 'BANK_QR', 'note' => 'Khách có việc đột xuất và xin hủy lịch.'],
+            ['code' => 'MG-HIST-005', 'customer' => 'customer@mindguide.vn', 'specialist_key' => 'pham_hoang_long', 'service' => 'teen', 'days' => -12, 'hour' => 18, 'status' => 'NO_SHOW', 'payment_status' => 'UNPAID', 'payment_method' => 'CASH', 'note' => null],
         ];
 
         foreach ($appointments as $data) {
+            $specKey = $data['specialist_key'] ?? ($data['specialist'] ?? 'tran_thi_huong');
+            $specialist = $specialists[$specKey];
             $service = $services[$data['service']];
             $start = CarbonImmutable::now()->addDays($data['days'])->setTime($data['hour'], 0);
             $end = $start->addMinutes($service->duration_minutes);
@@ -227,7 +317,7 @@ class DatabaseSeeder extends Seeder
                 ['appointment_code' => $data['code']],
                 [
                     'customer_id' => $users[$data['customer']]->id,
-                    'specialist_profile_id' => $specialists[$data['specialist']]->id,
+                    'specialist_profile_id' => $specialist->id,
                     'service_id' => $service->id,
                     'start_at' => $start,
                     'end_at' => $end,
@@ -240,7 +330,7 @@ class DatabaseSeeder extends Seeder
                     'source' => 'ONLINE',
                     'customer_note' => $data['note'],
                     'created_by' => $users[$data['customer']]->id,
-                    'slot_lock_key' => $isHolding ? $specialists[$data['specialist']]->id.'|'.$start->format('Y-m-d H:i:s') : null,
+                    'slot_lock_key' => $isHolding ? $specialist->id.'|'.$start->format('Y-m-d H:i:s') : null,
                     'needs_attention' => false,
                     'confirmed_at' => $isConfirmed ? $start->subDay() : null,
                     'completed_at' => $isCompleted ? $end : null,
@@ -279,8 +369,13 @@ class DatabaseSeeder extends Seeder
         $serviceModels = array_values($services);
         $startDate = CarbonImmutable::now()->subDays(60)->startOfDay();
 
-        for ($index = 1; $index <= 90; $index++) {
+        // Chỉ tạo lịch đã qua trong quá khứ (index 1..59) để báo cáo/thống kê hoạt động chính xác
+        // Không tạo lịch tương lai để lịch trống hoàn toàn sạch, cho phép 4 actor đặt lịch thực tế không bị cản trở
+        for ($index = 1; $index <= 58; $index++) {
             $start = $startDate->addDays($index)->setTime(9 + ($index % 5) * 2, 0);
+            if ($start->isFuture()) {
+                continue;
+            }
             $service = $serviceModels[$index % count($serviceModels)];
             $specialist = $specialistModels[$index % count($specialistModels)];
             $customer = $customers[$index % count($customers)];

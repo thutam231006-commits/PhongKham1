@@ -57,6 +57,12 @@
         </div>
     @endif
 
+    @if($appointment->status === 'PENDING')
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Nhân viên sẽ gọi điện cho bạn trong vòng 24 giờ để xác nhận lịch hẹn. Thông tin phòng hoặc link Google Meet sẽ xuất hiện sau khi lịch được xác nhận.
+        </div>
+    @endif
+
     {{-- Header tiêu đề & Trạng thái --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
@@ -246,27 +252,8 @@
 
         </div>
 
-        {{-- CỘT PHẢI (4/12): MÃ QR CHECK-IN & HƯỚNG DẪN --}}
+        {{-- CỘT PHẢI (4/12): HƯỚNG DẪN --}}
         <div class="lg:col-span-4 sticky top-20 space-y-6">
-
-            {{-- Mã QR Check-in --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs text-center space-y-4">
-                <span class="inline-block rounded-full bg-[#EAF4FB] px-3 py-0.5 text-xs font-bold text-[#2D82C4]">
-                    Mã Check-in buổi hẹn
-                </span>
-
-                <div class="mx-auto w-44 h-44 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center p-3 relative shadow-2xs">
-                    {{-- QR SVG Demo --}}
-                    <svg class="w-36 h-36 text-[#2D82C4]" viewBox="0 0 100 100" fill="currentColor">
-                        <path d="M10 10h30v30h-30z M15 15v20h20v-20z M20 20h10v10h-10z M60 10h30v30h-30z M65 15v20h20v-20z M70 20h10v10h-10z M10 60h30v30h-30z M15 65v20h20v-20z M20 70h10v10h-10z M45 10h10v20h-10z M10 45h20v10h-20z M45 45h10v10h-10z M60 45h20v10h-20z M45 60h10v30h-10z M60 60h10v10h-10z M75 60h15v15h-15z M60 75h10v15h-10z M75 80h15v10h-15z"/>
-                    </svg>
-                </div>
-
-                <div>
-                    <span class="font-mono text-sm font-black text-[#0F172A] block tracking-wider">{{ $appointment->code }}</span>
-                    <p class="text-xs text-[#4A5568] mt-1">Đưa mã QR cho lễ tân khi bạn đến phòng khám để được tiếp đón nhanh chóng.</p>
-                </div>
-            </div>
 
             {{-- Hướng dẫn trước buổi hẹn --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-5 text-xs text-[#334155] space-y-3 shadow-xs">
@@ -277,7 +264,7 @@
                     Lưu ý trước buổi tư vấn
                 </h4>
                 <ul class="space-y-2 leading-relaxed text-[#4A5568]">
-                    <li>• Vui lòng có mặt trước giờ hẹn ít nhất 10 phút.</li>
+                    <li>• Khi đến quầy, nhân viên sẽ xác nhận bằng họ tên, email và số điện thoại.</li>
                     <li>• Chuẩn bị không gian yên tĩnh và tai nghe nếu tham vấn trực tuyến.</li>
                     <li>• Hỗ trợ đổi lịch trước 24 giờ mà không phát sinh thêm chi phí.</li>
                 </ul>

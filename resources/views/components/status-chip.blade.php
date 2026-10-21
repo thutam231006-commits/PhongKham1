@@ -35,7 +35,7 @@
     */
     $appointmentMap = [
         'PENDING' => [
-            'label'  => 'Chờ thanh toán',
+            'label'  => 'Chờ phòng khám xác nhận',
             'text'   => '#B45309',
             'bg'     => '#FEF3C7',
             'border' => '#FDE68A',

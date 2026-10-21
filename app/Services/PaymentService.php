@@ -38,12 +38,9 @@ class PaymentService
                     $status = (int) $appointment->price === (int) $data['amount'] ? 'MATCHED' : 'AMOUNT_MISMATCH';
                 }
                 if ($status === 'MATCHED' && in_array($appointment->status, ['PENDING', 'CONFIRMED'], true)) {
-                    $from = $appointment->status;
-                    $appointment->update(['payment_status' => 'PAID', 'paid_at' => now(), 'status' => 'CONFIRMED', 'confirmed_at' => $appointment->confirmed_at ?? now()]);
-                    if ($from !== 'CONFIRMED') {
-                        $appointment->statusHistory()->create(['from_status' => $from, 'to_status' => 'CONFIRMED', 'action' => 'payment_confirmed', 'actor_role' => 'SYSTEM']);
-                    }
-                    $this->notifications->send($appointment->customer, 'Thanh toán thành công', 'Lịch '.$appointment->appointment_code.' đã được xác nhận.', 'payment.paid', route('customer.appointments.detail', $appointment), $appointment);
+                    $appointment->update(['payment_status' => 'PAID', 'paid_at' => now()]);
+                    $this->notifications->send($appointment->customer, 'Đã nhận thanh toán', 'Phòng khám đã nhận thanh toán cho lịch '.$appointment->appointment_code.'. Nhân viên sẽ gọi xác nhận trong vòng 24 giờ.', 'payment.paid', route('customer.appointments.detail', $appointment), $appointment);
+                    $this->notifications->sendMany(User::query()->whereIn('role', ['staff', 'admin'])->where('status', 'ACTIVE')->get(), 'Đã nhận thanh toán, chờ xác nhận', 'Lịch '.$appointment->appointment_code.' đã thanh toán và vẫn đang chờ nhân viên xác nhận.', 'appointment.attention', route('staff.appointments'), $appointment);
                 }
             }
 

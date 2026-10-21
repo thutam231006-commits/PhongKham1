@@ -202,9 +202,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
         Route::get('/checkin', [StaffController::class, 'checkin'])->name('checkin');
         Route::post('/checkin/{id}', [StaffController::class, 'markCheckin'])->name('checkin.store');
-        Route::get('/appointments', [StaffController::class, 'appointments'])->name('appointments');
+        Route::get('/appointments', [StaffController::class, 'appointmentList'])->name('appointments');
         Route::get('/appointments/pending', [StaffController::class, 'appointments'])->name('appointments.pending');
         Route::post('/appointments/{appointment}/confirm', [StaffController::class, 'confirmAppointment'])->name('appointments.confirm');
+        Route::post('/appointments/{appointment}/reassign', [StaffController::class, 'reassignAppointment'])->name('appointments.reassign');
         Route::post('/appointments/{appointment}/cancel', [StaffController::class, 'cancelAppointment'])->name('appointments.cancel');
         Route::post('/reschedule-requests/{rescheduleRequest}', [StaffController::class, 'resolveReschedule'])->name('reschedule-requests.resolve');
         Route::get('/customers', [StaffController::class, 'customers'])->name('customers');

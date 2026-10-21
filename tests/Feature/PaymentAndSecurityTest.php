@@ -31,7 +31,7 @@ class PaymentAndSecurityTest extends TestCase
         $this->withHeader('Authorization', 'Apikey test-secret')->postJson(route('webhooks.sepay'), $payload)->assertOk();
 
         $this->assertDatabaseCount('payment_transactions', 1);
-        $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'CONFIRMED', 'payment_status' => 'PAID']);
+        $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'PENDING', 'payment_status' => 'PAID']);
     }
 
     public function test_invalid_webhook_secret_is_rejected(): void

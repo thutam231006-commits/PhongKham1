@@ -116,7 +116,7 @@
             {{-- Mật khẩu --}}
             <div>
                 <label for="password" class="block text-xs font-bold text-[#0F172A] mb-1">
-                    Mật khẩu <span class="text-red-500">*</span> (tối thiểu 8 ký tự)
+                    Mật khẩu <span class="text-red-500">*</span> (tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số & ký tự đặc biệt)
                 </label>
                 <div class="relative">
                     <input :type="showPassword ? 'text' : 'password'"
@@ -124,7 +124,7 @@
                            name="password"
                            required
                            minlength="8"
-                           placeholder="••••••••"
+                           placeholder="Ví dụ: Pass@1234"
                            class="w-full rounded-xl border border-gray-300 bg-[#F5FAFE] pl-4 pr-11 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2D82C4]/20 transition">
                     <button type="button"
                             @click="showPassword = !showPassword"
@@ -138,6 +138,7 @@
                         </svg>
                     </button>
                 </div>
+                <p class="mt-1 text-[11px] text-gray-500">Mật khẩu cần tối thiểu 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt.</p>
             </div>
 
             {{-- Xác nhận mật khẩu --}}

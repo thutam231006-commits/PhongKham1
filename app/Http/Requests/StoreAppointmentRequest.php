@@ -30,6 +30,7 @@ class StoreAppointmentRequest extends FormRequest
             'time' => ['required', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9](\s*-\s*([01][0-9]|2[0-3]):[0-5][0-9])?$/'],
             'customer_note' => ['nullable', 'string', 'max:500'],
             'payment_method' => ['required', Rule::in(['CASH', 'BANK_QR'])],
+            'consultation_type' => ['nullable', Rule::in(['ONLINE', 'OFFLINE'])],
             'idempotency_key' => ['nullable', 'string', 'max:80'],
         ];
     }

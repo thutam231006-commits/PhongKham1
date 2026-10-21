@@ -8,7 +8,7 @@ final class AppointmentStatus
     public static function labels(): array
     {
         return [
-            'PENDING' => 'Chờ thanh toán',
+            'PENDING' => 'Chờ phòng khám xác nhận',
             'CONFIRMED' => 'Đã xác nhận',
             'RESCHEDULE_REQUESTED' => 'Chờ duyệt đổi lịch',
             'RESCHEDULED' => 'Đã đổi lịch',

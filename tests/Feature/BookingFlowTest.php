@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Appointment;
+use App\Models\ConsultationRoom;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\User;
@@ -35,11 +36,11 @@ class BookingFlowTest extends TestCase
             'customer_id' => $customer->id,
             'service_id' => $service->id,
             'specialist_profile_id' => $specialist->id,
-            'status' => 'CONFIRMED',
+            'status' => 'PENDING',
             'payment_method' => 'CASH',
         ]);
         $this->assertDatabaseHas('appointment_status_histories', [
-            'to_status' => 'CONFIRMED',
+            'to_status' => 'PENDING',
             'action' => 'create',
         ]);
     }
@@ -85,6 +86,124 @@ class BookingFlowTest extends TestCase
         $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id]])->get(route('booking.select-slot', ['date' => $date->toDateString()]))->assertOk()->assertSee('10:20');
         $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id]])->post(route('booking.step.slot'), ['date' => $date->toDateString(), 'time' => '10:20'])->assertRedirect(route('booking.note'));
         $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id, 'date' => $date->toDateString(), 'time' => '10:20', 'start_at' => $date->format('Y-m-d').' 10:20:00']])->post(route('booking.step.note'), ['customer_note' => 'Ghi chú bước tư vấn.'])->assertRedirect(route('booking.confirm'));
+    }
+
+    public function test_customer_can_confirm_web_booking_with_a_database_safe_idempotency_key(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+
+        $response = $this->actingAs($customer)
+            ->withSession(['booking' => [
+                'service_id' => $service->id,
+                'specialist_id' => $specialist->id,
+                'date' => $date->toDateString(),
+                'time' => '10:00',
+                'start_at' => $date->format('Y-m-d H:i:s'),
+            ]])
+            ->post(route('booking.confirm.store'), ['payment_method' => 'CASH']);
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+
+        $response->assertRedirect(route('customer.appointments.detail', $appointment));
+        $this->assertNotNull($appointment->idempotency_key);
+        $this->assertLessThanOrEqual(80, strlen($appointment->idempotency_key));
+    }
+
+    public function test_staff_confirmation_assigns_a_room_and_notifies_the_specialist(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+
+        $this->actingAs($customer)
+            ->withSession(['booking' => [
+                'service_id' => $service->id,
+                'specialist_id' => $specialist->id,
+                'date' => $date->toDateString(),
+                'time' => '10:00',
+                'start_at' => $date->format('Y-m-d H:i:s'),
+            ]])
+            ->post(route('booking.confirm.store'), ['payment_method' => 'CASH', 'consultation_type' => 'OFFLINE'])
+            ->assertRedirect();
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+
+        $this->actingAs($staff)
+            ->post(route('staff.appointments.confirm', $appointment))
+            ->assertSessionHas('success');
+
+        $appointment->refresh();
+        $this->assertSame('CONFIRMED', $appointment->status);
+        $this->assertNotNull($appointment->consultation_room_id);
+        $this->assertInstanceOf(ConsultationRoom::class, $appointment->consultationRoom);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $specialist->user_id]);
+    }
+
+    public function test_staff_confirmation_attaches_the_configured_google_meet_link(): void
+    {
+        config(['services.google_meet.url' => 'https://meet.google.com/test-room']);
+        $customer = User::factory()->create(['role' => 'customer']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+
+        $this->actingAs($customer)
+            ->withSession(['booking' => [
+                'service_id' => $service->id,
+                'specialist_id' => $specialist->id,
+                'date' => $date->toDateString(),
+                'time' => '10:00',
+                'start_at' => $date->format('Y-m-d H:i:s'),
+            ]])
+            ->post(route('booking.confirm.store'), ['payment_method' => 'CASH', 'consultation_type' => 'ONLINE'])
+            ->assertRedirect();
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+        $this->actingAs($staff)->post(route('staff.appointments.confirm', $appointment));
+
+        $this->assertDatabaseHas('appointments', [
+            'id' => $appointment->id,
+            'consultation_type' => 'ONLINE',
+            'meeting_url' => 'https://meet.google.com/test-room',
+            'consultation_room_id' => null,
+        ]);
+    }
+
+    public function test_staff_can_reassign_a_pending_appointment_to_an_available_specialist(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        [$service, $currentSpecialist] = $this->bookingSetup();
+        $replacement = SpecialistProfile::factory()->create();
+        $replacement->services()->attach($service);
+        $start = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+        WorkingSchedule::factory()->create([
+            'specialist_profile_id' => $replacement->id,
+            'day_of_week' => $start->isoWeekday(),
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+        ]);
+        $appointment = Appointment::factory()->create([
+            'customer_id' => $customer->id,
+            'created_by' => $customer->id,
+            'specialist_profile_id' => $currentSpecialist->id,
+            'service_id' => $service->id,
+            'start_at' => $start,
+            'end_at' => $start->addHour(),
+            'status' => 'PENDING',
+            'consultation_type' => 'OFFLINE',
+            'slot_lock_key' => $currentSpecialist->id.'|'.$start->format('Y-m-d H:i:s'),
+        ]);
+
+        $this->actingAs($staff)
+            ->post(route('staff.appointments.reassign', $appointment), ['specialist_id' => $replacement->id])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'specialist_profile_id' => $replacement->id, 'status' => 'PENDING']);
+        $this->assertDatabaseHas('appointment_status_histories', ['appointment_id' => $appointment->id, 'action' => 'reassign_specialist']);
     }
 
     public function test_specialists_api_filters_by_selected_service(): void
