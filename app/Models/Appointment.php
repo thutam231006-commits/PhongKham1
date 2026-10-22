@@ -20,7 +20,7 @@ class Appointment extends Model
         'rescheduled_from_id', 'reschedule_count',
         'start_at', 'end_at', 'duration_minutes', 'buffer_minutes', 'price',
         'status', 'payment_status', 'paid_at', 'refunded_at', 'refund_amount', 'refund_status', 'payment_method', 'payment_expires_at', 'reminded_at', 'idempotency_key', 'source', 'customer_note',
-        'created_by', 'slot_lock_key', 'needs_attention', 'confirmed_at', 'started_at', 'completed_at',
+        'created_by', 'slot_lock_key', 'needs_attention', 'attention_reason', 'attention_flagged_at', 'confirmed_at', 'started_at', 'completed_at',
         'cancelled_at', 'cancel_reason',
         'checked_in_at', 'checked_in_by', 'collected_at', 'collected_by', 'payment_reference',
         'consultation_type', 'consultation_room_id', 'meeting_url',
@@ -30,7 +30,7 @@ class Appointment extends Model
     {
         return [
             'start_at' => 'datetime', 'end_at' => 'datetime', 'price' => 'decimal:0',
-            'customer_note' => 'encrypted', 'needs_attention' => 'boolean',
+            'customer_note' => 'encrypted', 'needs_attention' => 'boolean', 'attention_flagged_at' => 'datetime',
             'confirmed_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime', 'cancelled_at' => 'datetime',
             'checked_in_at' => 'datetime', 'collected_at' => 'datetime',
             'paid_at' => 'datetime', 'refunded_at' => 'datetime', 'refund_amount' => 'decimal:0',
@@ -92,6 +92,11 @@ class Appointment extends Model
     public function rescheduledFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'rescheduled_from_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function scopeHoldingSlot(Builder $query): Builder

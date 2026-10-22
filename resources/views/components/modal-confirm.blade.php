@@ -65,6 +65,7 @@
     'confirmClass' => '',
     'requireReason'=> false,
     'reasonLabel'  => 'Lý do',
+    'reasonName'   => 'reason',
     'reasonMaxLen' => 500,
     'action'       => '#',
     'method'       => 'POST',
@@ -208,7 +209,7 @@
                         </label>
                         <textarea
                             id="{{ $reasonId }}"
-                            name="reason"
+                            name="{{ $reasonName }}"
                             x-ref="reasonInput"
                             x-model="reason"
                             rows="3"
@@ -237,7 +238,7 @@
                         </label>
                         <textarea
                             id="{{ $reasonId }}"
-                            name="reason"
+                            name="{{ $reasonName }}"
                             x-ref="reasonInput"
                             x-model="reason"
                             rows="2"

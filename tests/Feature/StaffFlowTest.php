@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\GenericDatabaseNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class StaffFlowTest extends TestCase
@@ -68,6 +69,48 @@ class StaffFlowTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $staff->id,
         ]);
+    }
+
+    public function test_staff_can_open_customer_profile_with_booking_history(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $customer = User::factory()->create(['role' => 'customer', 'email' => 'profile@example.test']);
+        $customer->customerProfile()->create(['customer_code' => 'KH-00077']);
+        $appointment = $this->makeAppointment(['customer_id' => $customer->id]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.customers'))
+            ->assertSee('Xem hồ sơ khách hàng');
+
+        $this->actingAs($staff)
+            ->get(route('staff.customers.profile', $customer))
+            ->assertOk()
+            ->assertSee('KH-00077')
+            ->assertSee($appointment->appointment_code)
+            ->assertSee($appointment->service->name)
+            ->assertSee('Lịch sử gói và lịch đã đặt')
+            ->assertDontSee('Ghi chú tư vấn');
+    }
+
+    public function test_staff_created_customer_can_activate_account_from_email_token(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $this->actingAs($staff)->post(route('staff.customers.store'), [
+            'name' => 'Khách Kích Hoạt',
+            'email' => 'activation@example.test',
+            'phone' => '0901234567',
+            'date_of_birth' => '1995-01-01',
+        ])->assertSessionHas('success');
+
+        $customer = User::query()->where('email', 'activation@example.test')->firstOrFail();
+        $this->assertSame('PENDING_ACTIVATION', $customer->status);
+        $token = 'activation-token-for-test';
+        DB::table('account_activation_tokens')->insert(['user_id' => $customer->id, 'token_hash' => hash('sha256', $token), 'expires_at' => now()->addHour(), 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->post(route('account.activation.store'), ['token' => $token, 'password' => 'Customer@123', 'password_confirmation' => 'Customer@123'])->assertRedirect(route('login'));
+        $this->assertDatabaseHas('users', ['email' => 'activation@example.test', 'status' => 'ACTIVE']);
+        $this->assertNotNull($customer->refresh()->email_verified_at);
+        $this->assertNotNull(DB::table('account_activation_tokens')->where('user_id', $customer->id)->value('used_at'));
     }
 
     public function test_staff_can_check_in_a_confirmed_appointment(): void

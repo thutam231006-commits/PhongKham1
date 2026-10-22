@@ -1,8 +1,9 @@
 <?php
 
 return [
-    'google_meet' => [
-        'url' => env('GOOGLE_MEET_URL', 'https://meet.google.com/new'),
+    'jitsi' => [
+        'base_url' => env('JITSI_BASE_URL', 'https://meet.jit.si'),
+        'room_prefix' => env('JITSI_ROOM_PREFIX', 'MindGuide'),
     ],
 
     'sepay' => [

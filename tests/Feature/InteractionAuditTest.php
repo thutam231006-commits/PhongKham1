@@ -178,6 +178,61 @@ class InteractionAuditTest extends TestCase
         $this->assertDatabaseHas('appointments', ['customer_id' => $customer->id, 'status' => 'CONFIRMED', 'source' => 'ONSITE']);
     }
 
+    public function test_staff_onsite_booking_can_create_an_online_appointment_with_its_own_meeting_room(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $customer = User::factory()->create(['role' => 'customer']);
+        [, $profile] = $this->specialist();
+        $service = Service::factory()->create();
+        $profile->services()->attach($service);
+        $date = now()->addDays(4);
+        WorkingSchedule::factory()->create(['specialist_profile_id' => $profile->id, 'day_of_week' => $date->isoWeekday(), 'start_time' => '08:00', 'end_time' => '17:00']);
+
+        $this->actingAs($staff)->post(route('staff.appointments.store'), [
+            'customer_id' => $customer->id,
+            'service_id' => $service->id,
+            'specialist_id' => $profile->id,
+            'date' => $date->toDateString(),
+            'time' => '10:00',
+            'payment_method' => 'CASH',
+            'consultation_type' => 'ONLINE',
+        ])->assertRedirect(route('staff.appointments'));
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+
+        $this->assertSame('ONLINE', $appointment->consultation_type);
+        $this->assertNull($appointment->consultation_room_id);
+        $this->assertNotNull($appointment->meeting_url);
+        $this->assertStringContainsString(strtolower($appointment->appointment_code), $appointment->meeting_url);
+    }
+
+    public function test_staff_onsite_offline_booking_is_assigned_a_consultation_room(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $customer = User::factory()->create(['role' => 'customer']);
+        [, $profile] = $this->specialist();
+        $service = Service::factory()->create();
+        $profile->services()->attach($service);
+        $date = now()->addDays(4);
+        WorkingSchedule::factory()->create(['specialist_profile_id' => $profile->id, 'day_of_week' => $date->isoWeekday(), 'start_time' => '08:00', 'end_time' => '17:00']);
+
+        $this->actingAs($staff)->post(route('staff.appointments.store'), [
+            'customer_id' => $customer->id,
+            'service_id' => $service->id,
+            'specialist_id' => $profile->id,
+            'date' => $date->toDateString(),
+            'time' => '10:00',
+            'payment_method' => 'CASH',
+            'consultation_type' => 'OFFLINE',
+        ])->assertRedirect(route('staff.appointments'));
+
+        $appointment = Appointment::query()->where('customer_id', $customer->id)->sole();
+
+        $this->assertSame('OFFLINE', $appointment->consultation_type);
+        $this->assertNotNull($appointment->consultation_room_id);
+        $this->assertNull($appointment->meeting_url);
+    }
+
     public function test_staff_can_reject_reschedule_and_confirm_refund(): void
     {
         $staff = User::factory()->create(['role' => 'staff']);

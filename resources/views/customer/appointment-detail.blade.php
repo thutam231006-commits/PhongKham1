@@ -59,7 +59,7 @@
 
     @if($appointment->status === 'PENDING')
         <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Nhân viên sẽ gọi điện cho bạn trong vòng 24 giờ để xác nhận lịch hẹn. Thông tin phòng hoặc link Google Meet sẽ xuất hiện sau khi lịch được xác nhận.
+            Nhân viên sẽ gọi điện cho bạn trong vòng 24 giờ để xác nhận lịch hẹn. Thông tin phòng hoặc link phòng họp trực tuyến sẽ xuất hiện sau khi lịch được xác nhận.
         </div>
     @endif
 

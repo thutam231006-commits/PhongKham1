@@ -155,6 +155,7 @@
                             <x-nav-link href="{{ route('staff.dashboard') }}">Tổng quan</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments') }}">Lịch hẹn</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments.pending') }}">Điều phối lịch</x-nav-link>
+                            <x-nav-link href="{{ route('staff.appointments.attention') }}">Lịch cần xử lý</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments.book') }}">Đặt lịch hộ</x-nav-link>
                             <x-nav-link href="{{ route('staff.customers') }}">Khách hàng</x-nav-link>
                             <x-nav-link href="{{ route('staff.payments') }}">Thanh toán & hoàn tiền</x-nav-link>
@@ -334,6 +335,7 @@
                         <x-mobile-nav-link href="{{ route('staff.dashboard') }}">Tổng quan</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments') }}">Lịch hẹn</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments.pending') }}">Điều phối lịch</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('staff.appointments.attention') }}">Lịch cần xử lý</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments.book') }}">Đặt lịch hộ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.customers') }}">Khách hàng</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.payments') }}">Thanh toán & hoàn tiền</x-mobile-nav-link>

@@ -18,6 +18,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AdminAnalyticsService;
 use App\Services\AppointmentWorkflowService;
+use App\Services\AttentionService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -128,7 +129,7 @@ class AdminController extends Controller
         return back()->with('success', 'Đã cập nhật hồ sơ chuyên viên.');
     }
 
-    public function toggleSpecialist(SpecialistProfile $specialistProfile): RedirectResponse
+    public function toggleSpecialist(SpecialistProfile $specialistProfile, AttentionService $attention): RedirectResponse
     {
         $newStatus = $specialistProfile->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         if ($newStatus === 'ACTIVE' && ($specialistProfile->services()->count() === 0 || $specialistProfile->workingSchedules()->where('is_active', true)->count() === 0)) {
@@ -137,7 +138,10 @@ class AdminController extends Controller
         $old = ['status' => $specialistProfile->status];
         $specialistProfile->update(['status' => $newStatus]);
         if ($newStatus === 'INACTIVE') {
-            $specialistProfile->appointments()->holdingSlot()->where('start_at', '>', now())->update(['needs_attention' => true]);
+            $attention->flag(
+                $specialistProfile->appointments()->holdingSlot()->where('start_at', '>', now()),
+                AttentionService::REASON_SPECIALIST_INACTIVE
+            );
         }
         $this->audit('specialist.status_changed', 'specialist_profiles', $specialistProfile->id, $old, ['status' => $newStatus]);
 
@@ -229,11 +233,14 @@ class AdminController extends Controller
         return view('admin.schedule', compact('exceptions', 'specialists'));
     }
 
-    public function storeScheduleException(Request $request): RedirectResponse
+    public function storeScheduleException(Request $request, AttentionService $attention): RedirectResponse
     {
         $data = $request->validate(['specialist_profile_id' => ['nullable', 'integer', 'exists:specialist_profiles,id'], 'type' => ['required', Rule::in(['HOLIDAY', 'DAY_OFF', 'TIME_BLOCK'])], 'start_date' => ['required', 'date'], 'end_date' => ['required', 'date', 'after_or_equal:start_date'], 'start_time' => ['nullable', 'date_format:H:i'], 'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'], 'reason' => ['required', 'string', 'max:255'], 'is_emergency' => ['nullable', 'boolean']]);
         $exception = ScheduleException::query()->create([...$data, 'created_by' => auth()->id(), 'is_emergency' => (bool) ($data['is_emergency'] ?? false)]);
-        Appointment::query()->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->whereBetween('start_at', [$exception->start_date->startOfDay(), $exception->end_date->endOfDay()])->when($exception->specialist_profile_id, fn ($query) => $query->where('specialist_profile_id', $exception->specialist_profile_id))->update(['needs_attention' => true]);
+        $attention->flag(
+            Appointment::query()->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->whereBetween('start_at', [$exception->start_date->startOfDay(), $exception->end_date->endOfDay()])->when($exception->specialist_profile_id, fn ($query) => $query->where('specialist_profile_id', $exception->specialist_profile_id)),
+            AttentionService::REASON_SCHEDULE_EXCEPTION
+        );
         $this->audit('schedule_exception.created', 'schedule_exceptions', $exception->id, null, $exception->only(['type', 'start_date', 'end_date']));
 
         return back()->with('success', 'Đã lưu ngày nghỉ/ngày lễ và đánh dấu các lịch bị ảnh hưởng.');

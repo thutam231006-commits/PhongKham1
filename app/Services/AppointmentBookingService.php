@@ -21,6 +21,7 @@ class AppointmentBookingService
     public function __construct(
         private readonly AuditService $audit,
         private readonly NotificationService $notifications,
+        private readonly ConsultationSetupService $consultationSetup,
     ) {}
 
     /**
@@ -115,6 +116,18 @@ class AppointmentBookingService
                 'actor_id' => $actor->id,
                 'actor_role' => strtoupper((string) $actor->role),
             ]);
+
+            if ($isOperatorBooking) {
+                $details = $this->consultationSetup->detailsForOnsiteBooking($appointment);
+                $appointment->update($details);
+                if ($details['needs_attention']) {
+                    $appointment->update([
+                        'needs_attention' => true,
+                        'attention_reason' => AttentionService::REASON_NO_ROOM,
+                        'attention_flagged_at' => now(),
+                    ]);
+                }
+            }
 
             $this->audit->record('appointment.created', $appointment, new: ['status' => $status, 'payment_method' => $data['payment_method']], actor: $actor);
             if ($isOperatorBooking) {

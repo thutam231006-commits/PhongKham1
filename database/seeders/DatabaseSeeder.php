@@ -14,7 +14,6 @@ use App\Models\SpecialistProfile;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\WorkingSchedule;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,8 +25,6 @@ class DatabaseSeeder extends Seeder
         $services = $this->seedServices();
         $specialists = $this->seedSpecialists($users, $services);
 
-        $this->seedAppointments($users, $specialists, $services);
-        $this->seedAnalyticsAppointments($users, $specialists, $services);
         $this->seedOperationalData($users);
     }
 
@@ -290,66 +287,6 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    /** @param array<string, User> $users @param array<string, SpecialistProfile> $specialists @param array<string, Service> $services */
-    private function seedAppointments(array $users, array $specialists, array $services): void
-    {
-        $staff = $users['staff@mindguide.vn'];
-        $appointments = [
-            ['code' => 'MG-HIST-001', 'customer' => 'customer@mindguide.vn', 'specialist' => 'tran_thi_huong', 'service' => 'individual_anxiety', 'days' => -2, 'hour' => 9, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'BANK_QR', 'note' => 'Buổi tư vấn về tình trạng mất ngủ và lo âu.'],
-            ['code' => 'MG-HIST-002', 'customer' => 'customer@mindguide.vn', 'specialist' => 'cuong.nguyen', 'specialist_key' => 'nguyen_manh_cuong', 'service' => 'individual_depression', 'days' => -4, 'hour' => 14, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'CASH', 'note' => 'Đánh giá ban đầu.'],
-            ['code' => 'MG-HIST-003', 'customer' => 'customer2@mindguide.vn', 'specialist_key' => 'vo_kim_ha', 'service' => 'cbt', 'days' => -5, 'hour' => 10, 'status' => 'COMPLETED', 'payment_status' => 'PAID', 'payment_method' => 'CASH', 'note' => null],
-            ['code' => 'MG-HIST-004', 'customer' => 'customer2@mindguide.vn', 'specialist_key' => 'pham_thi_my_hanh', 'service' => 'couple', 'days' => -8, 'hour' => 15, 'status' => 'CANCELLED_BY_CUSTOMER', 'payment_status' => 'REFUNDED', 'payment_method' => 'BANK_QR', 'note' => 'Khách có việc đột xuất và xin hủy lịch.'],
-            ['code' => 'MG-HIST-005', 'customer' => 'customer@mindguide.vn', 'specialist_key' => 'pham_hoang_long', 'service' => 'teen', 'days' => -12, 'hour' => 18, 'status' => 'NO_SHOW', 'payment_status' => 'UNPAID', 'payment_method' => 'CASH', 'note' => null],
-        ];
-
-        foreach ($appointments as $data) {
-            $specKey = $data['specialist_key'] ?? ($data['specialist'] ?? 'tran_thi_huong');
-            $specialist = $specialists[$specKey];
-            $service = $services[$data['service']];
-            $start = CarbonImmutable::now()->addDays($data['days'])->setTime($data['hour'], 0);
-            $end = $start->addMinutes($service->duration_minutes);
-            $isHolding = in_array($data['status'], ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS'], true);
-            $isConfirmed = in_array($data['status'], ['CONFIRMED', 'COMPLETED', 'NO_SHOW'], true);
-            $isCompleted = in_array($data['status'], ['COMPLETED', 'NO_SHOW'], true);
-            $isCancelled = str_starts_with($data['status'], 'CANCELLED_');
-
-            $appointment = Appointment::updateOrCreate(
-                ['appointment_code' => $data['code']],
-                [
-                    'customer_id' => $users[$data['customer']]->id,
-                    'specialist_profile_id' => $specialist->id,
-                    'service_id' => $service->id,
-                    'start_at' => $start,
-                    'end_at' => $end,
-                    'duration_minutes' => $service->duration_minutes,
-                    'buffer_minutes' => $service->buffer_minutes,
-                    'price' => $service->price,
-                    'status' => $data['status'],
-                    'payment_status' => $data['payment_status'],
-                    'payment_method' => $data['payment_method'],
-                    'source' => 'ONLINE',
-                    'customer_note' => $data['note'],
-                    'created_by' => $users[$data['customer']]->id,
-                    'slot_lock_key' => $isHolding ? $specialist->id.'|'.$start->format('Y-m-d H:i:s') : null,
-                    'needs_attention' => false,
-                    'confirmed_at' => $isConfirmed ? $start->subDay() : null,
-                    'completed_at' => $isCompleted ? $end : null,
-                    'cancelled_at' => $isCancelled ? $start->subDays(2) : null,
-                    'cancel_reason' => $isCancelled ? 'Khách đã yêu cầu hủy lịch trong thời hạn cho phép.' : null,
-                ]
-            );
-
-            $appointment->statusHistory()->delete();
-            $history = [['to_status' => $data['status'], 'action' => 'create', 'actor_id' => $appointment->created_by, 'actor_role' => 'CUSTOMER']];
-            if ($isConfirmed && $data['status'] !== 'CONFIRMED') {
-                $history[] = ['from_status' => 'CONFIRMED', 'to_status' => $data['status'], 'action' => strtolower($data['status']), 'actor_id' => $staff->id, 'actor_role' => 'STAFF'];
-            }
-            foreach ($history as $item) {
-                $appointment->statusHistory()->create($item);
-            }
-        }
-    }
-
     private function avatarUrl(int $index): string
     {
         return [
@@ -359,79 +296,6 @@ class DatabaseSeeder extends Seeder
             'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?auto=format&fit=crop&w=640&q=85',
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=640&q=85',
         ][$index];
-    }
-
-    /** @param array<string, User> $users @param array<string, SpecialistProfile> $specialists @param array<string, Service> $services */
-    private function seedAnalyticsAppointments(array $users, array $specialists, array $services): void
-    {
-        $customers = array_values(array_filter($users, fn (User $user): bool => $user->role === 'customer'));
-        $specialistModels = array_values($specialists);
-        $serviceModels = array_values($services);
-        $startDate = CarbonImmutable::now()->subDays(60)->startOfDay();
-
-        // Chỉ tạo lịch đã qua trong quá khứ (index 1..59) để báo cáo/thống kê hoạt động chính xác
-        // Không tạo lịch tương lai để lịch trống hoàn toàn sạch, cho phép 4 actor đặt lịch thực tế không bị cản trở
-        for ($index = 1; $index <= 58; $index++) {
-            $start = $startDate->addDays($index)->setTime(9 + ($index % 5) * 2, 0);
-            if ($start->isFuture()) {
-                continue;
-            }
-            $service = $serviceModels[$index % count($serviceModels)];
-            $specialist = $specialistModels[$index % count($specialistModels)];
-            $customer = $customers[$index % count($customers)];
-            $status = $this->analyticsStatus($index, $start);
-            $paymentMethod = $index % 10 < 7 ? 'BANK_QR' : 'CASH';
-            $isCompleted = in_array($status, ['COMPLETED', 'NO_SHOW'], true);
-            $isRefunded = $status === 'CANCELLED_BY_CUSTOMER' && $index % 2 === 0;
-            $isRefundPending = $status === 'CANCELLED_BY_CUSTOMER' && $index % 2 === 1;
-            $isPaid = $isCompleted || $isRefunded || $isRefundPending;
-            $price = (int) $service->price;
-
-            Appointment::updateOrCreate(
-                ['appointment_code' => sprintf('MG-SEED-%03d', $index)],
-                [
-                    'customer_id' => $customer->id,
-                    'specialist_profile_id' => $specialist->id,
-                    'service_id' => $service->id,
-                    'start_at' => $start,
-                    'end_at' => $start->addMinutes($service->duration_minutes),
-                    'duration_minutes' => $service->duration_minutes,
-                    'buffer_minutes' => $service->buffer_minutes,
-                    'price' => $price,
-                    'status' => $status,
-                    'payment_status' => $isRefunded ? 'REFUNDED' : ($isRefundPending ? 'REFUND_PENDING' : ($isPaid ? 'PAID' : 'UNPAID')),
-                    'paid_at' => $isPaid ? $start->subDays(1) : null,
-                    'refunded_at' => $isRefunded ? $start->subHours(8) : null,
-                    'refund_amount' => ($isRefunded || $isRefundPending) ? (int) floor($price * 0.5) : null,
-                    'refund_status' => $isRefunded ? 'REFUNDED' : ($isRefundPending ? 'REFUND_PENDING' : null),
-                    'payment_method' => $paymentMethod,
-                    'source' => $index % 4 === 0 ? 'STAFF' : 'ONLINE',
-                    'customer_note' => null,
-                    'created_by' => $customer->id,
-                    'slot_lock_key' => in_array($status, ['PENDING', 'CONFIRMED'], true) ? $specialist->id.'|'.$start->format('Y-m-d H:i:s') : null,
-                    'needs_attention' => $index % 17 === 0,
-                    'confirmed_at' => $status !== 'PENDING' ? $start->subHours(12) : null,
-                    'completed_at' => $isCompleted ? $start->addMinutes($service->duration_minutes) : null,
-                    'cancelled_at' => str_starts_with($status, 'CANCELLED_') ? $start->subDays(2) : null,
-                    'cancel_reason' => str_starts_with($status, 'CANCELLED_') ? 'Dữ liệu mẫu kiểm thử vận hành.' : null,
-                ]
-            );
-        }
-    }
-
-    private function analyticsStatus(int $index, CarbonImmutable $start): string
-    {
-        if ($start->isFuture()) {
-            return $index % 3 === 0 ? 'PENDING' : 'CONFIRMED';
-        }
-        if ($index % 13 === 0) {
-            return 'CANCELLED_BY_CUSTOMER';
-        }
-        if ($index % 11 === 0) {
-            return 'NO_SHOW';
-        }
-
-        return $index % 7 === 0 ? 'CANCELLED_BY_CLINIC' : 'COMPLETED';
     }
 
     /** @param array<string, User> $users */

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CustomerProfile;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\AccountActivationService;
 use App\Services\AuditService;
 use App\Services\NotificationService;
 use Illuminate\Auth\Events\PasswordReset;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * AuthController — Quản lý các màn hình xác thực công khai
@@ -57,6 +59,9 @@ class AuthController extends Controller
         $user = User::query()->whereRaw('LOWER(email) = ?', [strtolower($credentials['email'])])->first();
         if ($user?->locked_until?->isFuture()) {
             return back()->withInput($request->only('email'))->withErrors(['email' => 'Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau 15 phút.']);
+        }
+        if ($user && $user->status === 'PENDING_ACTIVATION') {
+            return back()->withInput($request->only('email'))->withErrors(['email' => 'Tài khoản chưa được kích hoạt. Vui lòng mở email kích hoạt tài khoản.']);
         }
         if ($user && $user->status !== 'ACTIVE') {
             return back()->withInput($request->only('email'))->withErrors(['email' => 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ phòng khám.']);
@@ -210,6 +215,23 @@ class AuthController extends Controller
         }
 
         return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập bằng mật khẩu mới.');
+    }
+
+    public function activationForm(string $token): View
+    {
+        return view('public.activate-account', compact('token'));
+    }
+
+    public function activateAccount(Request $request, AccountActivationService $activation): RedirectResponse
+    {
+        $data = $request->validate(['token' => ['required', 'string'], 'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]]);
+        try {
+            $activation->activate($data['token'], $data['password']);
+        } catch (HttpException $exception) {
+            return back()->withErrors(['token' => $exception->getMessage()]);
+        }
+
+        return redirect()->route('login')->with('success', 'Tài khoản đã được kích hoạt. Vui lòng đăng nhập bằng mật khẩu bạn vừa tạo.');
     }
 
     /**

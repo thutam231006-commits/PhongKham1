@@ -340,7 +340,7 @@ class CustomerController extends Controller
             'type' => $appointment->consultation_type ?? 'OFFLINE',
             'customer_note' => $appointment->customer_note,
             'location' => $appointment->consultation_type === 'ONLINE'
-                ? 'Tư vấn trực tuyến qua Google Meet'
+                ? 'Tư vấn trực tuyến qua phòng họp bảo mật'
                 : ($appointment->consultationRoom?->name ?? ($appointment->status === 'PENDING' ? 'Sẽ được xếp phòng khi xác nhận' : 'Phòng khám Mind Guide')),
             'meeting_url' => $appointment->meeting_url,
             'can_reschedule' => $appointment->status === 'CONFIRMED' && $appointment->start_at->gte(now()->addHours(24)) && $appointment->reschedule_count < 2,

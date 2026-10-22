@@ -142,9 +142,9 @@ class BookingFlowTest extends TestCase
         $this->assertDatabaseHas('notifications', ['notifiable_id' => $specialist->user_id]);
     }
 
-    public function test_staff_confirmation_attaches_the_configured_google_meet_link(): void
+    public function test_staff_confirmation_attaches_a_unique_jitsi_room_per_appointment(): void
     {
-        config(['services.google_meet.url' => 'https://meet.google.com/test-room']);
+        config(['services.jitsi.base_url' => 'https://meet.jit.si', 'services.jitsi.room_prefix' => 'MindGuide']);
         $customer = User::factory()->create(['role' => 'customer']);
         $staff = User::factory()->create(['role' => 'staff']);
         [$service, $specialist] = $this->bookingSetup();
@@ -167,9 +167,48 @@ class BookingFlowTest extends TestCase
         $this->assertDatabaseHas('appointments', [
             'id' => $appointment->id,
             'consultation_type' => 'ONLINE',
-            'meeting_url' => 'https://meet.google.com/test-room',
             'consultation_room_id' => null,
         ]);
+
+        $appointment->refresh();
+        $this->assertSame(
+            'https://meet.jit.si/mindguide-'.strtolower($appointment->appointment_code),
+            $appointment->meeting_url
+        );
+    }
+
+    public function test_two_online_appointments_never_share_the_same_meeting_room(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $firstCustomer = User::factory()->create(['role' => 'customer']);
+        $secondCustomer = User::factory()->create(['role' => 'customer']);
+        [$service, $specialist] = $this->bookingSetup();
+        $date = CarbonImmutable::now()->addDays(3)->setTime(10, 0);
+
+        foreach ([[$firstCustomer, '10:00'], [$secondCustomer, '14:00']] as [$customer, $time]) {
+            $this->actingAs($customer)
+                ->withSession(['booking' => [
+                    'service_id' => $service->id,
+                    'specialist_id' => $specialist->id,
+                    'date' => $date->toDateString(),
+                    'time' => $time,
+                    'start_at' => $date->format('Y-m-d').' '.$time.':00',
+                ]])
+                ->post(route('booking.confirm.store'), ['payment_method' => 'CASH', 'consultation_type' => 'ONLINE'])
+                ->assertRedirect();
+        }
+
+        $appointments = Appointment::query()->whereIn('customer_id', [$firstCustomer->id, $secondCustomer->id])->get();
+        $this->assertCount(2, $appointments);
+
+        $this->actingAs($staff);
+        foreach ($appointments as $appointment) {
+            $this->post(route('staff.appointments.confirm', $appointment));
+        }
+
+        $urls = $appointments->map(fn (Appointment $appointment): ?string => $appointment->refresh()->meeting_url);
+        $this->assertCount(2, $urls->unique());
+        $this->assertNotNull($urls->filter());
     }
 
     public function test_staff_can_reassign_a_pending_appointment_to_an_available_specialist(): void

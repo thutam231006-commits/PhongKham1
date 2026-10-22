@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Exceptions\BookingSlotUnavailable;
 use App\Models\Appointment;
-use App\Models\ConsultationRoom;
 use App\Models\RefundRequest;
 use App\Models\RescheduleRequest;
 use App\Models\ScheduleException;
@@ -18,6 +17,7 @@ class AppointmentWorkflowService
     public function __construct(
         private readonly AuditService $audit,
         private readonly NotificationService $notifications,
+        private readonly ConsultationSetupService $consultationSetup,
     ) {}
 
     public function confirm(Appointment $appointment, User $actor): Appointment
@@ -26,11 +26,9 @@ class AppointmentWorkflowService
             $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
             abort_unless($appointment->status === 'PENDING', 409, 'Chỉ lịch đang chờ mới có thể xác nhận.');
             $appointment->load(['customer', 'specialistProfile.user']);
-            $details = $appointment->consultation_type === 'ONLINE'
-                ? ['meeting_url' => config('services.google_meet.url', 'https://meet.google.com/new'), 'consultation_room_id' => null]
-                : ['consultation_room_id' => $this->findAvailableRoom($appointment)->id, 'meeting_url' => null];
+            $details = $this->consultationSetup->detailsFor($appointment);
             $this->transition($appointment, 'CONFIRMED', 'confirm', $actor, [...$details, 'confirmed_at' => now(), 'payment_expires_at' => null]);
-            $this->notifications->send($appointment->customer, 'Lịch hẹn đã được xác nhận', 'Lịch '.$appointment->appointment_code.' đã được xác nhận. Vui lòng xem thông tin phòng hoặc link Google Meet trong chi tiết lịch.', 'appointment.confirmed', route('customer.appointments.detail', $appointment), $appointment);
+            $this->notifications->send($appointment->customer, 'Lịch hẹn đã được xác nhận', 'Lịch '.$appointment->appointment_code.' đã được xác nhận. Vui lòng xem thông tin phòng hoặc link phòng họp trực tuyến trong chi tiết lịch.', 'appointment.confirmed', route('customer.appointments.detail', $appointment), $appointment);
             $this->notifications->send($appointment->specialistProfile->user, 'Có lịch hẹn mới', 'Lịch '.$appointment->appointment_code.' đã được xác nhận với khách '.$appointment->customer->name.'.', 'appointment.confirmed', route('specialist.appointments.detail', $appointment), $appointment);
 
             return $appointment->refresh();
@@ -106,7 +104,7 @@ class AppointmentWorkflowService
         return DB::transaction(function () use ($appointment, $actor, $reason): Appointment {
             $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
             abort_unless(in_array($appointment->status, ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'], true), 409, 'Lịch hẹn không còn có thể hủy.');
-            $attributes = ['cancelled_at' => now(), 'cancel_reason' => $reason, 'slot_lock_key' => null, 'needs_attention' => false];
+            $attributes = ['cancelled_at' => now(), 'cancel_reason' => $reason, 'slot_lock_key' => null, 'needs_attention' => false, 'attention_reason' => null, 'attention_flagged_at' => null];
 
             if ($appointment->payment_status === 'PAID') {
                 RefundRequest::query()->updateOrCreate(['appointment_id' => $appointment->id], ['amount' => (int) $appointment->price, 'percentage' => 100, 'status' => 'PENDING']);
@@ -154,7 +152,7 @@ class AppointmentWorkflowService
             $endAt = CarbonImmutable::instance($request->requested_end_at);
             $this->assertSlotAvailable($appointment, $startAt, $endAt);
             $newAppointment = Appointment::query()->create([
-                ...$appointment->only(['customer_id', 'specialist_profile_id', 'service_id', 'duration_minutes', 'buffer_minutes', 'price', 'payment_status', 'paid_at', 'payment_method', 'customer_note']),
+                ...$appointment->only(['customer_id', 'specialist_profile_id', 'service_id', 'duration_minutes', 'buffer_minutes', 'price', 'payment_status', 'paid_at', 'payment_method', 'customer_note', 'consultation_type']),
                 'appointment_code' => 'MG'.now()->format('ymd').strtoupper(str()->random(5)),
                 'rescheduled_from_id' => $appointment->id,
                 'reschedule_count' => $appointment->reschedule_count + 1,
@@ -166,6 +164,7 @@ class AppointmentWorkflowService
                 'slot_lock_key' => $appointment->specialist_profile_id.'|'.$startAt->format('Y-m-d H:i:s'),
                 'confirmed_at' => now(),
             ]);
+            $newAppointment->update($this->consultationSetup->detailsFor($newAppointment));
             $newAppointment->statusHistory()->create(['to_status' => 'CONFIRMED', 'action' => 'reschedule_approved', 'actor_id' => $actor->id, 'actor_role' => strtoupper($actor->role)]);
             $request->update(['status' => 'APPROVED', 'resolved_by' => $actor->id, 'resolved_at' => now()]);
             $this->transition($appointment, 'RESCHEDULED', 'approve_reschedule', $actor, ['slot_lock_key' => null], $reason);
@@ -189,31 +188,92 @@ class AppointmentWorkflowService
         return $expired->count();
     }
 
+    /**
+     * Bắt đầu buổi tư vấn (Staff điều phối hộ — SCR-STF-03).
+     */
+    public function start(Appointment $appointment, User $actor): Appointment
+    {
+        return DB::transaction(function () use ($appointment, $actor): Appointment {
+            $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
+            abort_unless($appointment->status === 'CONFIRMED', 409, 'Chỉ lịch đã xác nhận mới có thể bắt đầu.');
+            abort_unless(now()->gte($appointment->start_at->copy()->subMinutes(15)), 422, 'Chỉ có thể bắt đầu từ 15 phút trước giờ hẹn.');
+
+            $this->transition($appointment, 'IN_PROGRESS', 'start', $actor, ['started_at' => now()]);
+
+            return $appointment->refresh();
+        });
+    }
+
+    /**
+     * Đánh dấu vắng mặt (Staff điều phối hộ — SCR-STF-03).
+     */
+    public function markNoShow(Appointment $appointment, User $actor): Appointment
+    {
+        return DB::transaction(function () use ($appointment, $actor): Appointment {
+            $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
+            abort_unless($appointment->status === 'CONFIRMED', 409, 'Lịch hẹn không ở trạng thái có thể đánh dấu vắng mặt.');
+            abort_unless(now()->gte($appointment->start_at->copy()->addMinutes(15)), 422, 'Chỉ đánh dấu vắng mặt sau 15 phút chờ.');
+
+            $this->transition($appointment, 'NO_SHOW', 'no_show', $actor, ['slot_lock_key' => null, 'needs_attention' => false, 'attention_reason' => null, 'attention_flagged_at' => null]);
+            $this->notifications->send($appointment->customer, 'Lịch hẹn đã kết thúc', 'Lịch '.$appointment->appointment_code.' đã được đánh dấu vắng mặt. Vui lòng liên hệ phòng khám để đặt lịch mới.', 'appointment.no_show', route('customer.appointments.detail', $appointment), $appointment);
+
+            return $appointment->refresh();
+        });
+    }
+
+    /**
+     * Đổi lịch do phòng khám thực hiện (SCR-STF-03 / SCR-STF-07).
+     *
+     * Tạo lịch mới ở trạng thái CONFIRMED, chuyển lịch cũ sang RESCHEDULED và
+     * xóa cờ "cần xử lý" sau khi đã xử lý xong.
+     */
+    public function rescheduleByClinic(Appointment $appointment, CarbonImmutable $requestedStartAt, User $actor, ?string $reason = null): Appointment
+    {
+        return DB::transaction(function () use ($appointment, $requestedStartAt, $actor, $reason): Appointment {
+            $appointment = Appointment::query()->lockForUpdate()->findOrFail($appointment->id);
+            abort_unless(in_array($appointment->status, ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'], true), 409, 'Lịch hẹn không còn có thể đổi.');
+
+            $requestedEndAt = $requestedStartAt->addMinutes($appointment->duration_minutes);
+            $this->assertSlotAvailable($appointment, $requestedStartAt, $requestedEndAt);
+
+            $newAppointment = Appointment::query()->create([
+                ...$appointment->only(['customer_id', 'specialist_profile_id', 'service_id', 'duration_minutes', 'buffer_minutes', 'price', 'payment_status', 'paid_at', 'payment_method', 'customer_note', 'consultation_type']),
+                'appointment_code' => 'MG'.now()->format('ymd').strtoupper(str()->random(5)),
+                'rescheduled_from_id' => $appointment->id,
+                'reschedule_count' => $appointment->reschedule_count + 1,
+                'start_at' => $requestedStartAt,
+                'end_at' => $requestedEndAt,
+                'status' => 'CONFIRMED',
+                'source' => 'STAFF',
+                'created_by' => $actor->id,
+                'slot_lock_key' => $appointment->specialist_profile_id.'|'.$requestedStartAt->format('Y-m-d H:i:s'),
+                'confirmed_at' => now(),
+            ]);
+            $newAppointment->update($this->consultationSetup->detailsFor($newAppointment));
+            $newAppointment->statusHistory()->create(['to_status' => 'CONFIRMED', 'action' => 'reschedule_by_clinic', 'actor_id' => $actor->id, 'actor_role' => strtoupper($actor->role), 'reason' => $reason]);
+            $this->transition($appointment, 'RESCHEDULED', 'reschedule_by_clinic', $actor, ['slot_lock_key' => null, 'needs_attention' => false, 'attention_reason' => null, 'attention_flagged_at' => null], $reason);
+            $this->notifications->send($appointment->customer, 'Lịch hẹn đã được đổi', 'Phòng khám đã đổi lịch '.$appointment->appointment_code.' sang '.$requestedStartAt->format('d/m/Y H:i').'. Lịch mới: '.$newAppointment->appointment_code.'.', 'appointment.rescheduled', route('customer.appointments.detail', $newAppointment), $newAppointment);
+
+            return $newAppointment;
+        });
+    }
+
+    /**
+     * Gửi thông báo thủ công tới khách của lịch (SCR-STF-03 / FR-NOTI-005).
+     */
+    public function notifyCustomer(Appointment $appointment, User $actor, string $message): void
+    {
+        $appointment->loadMissing('customer');
+        $this->notifications->send($appointment->customer, 'Thông báo từ phòng khám', $message, 'appointment.manual_notice', route('customer.appointments.detail', $appointment), $appointment);
+        $this->audit->record('appointment.manual_notice', $appointment, new: ['message' => $message], actor: $actor);
+    }
+
     private function transition(Appointment $appointment, string $to, string $action, User $actor, array $attributes = [], ?string $reason = null): void
     {
         $from = $appointment->status;
         $appointment->update([...$attributes, 'status' => $to]);
         $appointment->statusHistory()->create(['from_status' => $from, 'to_status' => $to, 'action' => $action, 'actor_id' => $actor->id, 'actor_role' => strtoupper($actor->role), 'reason' => $reason]);
         $this->audit->record('appointment.'.$action, $appointment, old: ['status' => $from], new: ['status' => $to]);
-    }
-
-    private function findAvailableRoom(Appointment $appointment): ConsultationRoom
-    {
-        $room = ConsultationRoom::query()
-            ->where('is_active', true)
-            ->whereDoesntHave('appointments', function ($query) use ($appointment): void {
-                $query->whereKeyNot($appointment->id)
-                    ->holdingSlot()
-                    ->where('start_at', '<', $appointment->end_at)
-                    ->where('end_at', '>', $appointment->start_at);
-            })
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->first();
-
-        abort_unless($room, 409, 'Hiện không còn phòng tư vấn trống trong khung giờ này.');
-
-        return $room;
     }
 
     private function assertSpecialistWorking(SpecialistProfile $specialist, Appointment $appointment): void

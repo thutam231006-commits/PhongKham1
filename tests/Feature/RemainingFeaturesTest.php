@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\RescheduleRequest;
-use App\Models\Review;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\User;
@@ -42,6 +41,51 @@ class RemainingFeaturesTest extends TestCase
         $this->assertDatabaseHas('reschedule_requests', ['id' => $request->id, 'status' => 'APPROVED']);
     }
 
+    public function test_approved_reschedule_keeps_the_online_consultation_type_and_gets_its_own_meeting_room(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->appointment([
+            'customer_id' => $customer->id,
+            'status' => 'RESCHEDULE_REQUESTED',
+            'consultation_type' => 'ONLINE',
+            'start_at' => now()->addDays(4),
+            'end_at' => now()->addDays(4)->addHour(),
+        ]);
+        $request = RescheduleRequest::query()->create(['appointment_id' => $appointment->id, 'requested_start_at' => now()->addDays(5)->setTime(10, 0), 'requested_end_at' => now()->addDays(5)->setTime(11, 0), 'requested_by' => $customer->id]);
+
+        $this->actingAs($staff)->post(route('staff.reschedule-requests.resolve', $request), ['decision' => 'approve'])->assertSessionHas('success');
+
+        $newAppointment = Appointment::query()->where('rescheduled_from_id', $appointment->id)->sole();
+
+        $this->assertSame('ONLINE', $newAppointment->consultation_type);
+        $this->assertNull($newAppointment->consultation_room_id);
+        $this->assertNotNull($newAppointment->meeting_url);
+        $this->assertStringContainsString(strtolower($newAppointment->appointment_code), $newAppointment->meeting_url);
+    }
+
+    public function test_approved_reschedule_of_an_offline_appointment_assigns_a_consultation_room(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->appointment([
+            'customer_id' => $customer->id,
+            'status' => 'RESCHEDULE_REQUESTED',
+            'consultation_type' => 'OFFLINE',
+            'start_at' => now()->addDays(4),
+            'end_at' => now()->addDays(4)->addHour(),
+        ]);
+        $request = RescheduleRequest::query()->create(['appointment_id' => $appointment->id, 'requested_start_at' => now()->addDays(5)->setTime(10, 0), 'requested_end_at' => now()->addDays(5)->setTime(11, 0), 'requested_by' => $customer->id]);
+
+        $this->actingAs($staff)->post(route('staff.reschedule-requests.resolve', $request), ['decision' => 'approve'])->assertSessionHas('success');
+
+        $newAppointment = Appointment::query()->where('rescheduled_from_id', $appointment->id)->sole();
+
+        $this->assertSame('OFFLINE', $newAppointment->consultation_type);
+        $this->assertNotNull($newAppointment->consultation_room_id);
+        $this->assertNull($newAppointment->meeting_url);
+    }
+
     public function test_pending_appointment_reschedule_returns_a_friendly_message(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);
@@ -70,7 +114,7 @@ class RemainingFeaturesTest extends TestCase
         $this->assertDatabaseHas('roles', ['code' => 'admin']);
         $this->assertDatabaseHas('permissions', ['code' => 'appointments.manage']);
         $this->assertDatabaseHas('customer_profiles', ['privacy_policy_version' => '2026-01']);
-        $this->assertGreaterThan(0, Review::query()->count());
+        $this->assertSame(0, Appointment::query()->count());
     }
 
     public function test_new_role_pages_render_without_server_errors(): void

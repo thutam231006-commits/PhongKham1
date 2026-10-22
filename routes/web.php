@@ -98,6 +98,8 @@ Route::post('/quen-mat-khau', [AuthController::class, 'sendResetLink'])->middlew
 // SCR-PUB-09 — Đặt lại mật khẩu
 Route::get('/dat-lai-mat-khau/{token}', [AuthController::class, 'resetForm'])->name('password.reset');
 Route::post('/dat-lai-mat-khau', [AuthController::class, 'resetPassword'])->name('password.update');
+Route::get('/kich-hoat-tai-khoan/{token}', [AuthController::class, 'activationForm'])->name('account.activation.form');
+Route::post('/kich-hoat-tai-khoan', [AuthController::class, 'activateAccount'])->name('account.activation.store');
 
 // SCR-PUB-10 — Xác thực email
 Route::get('/xac-thuc-email', [AuthController::class, 'verifyNotice'])->name('verification.notice');
@@ -204,11 +206,19 @@ Route::middleware('auth')->group(function () {
         Route::post('/checkin/{id}', [StaffController::class, 'markCheckin'])->name('checkin.store');
         Route::get('/appointments', [StaffController::class, 'appointmentList'])->name('appointments');
         Route::get('/appointments/pending', [StaffController::class, 'appointments'])->name('appointments.pending');
+        Route::get('/appointments/{appointment}', [StaffController::class, 'appointmentDetail'])->name('appointments.detail');
         Route::post('/appointments/{appointment}/confirm', [StaffController::class, 'confirmAppointment'])->name('appointments.confirm');
         Route::post('/appointments/{appointment}/reassign', [StaffController::class, 'reassignAppointment'])->name('appointments.reassign');
         Route::post('/appointments/{appointment}/cancel', [StaffController::class, 'cancelAppointment'])->name('appointments.cancel');
+        Route::post('/appointments/{appointment}/start', [StaffController::class, 'startAppointment'])->name('appointments.start');
+        Route::post('/appointments/{appointment}/no-show', [StaffController::class, 'noShowAppointment'])->name('appointments.no-show');
+        Route::post('/appointments/{appointment}/reschedule', [StaffController::class, 'rescheduleAppointment'])->name('appointments.reschedule');
+        Route::post('/appointments/{appointment}/notify', [StaffController::class, 'notifyAppointment'])->name('appointments.notify');
+        Route::get('/attention', [StaffController::class, 'attentionList'])->name('appointments.attention');
         Route::post('/reschedule-requests/{rescheduleRequest}', [StaffController::class, 'resolveReschedule'])->name('reschedule-requests.resolve');
         Route::get('/customers', [StaffController::class, 'customers'])->name('customers');
+        Route::get('/customers/{user}', [StaffController::class, 'customerProfile'])->name('customers.profile');
+        Route::post('/customers/{user}/resend-activation', [StaffController::class, 'resendActivation'])->name('customers.resend-activation');
         Route::post('/customers', [StaffController::class, 'storeCustomer'])->name('customers.store');
         Route::put('/customers/{user}', [StaffController::class, 'updateCustomer'])->name('customers.update');
         Route::get('/booking-onsite', [StaffController::class, 'bookingOnsite'])->name('appointments.book');

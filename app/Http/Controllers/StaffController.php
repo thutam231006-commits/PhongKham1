@@ -10,6 +10,7 @@ use App\Models\RescheduleRequest;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\User;
+use App\Services\AccountActivationService;
 use App\Services\AppointmentBookingService;
 use App\Services\AppointmentWorkflowService;
 use App\Services\AuditService;
@@ -20,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -174,7 +176,7 @@ class StaffController extends Controller
 
     public function storeBookingOnsite(Request $request, AppointmentBookingService $booking): RedirectResponse
     {
-        $data = $request->validate(['customer_id' => ['required', 'integer', 'exists:users,id'], 'service_id' => ['required', 'integer', 'exists:services,id'], 'specialist_id' => ['required', 'integer', 'exists:specialist_profiles,id'], 'date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i'], 'payment_method' => ['required', Rule::in(['CASH', 'BANK_QR'])], 'customer_note' => ['nullable', 'string', 'max:500']]);
+        $data = $request->validate(['customer_id' => ['required', 'integer', 'exists:users,id'], 'service_id' => ['required', 'integer', 'exists:services,id'], 'specialist_id' => ['required', 'integer', 'exists:specialist_profiles,id'], 'date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i'], 'payment_method' => ['required', Rule::in(['CASH', 'BANK_QR'])], 'consultation_type' => ['nullable', Rule::in(['ONLINE', 'OFFLINE'])], 'customer_note' => ['nullable', 'string', 'max:500']]);
         $customer = User::query()->where('role', 'customer')->findOrFail($data['customer_id']);
         $booking->create($customer, $data, $request->user());
 
@@ -193,22 +195,50 @@ class StaffController extends Controller
         return view('staff.customers', compact('customers'));
     }
 
-    public function storeCustomer(Request $request, AuditService $audit): RedirectResponse
+    public function customerProfile(User $user): View
     {
-        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['required', 'email', 'unique:users,email'], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
-        DB::transaction(function () use ($data, $audit): void {
-            $user = User::query()->create(['name' => $data['name'], 'email' => strtolower($data['email']), 'phone' => $data['phone'] ?? null, 'password' => Hash::make('MindGuide@2026'), 'role' => 'customer', 'status' => 'ACTIVE', 'email_verified_at' => now()]);
+        abort_unless(strtolower((string) $user->role) === 'customer', 404);
+        $user->load('customerProfile');
+        $appointments = Appointment::query()
+            ->where('customer_id', $user->id)
+            ->with(['service', 'specialistProfile.user', 'consultationRoom'])
+            ->orderByDesc('start_at')
+            ->get();
+
+        return view('staff.customer-profile', compact('user', 'appointments'));
+    }
+
+    public function resendActivation(User $user, AccountActivationService $activation): RedirectResponse
+    {
+        abort_unless(strtolower((string) $user->role) === 'customer', 404);
+        abort_unless($user->status === 'PENDING_ACTIVATION' && filled($user->email), 422, 'Khách hàng chưa đủ điều kiện nhận email kích hoạt.');
+        $activation->createAndSend($user);
+
+        return back()->with('success', 'Đã gửi lại email kích hoạt tài khoản.');
+    }
+
+    public function storeCustomer(Request $request, AuditService $audit, AccountActivationService $activation): RedirectResponse
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', 'unique:users,email'], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
+        $user = DB::transaction(function () use ($data, $audit): User {
+            $user = User::query()->create(['name' => $data['name'], 'email' => strtolower((string) ($data['email'] ?? '')), 'phone' => $data['phone'] ?? null, 'password' => Hash::make(Str::random(40)), 'role' => 'customer', 'status' => $data['email'] ? 'PENDING_ACTIVATION' : 'ACTIVE', 'email_verified_at' => null]);
             CustomerProfile::query()->create(['user_id' => $user->id, 'customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $data['date_of_birth'], 'privacy_policy_version' => 'staff-created', 'consented_at' => now()]);
             $audit->record('customer.created', $user, new: ['role' => 'customer']);
+
+            return $user;
         });
 
-        return back()->with('success', 'Đã tạo hồ sơ khách. Mật khẩu tạm thời: MindGuide@2026.');
+        if ($user->status === 'PENDING_ACTIVATION') {
+            $activation->createAndSend($user);
+        }
+
+        return back()->with('success', $user->status === 'PENDING_ACTIVATION' ? 'Đã tạo hồ sơ và gửi email kích hoạt tài khoản cho khách.' : 'Đã tạo hồ sơ khách. Khách chưa có email nên chưa thể đăng nhập.');
     }
 
     public function updateCustomer(Request $request, User $user, AuditService $audit): RedirectResponse
     {
         abort_unless(strtolower((string) $user->role) === 'customer', 404);
-        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
+        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
         $user->update(collect($data)->except('date_of_birth')->all());
         CustomerProfile::query()->updateOrCreate(['user_id' => $user->id], ['customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $data['date_of_birth'] ?? null]);
         $audit->record('customer.updated', $user, new: ['email' => $user->email]);
@@ -221,6 +251,45 @@ class StaffController extends Controller
         $workflow->confirm($appointment, auth()->user());
 
         return back()->with('success', 'Đã xác nhận lịch hẹn.');
+    }
+
+    /**
+     * SCR-STF-03 — Chi tiết lịch hẹn để điều phối.
+     */
+    public function appointmentDetail(Appointment $appointment): View
+    {
+        $appointment->load([
+            'customer', 'service', 'specialistProfile.user', 'consultationRoom',
+            'statusHistory', 'refundRequest', 'paymentTransactions', 'rescheduledFrom', 'rescheduleRequests', 'createdBy',
+        ]);
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
+
+        return view('staff.appointment-detail', compact('appointment', 'specialists'));
+    }
+
+    /**
+     * SCR-STF-07 — Điều phối lịch bị ảnh hưởng.
+     */
+    public function attentionList(Request $request): View
+    {
+        $data = $request->validate([
+            'specialist_id' => ['nullable', 'integer', 'exists:specialist_profiles,id'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $query = Appointment::query()
+            ->where('needs_attention', true)
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])
+            ->with(['customer', 'service', 'specialistProfile.user', 'consultationRoom'])
+            ->orderBy('start_at');
+        $query->when($data['specialist_id'] ?? null, fn ($builder, int $specialistId) => $builder->where('specialist_profile_id', $specialistId));
+        $query->when($data['date'] ?? null, fn ($builder, string $date) => $builder->whereDate('start_at', $date));
+
+        $appointments = $query->get();
+        $groupedByReason = $appointments->groupBy(fn (Appointment $appointment): string => $appointment->attention_reason ?? 'Lý do khác');
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
+
+        return view('staff.attention', compact('appointments', 'groupedByReason', 'specialists', 'data'));
     }
 
     public function reassignAppointment(Request $request, Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
@@ -245,6 +314,58 @@ class StaffController extends Controller
         $workflow->resolveReschedule($rescheduleRequest, $request->user(), $data['decision'] === 'approve', $data['reason'] ?? null);
 
         return back()->with('success', 'Đã xử lý yêu cầu đổi lịch.');
+    }
+
+    /**
+     * SCR-STF-03 — Bắt đầu buổi tư vấn hộ khách.
+     */
+    public function startAppointment(Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
+    {
+        $workflow->start($appointment, auth()->user());
+
+        return back()->with('success', 'Đã bắt đầu buổi tư vấn.');
+    }
+
+    /**
+     * SCR-STF-03 — Đánh dấu khách vắng mặt.
+     */
+    public function noShowAppointment(Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
+    {
+        $workflow->markNoShow($appointment, auth()->user());
+
+        return back()->with('success', 'Đã đánh dấu khách vắng mặt.');
+    }
+
+    /**
+     * SCR-STF-03 / SCR-STF-07 — Đổi lịch do phòng khám thực hiện.
+     */
+    public function rescheduleAppointment(Request $request, Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'time' => ['required', 'date_format:H:i'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $workflow->rescheduleByClinic(
+            $appointment,
+            CarbonImmutable::createFromFormat('Y-m-d H:i', $data['date'].' '.$data['time']),
+            $request->user(),
+            $data['reason']
+        );
+
+        return back()->with('success', 'Đã đổi lịch và gửi thông báo cho khách.');
+    }
+
+    /**
+     * SCR-STF-03 — Gửi thông báo thủ công cho khách của lịch.
+     */
+    public function notifyAppointment(Request $request, Appointment $appointment, AppointmentWorkflowService $workflow): RedirectResponse
+    {
+        $data = $request->validate(['message' => ['required', 'string', 'max:500']]);
+        $workflow->notifyCustomer($appointment, $request->user(), $data['message']);
+
+        return back()->with('success', 'Đã gửi thông báo cho khách hàng.');
     }
 
     public function payments(): View

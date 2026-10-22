@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\WorkingSchedule;
+use App\Services\AttentionService;
 use App\Services\AuditService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
@@ -99,12 +100,15 @@ class SpecialistController extends Controller
         return view('specialist.schedule', compact('profile', 'schedules', 'exceptions'));
     }
 
-    public function storeScheduleException(Request $request): RedirectResponse
+    public function storeScheduleException(Request $request, AttentionService $attention): RedirectResponse
     {
         $profile = $this->ownedProfile();
         $data = $request->validate(['type' => ['required', 'in:DAY_OFF,TIME_BLOCK'], 'start_date' => ['required', 'date'], 'end_date' => ['required', 'date', 'after_or_equal:start_date'], 'start_time' => ['nullable', 'date_format:H:i'], 'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'], 'reason' => ['required', 'string', 'max:255'], 'is_emergency' => ['nullable', 'boolean']]);
         $exception = $profile->scheduleExceptions()->create([...$data, 'created_by' => auth()->id(), 'is_emergency' => (bool) ($data['is_emergency'] ?? false)]);
-        Appointment::query()->where('specialist_profile_id', $profile->id)->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->whereBetween('start_at', [$exception->start_date->startOfDay(), $exception->end_date->endOfDay()])->update(['needs_attention' => true]);
+        $attention->flag(
+            Appointment::query()->where('specialist_profile_id', $profile->id)->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->whereBetween('start_at', [$exception->start_date->startOfDay(), $exception->end_date->endOfDay()]),
+            AttentionService::REASON_SCHEDULE_EXCEPTION
+        );
 
         return back()->with('success', 'Đã lưu ngày nghỉ/chặn giờ và đánh dấu lịch bị ảnh hưởng.');
     }
@@ -161,7 +165,7 @@ class SpecialistController extends Controller
 
     public function appointmentDetail(int $id): View
     {
-        $appointment = $this->ownedAppointment($id)->load(['customer', 'service', 'statusHistory', 'consultationRecord']);
+        $appointment = $this->ownedAppointment($id)->load(['customer', 'service', 'statusHistory', 'consultationRecord', 'consultationRoom']);
 
         return view('specialist.appointment-detail', compact('appointment'));
     }
