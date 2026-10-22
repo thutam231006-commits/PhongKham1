@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Tổng quan Nhân viên')
+@section('title', 'Trang chủ nhân viên')
 
 @section('content')
 <div class="mx-auto max-w-screen-xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-col gap-4 border-b border-[#D7E8F3] pb-6 lg:flex-row lg:items-end lg:justify-between">
-        <div><p class="text-sm font-semibold text-[#6FA6CF]">Trung tâm vận hành</p><h1 class="mt-1 text-3xl font-black tracking-tight text-[#102A43]">Tổng quan nhân viên</h1><p class="mt-2 max-w-2xl text-sm text-[#52637A]">Theo dõi yêu cầu mới, lịch trong ngày và các việc cần xử lý trong một màn hình.</p></div>
+        <div><p class="text-sm font-semibold text-[#6FA6CF]">Trung tâm vận hành</p><h1 class="mt-1 text-3xl font-black tracking-tight text-[#102A43]">Trang chủ nhân viên</h1><p class="mt-2 max-w-2xl text-sm text-[#52637A]">Theo dõi yêu cầu mới, lịch trong ngày và các việc cần xử lý trong một màn hình.</p></div>
         <form method="GET" class="flex items-end gap-2"><div><label for="dashboard-date" class="mb-1 block text-xs font-bold text-[#52637A]">Ngày làm việc</label><input id="dashboard-date" name="date" type="date" value="{{ $date }}" class="rounded-lg border-[#B8D2E4] bg-white text-sm text-[#102A43] focus:border-[#2D82C4] focus:ring-[#2D82C4]"></div><button type="submit" class="rounded-lg bg-[#2D82C4] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#23689C]">Xem ngày</button></form>
     </div>
 

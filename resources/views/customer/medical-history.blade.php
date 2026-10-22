@@ -81,11 +81,11 @@
 
                 {{-- Khối tóm tắt và lời khuyên --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm">
-                    {{-- Ghi nhận từ chuyên viên --}}
+                    {{-- Bản tóm lược do chuyên viên soạn để gửi khách --}}
                     <div class="rounded-xl border border-gray-200/80 bg-[#F5FAFE] p-4 space-y-1.5">
                         <span class="text-xs font-bold text-[#2D82C4] uppercase tracking-wider block">1. Nhận định từ chuyên gia</span>
                         <p class="text-[#334155] leading-relaxed">
-                            {{ $rec->summary }}
+                            {{ $rec->summary ?: 'Chuyên viên chưa gửi tóm lược cho buổi tư vấn này.' }}
                         </p>
                     </div>
 
@@ -93,7 +93,7 @@
                     <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-1.5">
                         <span class="text-xs font-bold text-emerald-900 uppercase tracking-wider block">2. Bài tập & Hướng rèn luyện</span>
                         <p class="text-[#334155] leading-relaxed">
-                            {{ $rec->recommendation }}
+                            {{ $rec->recommendation ?: 'Chuyên viên chưa gửi khuyến nghị cho buổi tư vấn này.' }}
                         </p>
                         @if(!empty($rec->homework))
                             <div class="mt-2 pt-2 border-t border-emerald-100/80">

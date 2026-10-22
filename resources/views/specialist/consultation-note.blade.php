@@ -62,6 +62,36 @@
                 Cần theo dõi tiếp
             </label>
 
+            {{-- Bản tóm lược gửi khách hàng (khách KHÔNG đọc được nội dung chuyên môn) --}}
+            <fieldset class="space-y-5 rounded-xl border border-emerald-200 bg-emerald-50/40 p-5">
+                <legend class="px-2 text-sm font-black text-emerald-900">
+                    Bản tóm lược gửi khách hàng
+                </legend>
+                <p class="text-xs text-emerald-950/80">
+                    Chỉ nội dung trong khối này mới hiển thị cho khách hàng tại
+                    <strong>Lịch sử tư vấn &amp; Lời dặn</strong>. Phần tóm tắt chuyên môn ở trên
+                    luôn được mã hóa và chỉ bạn (chuyên viên phụ trách) đọc được.
+                </p>
+
+                <label class="block text-sm font-bold text-[#334155]">
+                    Nhận định gửi khách
+                    <textarea name="customer_summary" maxlength="2000" rows="5"
+                              class="mt-2 w-full rounded-lg border-gray-300">{{ old('customer_summary', $appointment->consultationRecord?->customer_summary) }}</textarea>
+                    <span class="mt-1 block text-xs font-normal text-[#64748B]">
+                        Tóm lược dễ hiểu, không đưa thông tin nhạy cảm. Tối đa 2.000 ký tự.
+                    </span>
+                </label>
+
+                <label class="block text-sm font-bold text-[#334155]">
+                    Khuyến nghị / bài tập gửi khách
+                    <textarea name="customer_recommendation" maxlength="2000" rows="5"
+                              class="mt-2 w-full rounded-lg border-gray-300">{{ old('customer_recommendation', $appointment->consultationRecord?->customer_recommendation) }}</textarea>
+                    <span class="mt-1 block text-xs font-normal text-[#64748B]">
+                        Hướng rèn luyện thực tế khách có thể áp dụng. Tối đa 2.000 ký tự.
+                    </span>
+                </label>
+            </fieldset>
+
             <button type="submit" class="rounded-lg bg-[#2D82C4] px-5 py-3 text-sm font-bold text-white hover:bg-[#23689C]">
                 Lưu hồ sơ an toàn
             </button>

@@ -91,6 +91,16 @@
                     :class="activeTab === 'notification' ? 'border-[#2D82C4] text-[#2D82C4] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
                 Cài đặt thông báo
             </button>
+
+            <button type="button"
+                    @click="activeTab = 'consultations'"
+                    class="pb-4 px-1 border-b-2 transition"
+                    :class="activeTab === 'consultations' ? 'border-[#2D82C4] text-[#2D82C4] font-bold' : 'border-transparent text-[#4A5568] hover:text-[#0F172A]'">
+                Kết quả tư vấn
+                @if (count($consultations ?? []) > 0)
+                    <span class="ml-1 rounded-full bg-[#EAF4FB] px-1.5 py-0.5 text-[10px] font-bold text-[#2D82C4]">{{ count($consultations) }}</span>
+                @endif
+            </button>
         </nav>
     </div>
 
@@ -265,6 +275,71 @@
                 </label>
             </div>
         </div>
+    </div>
+
+    {{-- ═══ TAB 4: KẾT QUẢ TƯ VẤN (SCR-CUS-02) ═══ --}}
+    <div x-show="activeTab === 'consultations'" x-cloak class="space-y-6">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5 flex items-start gap-3.5 text-xs text-emerald-950">
+            <svg class="h-5 w-5 text-emerald-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            <div class="leading-relaxed">
+                <strong class="font-bold">Bảo vệ quyền riêng tư:</strong> Nội dung dưới đây do chuyên viên phụ trách soạn riêng để gửi bạn.
+                Hồ sơ chuyên môn nội bộ của buổi tư vấn được mã hóa và chỉ chuyên viên phụ trách được truy cập.
+            </div>
+        </div>
+
+        @forelse($consultations as $consultation)
+            <article class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-xs space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs font-black text-[#2D82C4] bg-[#EAF4FB] px-3 py-1 rounded-lg">
+                                {{ $consultation->appointment_code }}
+                            </span>
+                            <span class="text-xs text-[#4A5568]">
+                                Ngày tư vấn: <strong class="text-[#0F172A]">{{ $consultation->date }}</strong> ({{ $consultation->time_slot }})
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-bold text-[#0F172A] mt-2">{{ $consultation->service_name }}</h3>
+                        <p class="text-xs text-[#6FA6CF] font-semibold mt-0.5">Chuyên gia: {{ $consultation->specialist_name }}</p>
+                    </div>
+
+                    @if ($consultation->follow_up_needed)
+                        <span class="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
+                            <span aria-hidden="true">↻</span>
+                            Cần theo dõi tiếp
+                        </span>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm">
+                    <div class="rounded-xl border border-gray-200/80 bg-[#F5FAFE] p-4 space-y-1.5">
+                        <span class="text-xs font-bold text-[#2D82C4] uppercase tracking-wider block">1. Nhận định từ chuyên gia</span>
+                        <p class="text-[#334155] leading-relaxed">
+                            {{ $consultation->summary ?: 'Chuyên viên chưa gửi tóm lược cho buổi tư vấn này.' }}
+                        </p>
+                    </div>
+
+                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-1.5">
+                        <span class="text-xs font-bold text-emerald-900 uppercase tracking-wider block">2. Bài tập & Hướng rèn luyện</span>
+                        <p class="text-[#334155] leading-relaxed">
+                            {{ $consultation->recommendation ?: 'Chuyên viên chưa gửi khuyến nghị cho buổi tư vấn này.' }}
+                        </p>
+                    </div>
+                </div>
+            </article>
+        @empty
+            <div class="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
+                <p class="text-sm font-semibold text-[#0F172A]">Chưa có kết quả tư vấn nào.</p>
+                <p class="text-xs text-[#4A5568] mt-1">
+                    Sau khi hoàn thành buổi tư vấn, chuyên viên sẽ gửi tóm lược và khuyến nghị tại đây.
+                </p>
+                <a href="{{ route('customer.medical-history') }}" class="mt-4 inline-block rounded-xl bg-[#2D82C4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#23689C] transition">
+                    Xem lịch sử tư vấn
+                </a>
+            </div>
+        @endforelse
     </div>
 
 </div>

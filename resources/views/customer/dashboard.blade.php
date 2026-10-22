@@ -11,7 +11,7 @@
 
 @extends('layouts.app')
 
-@section('title', 'Tổng Quan Khách Hàng — Mind Guide')
+@section('title', 'Trang Chủ Khách Hàng — Mind Guide')
 
 @section('breadcrumb')
 <nav aria-label="Đường dẫn điều hướng" class="py-2">
@@ -20,7 +20,7 @@
             <a href="{{ url('/') }}" class="hover:text-[#2D82C4] hover:underline transition">Trang chủ</a>
         </li>
         <li aria-hidden="true" class="text-gray-400">/</li>
-        <li class="font-semibold text-[#1A202C]" aria-current="page">Tổng quan tài khoản</li>
+        <li class="font-semibold text-[#1A202C]" aria-current="page">Trang chủ</li>
     </ol>
 </nav>
 @endsection

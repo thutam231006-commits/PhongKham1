@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tổng quan chuyên viên')
+@section('title', 'Trang chủ chuyên viên')
 
 @section('content')
 <div class="mx-auto max-w-screen-xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">

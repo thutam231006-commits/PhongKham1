@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\BookingSlotUnavailable;
 use App\Models\Appointment;
+use App\Models\ConsultationRecord;
 use App\Models\CustomerProfile;
 use App\Models\Review;
 use App\Services\AppointmentWorkflowService;
+use App\Services\ConsultationRecordService;
 use App\Support\AppointmentStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -79,12 +81,28 @@ class CustomerController extends Controller
     /**
      * SCR-CUS-02 — Hồ sơ cá nhân
      */
-    public function profile(): View
+    public function profile(ConsultationRecordService $records): View
     {
         $model = auth()->user()->load('customerProfile');
         $user = (object) ['id' => $model->id, 'name' => $model->name, 'email' => $model->email, 'phone' => $model->phone, 'code' => $model->customerProfile?->customer_code ?? 'KH-'.str_pad((string) $model->id, 5, '0', STR_PAD_LEFT), 'dob' => $model->customerProfile?->date_of_birth?->format('Y-m-d'), 'created_at' => $model->created_at?->format('d/m/Y'), 'email_verified' => $model->email_verified_at !== null];
 
-        return view('customer.profile', compact('user'));
+        // Kết quả các buổi tư vấn tâm lý — chỉ bản tóm lược đã lọc cho khách
+        // (nội dung chuyên môn thuộc về chuyên viên phụ trách — BR-049).
+        $consultations = $records->forCustomer($model)->map(fn (ConsultationRecord $record): object => (object) [
+            'id' => $record->id,
+            'appointment_code' => $record->appointment?->appointment_code,
+            'service_name' => $record->appointment?->service?->name,
+            'specialist_name' => $record->appointment?->specialistProfile?->user?->name,
+            'date' => $record->appointment?->start_at?->format('d/m/Y'),
+            'time_slot' => $record->appointment?->start_at
+                ? $record->appointment->start_at->format('H:i').' - '.$record->appointment->end_at->format('H:i')
+                : null,
+            'summary' => $record->customer_summary,
+            'recommendation' => $record->customer_recommendation,
+            'follow_up_needed' => (bool) $record->follow_up_needed,
+        ])->values();
+
+        return view('customer.profile', compact('user', 'consultations'));
     }
 
     /**
@@ -134,28 +152,32 @@ class CustomerController extends Controller
 
     /**
      * Lịch sử tư vấn & Tóm tắt chuyên viên (Medical History / Consultation Notes)
+     *
+     * Khách hàng chỉ xem bản tóm lược đã lọc (`customer_summary`,
+     * `customer_recommendation`); nội dung chuyên môn `summary`/`follow_up_plan`
+     * thuộc về chuyên viên phụ trách (BR-049).
      */
-    public function medicalHistory(): View
+    public function medicalHistory(ConsultationRecordService $records): View
     {
-        $records = Appointment::query()
-            ->where('customer_id', auth()->id())
-            ->where('status', 'COMPLETED')
-            ->with(['service', 'specialistProfile.user'])
-            ->latest('completed_at')
-            ->get()
-            ->map(fn (Appointment $appointment): object => (object) [
-                'id' => $appointment->id,
-                'appointment_code' => $appointment->appointment_code,
-                'service_name' => $appointment->service->name,
-                'specialist_name' => $appointment->specialistProfile->user->name,
-                'date' => $appointment->start_at->format('d/m/Y'),
-                'time_slot' => $appointment->start_at->format('H:i').' - '.$appointment->end_at->format('H:i'),
-                'summary' => 'Hồ sơ chuyên môn được bảo mật và chỉ chuyên viên phụ trách được truy cập.',
-                'recommendation' => 'Vui lòng đặt lịch theo dõi hoặc liên hệ phòng khám nếu cần hỗ trợ tiếp.',
-                'homework' => null,
-            ]);
+        $consultations = $records->forCustomer(auth()->user());
 
-        return view('customer.medical-history', compact('records'));
+        $history = $consultations
+            ->map(fn (ConsultationRecord $record): object => (object) [
+                'id' => $record->id,
+                'appointment_code' => $record->appointment?->appointment_code,
+                'service_name' => $record->appointment?->service?->name,
+                'specialist_name' => $record->appointment?->specialistProfile?->user?->name,
+                'date' => $record->appointment?->start_at?->format('d/m/Y'),
+                'time_slot' => $record->appointment?->start_at
+                    ? $record->appointment->start_at->format('H:i').' - '.$record->appointment->end_at->format('H:i')
+                    : null,
+                'summary' => $record->customer_summary,
+                'recommendation' => $record->customer_recommendation,
+                'homework' => null,
+            ])
+            ->values();
+
+        return view('customer.medical-history', ['records' => $history]);
     }
 
     /**

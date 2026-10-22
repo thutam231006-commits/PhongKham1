@@ -193,6 +193,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/appointments/{id}/no-show', [SpecialistController::class, 'noShowAppointment'])->name('appointments.no-show');
         Route::get('/appointments/{id}/consultation-note', [SpecialistController::class, 'consultationNote'])->name('consultation-note');
         Route::post('/appointments/{id}/consultation-note', [SpecialistController::class, 'storeConsultationNote'])->name('consultation-note.store');
+        Route::get('/customers/{customer}', [SpecialistController::class, 'customerProfile'])->name('customers.profile');
         Route::get('/profile', [SpecialistController::class, 'profile'])->name('profile');
         Route::put('/profile', [SpecialistController::class, 'updateProfile'])->name('profile.update');
     });

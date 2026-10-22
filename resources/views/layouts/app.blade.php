@@ -136,7 +136,7 @@
 
                         {{-- Customer --}}
                         @if ($role === 'customer')
-                            <x-nav-link href="{{ route('customer.dashboard') }}">Tổng quan</x-nav-link>
+                            <x-nav-link href="{{ route('customer.dashboard') }}">Trang chủ</x-nav-link>
                             <x-nav-link href="{{ route('appointments.book') }}">Đặt lịch</x-nav-link>
                             <x-nav-link href="{{ route('customer.appointments') }}">Lịch hẹn của tôi</x-nav-link>
                             <x-nav-link href="{{ route('customer.profile') }}">Hồ sơ cá nhân</x-nav-link>
@@ -144,7 +144,7 @@
 
                         {{-- Specialist --}}
                         @if ($role === 'specialist')
-                            <x-nav-link href="{{ route('specialist.dashboard') }}">Tổng quan</x-nav-link>
+                            <x-nav-link href="{{ route('specialist.dashboard') }}">Trang chủ</x-nav-link>
                             <x-nav-link href="{{ route('specialist.appointments') }}">Lịch hẹn</x-nav-link>
                             <x-nav-link href="{{ route('specialist.schedule') }}">Lịch làm việc</x-nav-link>
                             <x-nav-link href="{{ route('specialist.leaves') }}">Ngày nghỉ và chặn giờ</x-nav-link>
@@ -152,7 +152,7 @@
 
                         {{-- Staff --}}
                         @if ($role === 'staff')
-                            <x-nav-link href="{{ route('staff.dashboard') }}">Tổng quan</x-nav-link>
+                            <x-nav-link href="{{ route('staff.dashboard') }}">Trang chủ</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments') }}">Lịch hẹn</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments.pending') }}">Điều phối lịch</x-nav-link>
                             <x-nav-link href="{{ route('staff.appointments.attention') }}">Lịch cần xử lý</x-nav-link>
@@ -164,7 +164,7 @@
                         {{-- Admin --}}
                         @if ($role === 'admin')
                             <div x-data="{ open: null }" @click.outside="open = null" class="hidden lg:flex items-center gap-1">
-                                <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#23689C]">Tổng quan</a>
+                                <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-semibold text-white/90 hover:bg-[#23689C]">Trang chủ</a>
                                 @foreach ([
                                     'operations' => ['label' => 'Vận hành', 'items' => [['Lịch hẹn', 'admin.appointments'], ['Lịch và ngày lễ', 'admin.schedule'], ['Thanh toán và hoàn tiền', 'admin.payments'], ['Kiểm duyệt đánh giá', 'admin.reviews'], ['Thông báo', 'admin.notifications']]],
                                     'catalog' => ['label' => 'Danh mục', 'items' => [['Chuyên viên', 'admin.specialists'], ['Dịch vụ', 'admin.services'], ['Danh mục dịch vụ', 'admin.categories'], ['Người dùng', 'admin.users']]],
@@ -318,21 +318,21 @@
                     @php $role = auth()->user()->role ?? null; @endphp
 
                     @if ($role === 'customer')
-                        <x-mobile-nav-link href="{{ route('customer.dashboard') }}">Tổng quan</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('customer.dashboard') }}">Trang chủ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('appointments.book') }}">Đặt lịch</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('customer.appointments') }}">Lịch hẹn của tôi</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('customer.profile') }}">Hồ sơ cá nhân</x-mobile-nav-link>
                     @endif
 
                     @if ($role === 'specialist')
-                        <x-mobile-nav-link href="{{ route('specialist.dashboard') }}">Tổng quan</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('specialist.dashboard') }}">Trang chủ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('specialist.appointments') }}">Lịch hẹn</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('specialist.schedule') }}">Lịch làm việc</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('specialist.leaves') }}">Ngày nghỉ và chặn giờ</x-mobile-nav-link>
                     @endif
 
                     @if ($role === 'staff')
-                        <x-mobile-nav-link href="{{ route('staff.dashboard') }}">Tổng quan</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('staff.dashboard') }}">Trang chủ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments') }}">Lịch hẹn</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments.pending') }}">Điều phối lịch</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('staff.appointments.attention') }}">Lịch cần xử lý</x-mobile-nav-link>
@@ -342,7 +342,7 @@
                     @endif
 
                     @if ($role === 'admin')
-                        <x-mobile-nav-link href="{{ route('admin.dashboard') }}">Tổng quan</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('admin.dashboard') }}">Trang chủ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.appointments') }}">Lịch hẹn</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.schedule') }}">Lịch và ngày lễ</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('admin.payments') }}">Thanh toán & hoàn tiền</x-mobile-nav-link>

@@ -8,9 +8,10 @@ use App\Models\Appointment;
 use App\Models\Review;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
+use App\Models\User;
 use App\Models\WorkingSchedule;
 use App\Services\AttentionService;
-use App\Services\AuditService;
+use App\Services\ConsultationRecordService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -170,6 +171,33 @@ class SpecialistController extends Controller
         return view('specialist.appointment-detail', compact('appointment'));
     }
 
+    /**
+     * Hồ sơ khách hàng mà chuyên viên đang phụ trách.
+     *
+     * Chỉ hiển thị các buổi tư vấn mà chính chuyên viên này phụ trách; nội dung
+     * chuyên môn được mã hóa và mọi lần xem đều được ghi audit (BR-049).
+     */
+    public function customerProfile(User $customer, ConsultationRecordService $records): View
+    {
+        abort_unless(strtolower((string) $customer->role) === 'customer', 404);
+
+        $profile = $this->ownedProfile();
+        $appointments = Appointment::query()
+            ->where('specialist_profile_id', $profile->id)
+            ->where('customer_id', $customer->id)
+            ->with(['service', 'consultationRecord'])
+            ->orderByDesc('start_at')
+            ->get();
+
+        $consultations = $records->forSpecialistCustomer($profile, $customer);
+
+        foreach ($consultations as $record) {
+            $records->recordRead($record, $record->appointment, 'customer_profile');
+        }
+
+        return view('specialist.customer-profile', compact('customer', 'appointments', 'consultations'));
+    }
+
     public function startAppointment(int $id): RedirectResponse
     {
         $appointment = $this->ownedAppointment($id);
@@ -239,45 +267,21 @@ class SpecialistController extends Controller
         return back()->with('success', 'Đã đánh dấu khách vắng mặt.');
     }
 
-    public function consultationNote(int $id, AuditService $audit): View
+    public function consultationNote(int $id, ConsultationRecordService $records): View
     {
         $appointment = $this->ownedAppointment($id)->load('consultationRecord');
         abort_unless(in_array($appointment->status, ['IN_PROGRESS', 'COMPLETED'], true), 422, 'Chỉ có thể ghi hồ sơ khi buổi tư vấn đang diễn ra hoặc đã hoàn thành.');
-        $audit->record('consultation_record.viewed', 'consultation_records', $appointment->consultationRecord?->id, new: ['appointment_id' => $appointment->id]);
+        $records->recordRead($appointment->consultationRecord, $appointment);
 
         return view('specialist.consultation-note', compact('appointment'));
     }
 
-    public function storeConsultationNote(StoreConsultationRecordRequest $request, int $id, AuditService $audit): RedirectResponse
+    public function storeConsultationNote(StoreConsultationRecordRequest $request, int $id, ConsultationRecordService $records): RedirectResponse
     {
         $appointment = $this->ownedAppointment($id);
         abort_unless(in_array($appointment->status, ['IN_PROGRESS', 'COMPLETED'], true), 422);
-        $data = $request->validated();
 
-        DB::transaction(function () use ($appointment, $data): void {
-            $record = $appointment->consultationRecord;
-            if ($record && isset($data['version']) && (int) $data['version'] !== $record->version) {
-                abort(409, 'Hồ sơ đã được cập nhật ở nơi khác. Vui lòng tải lại.');
-            }
-
-            if ($record) {
-                $record->update([
-                    'summary' => $data['summary'],
-                    'follow_up_plan' => $data['follow_up_plan'] ?? null,
-                    'follow_up_needed' => (bool) $data['follow_up_needed'],
-                    'version' => $record->version + 1,
-                ]);
-            } else {
-                $appointment->consultationRecord()->create([
-                    'specialist_profile_id' => $appointment->specialist_profile_id,
-                    'summary' => $data['summary'],
-                    'follow_up_plan' => $data['follow_up_plan'] ?? null,
-                    'follow_up_needed' => (bool) $data['follow_up_needed'],
-                    'version' => 1,
-                ]);
-            }
-        });
-        $audit->record('consultation_record.saved', 'consultation_records', $appointment->consultationRecord?->id, new: ['appointment_id' => $appointment->id, 'fields' => ['summary', 'follow_up_plan', 'follow_up_needed']]);
+        $records->upsert($appointment, $request->payload(), $request->user());
 
         return back()->with('success', 'Hồ sơ buổi tư vấn đã được lưu an toàn.');
     }
