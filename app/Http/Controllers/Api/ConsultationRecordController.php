@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpsertConsultationRecordRequest;
 use App\Http\Resources\ConsultationRecordResource;
 use App\Http\Resources\CustomerConsultationRecordResource;
+use App\Models\Appointment;
 use App\Models\User;
 use App\Services\ConsultationRecordService;
 use Illuminate\Http\JsonResponse;
