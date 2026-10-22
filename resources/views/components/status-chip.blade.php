@@ -7,18 +7,20 @@
 
     Props:
       @type   string  $status   — mã trạng thái (xem bảng bên dưới)
-      @type   string  $group    — 'appointment' (mặc định) | 'payment'
+      @type   string  $type     — 'appointment' (mặc định) | 'payment' | 'account'
+      @type   string  $group    — alias của $type (giữ tương thích)
       @type   string  $size     — 'sm' (mặc định) | 'md' | 'lg'
 
     Ví dụ:
       <x-status-chip status="PENDING" />
-      <x-status-chip status="PAID" group="payment" size="md" />
+      <x-status-chip status="PAID" type="payment" size="md" />
       <x-status-chip status="CANCELLED_BY_CLINIC" />
 --}}
 
 @props([
     'status' => '',
-    'group'  => 'appointment',   {{-- 'appointment' | 'payment' --}}
+    'type'   => 'appointment',   {{-- 'appointment' | 'payment' | 'account' --}}
+    'group'  => null,            {{-- alias của $type --}}
     'size'   => 'sm',            {{-- 'sm' | 'md' | 'lg' --}}
 ])
 
@@ -194,7 +196,7 @@
     ];
 
     // Chọn bảng theo group
-    $map = match ($group) {
+    $map = match ($group ?? $type) {
         'payment' => $paymentMap,
         'account' => $accountMap,
         default   => $appointmentMap,

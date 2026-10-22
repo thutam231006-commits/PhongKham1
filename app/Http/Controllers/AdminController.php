@@ -88,6 +88,43 @@ class AdminController extends Controller
         return back()->with('success', 'Đã cập nhật tài khoản.');
     }
 
+    /**
+     * Khóa / vô hiệu hóa / kích hoạt lại tài khoản — SCR-ADM-02.
+     *
+     * Bắt buộc có lý do và hủy toàn bộ phiên đang đăng nhập của người đó.
+     */
+    public function changeUserStatus(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['ACTIVE', 'LOCKED', 'DISABLED'])],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        abort_if($user->is(auth()->user()), 422, 'Không thể thay đổi trạng thái tài khoản của chính mình.');
+        if ($user->role === 'admin' && $data['status'] !== 'ACTIVE') {
+            abort_if(User::query()->where('role', 'admin')->where('status', 'ACTIVE')->whereKeyNot($user->id)->doesntExist(), 422, 'Hệ thống phải còn ít nhất một quản trị viên đang hoạt động.');
+        }
+
+        $old = ['status' => $user->status];
+        $user->update(['status' => $data['status']]);
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+        $user->forceFill(['remember_token' => null, 'failed_login_count' => 0, 'locked_until' => null])->saveQuietly();
+        $this->audit('user.status_changed', 'users', $user->id, $old, ['status' => $user->status, 'reason' => $data['reason']]);
+
+        return back()->with('success', 'Đã cập nhật trạng thái tài khoản. Mọi phiên đang đăng nhập của người này đã bị hủy.');
+    }
+
+    /**
+     * Gửi liên kết đặt lại mật khẩu cho người dùng — SCR-ADM-02.
+     */
+    public function sendPasswordResetLink(Request $request, User $user): RedirectResponse
+    {
+        PasswordBroker::sendResetLink(['email' => $user->email]);
+        $this->audit('user.password_reset_requested', 'users', $user->id, null, ['email' => $user->email]);
+
+        return back()->with('success', 'Đã gửi liên kết đặt lại mật khẩu tới email của người dùng.');
+    }
+
     public function specialists(): View
     {
         $specialists = SpecialistProfile::query()->with(['user', 'services'])->withCount('appointments')->orderBy('display_order')->paginate(20);

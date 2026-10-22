@@ -95,20 +95,30 @@ class StaffController extends Controller
             'status' => ['nullable', Rule::in(['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_CLINIC'])],
             'specialist_id' => ['nullable', 'integer', 'exists:specialist_profiles,id'],
             'service_id' => ['nullable', 'integer', 'exists:services,id'],
-            'date' => ['nullable', 'date_format:Y-m-d'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'payment_status' => ['nullable', Rule::in(['UNPAID', 'PAID', 'REFUND_PENDING', 'REFUNDED'])],
+            'payment_method' => ['nullable', Rule::in(['CASH', 'BANK_QR'])],
+            'attention' => ['nullable', 'boolean'],
+            'unpaid_cash' => ['nullable', 'boolean'],
         ]);
         $query = Appointment::query()->with(['customer', 'specialistProfile.user', 'service', 'consultationRoom'])->orderByDesc('start_at');
         $query->when($data['status'] ?? null, fn ($builder, string $status) => $builder->where('status', $status));
         $query->when($data['specialist_id'] ?? null, fn ($builder, int $specialistId) => $builder->where('specialist_profile_id', $specialistId));
         $query->when($data['service_id'] ?? null, fn ($builder, int $serviceId) => $builder->where('service_id', $serviceId));
-        $query->when($data['date'] ?? null, fn ($builder, string $date) => $builder->whereDate('start_at', $date));
+        $query->when($data['date_from'] ?? null, fn ($builder, string $date) => $builder->whereDate('start_at', '>=', $date));
+        $query->when($data['date_to'] ?? null, fn ($builder, string $date) => $builder->whereDate('start_at', '<=', $date));
+        $query->when($data['payment_status'] ?? null, fn ($builder, string $status) => $builder->where('payment_status', $status));
+        $query->when($data['payment_method'] ?? null, fn ($builder, string $method) => $builder->where('payment_method', $method));
+        $query->when($request->boolean('attention'), fn ($builder) => $builder->where('needs_attention', true));
+        $query->when($request->boolean('unpaid_cash'), fn ($builder) => $builder->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH'));
         $query->when($data['q'] ?? null, function ($builder, string $term): void {
             $builder->where(function ($nested) use ($term): void {
                 $nested->where('appointment_code', 'like', "%{$term}%")
                     ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
             });
         });
-        $appointments = $query->paginate(30)->withQueryString();
+        $appointments = $query->paginate(20)->withQueryString();
         $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
         $services = Service::query()->active()->orderBy('display_order')->get();
 
