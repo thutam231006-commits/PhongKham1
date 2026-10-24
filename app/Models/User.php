@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'phone', 'status', 'failed_login_count', 'locked_until'])]
+#[Fillable(['name', 'email', 'password', 'role', 'phone', 'gender', 'address', 'status', 'failed_login_count', 'locked_until'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {

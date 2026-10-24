@@ -12,11 +12,14 @@ use App\Models\SpecialistProfile;
 use App\Models\User;
 use App\Services\AccountActivationService;
 use App\Services\AppointmentBookingService;
+use App\Services\AppointmentTrafficService;
 use App\Services\AppointmentWorkflowService;
 use App\Services\AuditService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
+use App\Services\SlotAvailabilityService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,12 +30,15 @@ use Illuminate\View\View;
 
 class StaffController extends Controller
 {
-    public function dashboard(Request $request, NotificationService $notifications): View
+    public function __construct(private readonly SlotAvailabilityService $slots) {}
+
+    public function dashboard(Request $request, NotificationService $notifications, SlotAvailabilityService $slots, AppointmentTrafficService $traffic): View
     {
         $date = $request->date('date')?->toDateString() ?? today()->toDateString();
         $today = Appointment::query()->whereDate('start_at', $date)->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at')->get();
         $cashToCollect = Appointment::query()->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->count();
         $needsAttention = Appointment::query()->where('needs_attention', true)->count();
+        $attentionAppointments = Appointment::query()->where('needs_attention', true)->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->with(['customer', 'service', 'specialistProfile.user'])->orderBy('start_at')->limit(6)->get();
         $pendingAppointments = Appointment::query()->where('status', 'PENDING')->with(['customer', 'service', 'specialistProfile.user'])->oldest('created_at')->get();
         $pending = $pendingAppointments->count();
         $staffRecipients = User::query()->whereIn('role', ['staff', 'admin'])->where('status', 'ACTIVE')->get();
@@ -52,7 +58,52 @@ class StaffController extends Controller
         $notifications = $request->user()->notifications()->latest()->limit(8)->get();
         $urgentAppointments = Appointment::query()->whereIn('status', ['PENDING', 'RESCHEDULE_REQUESTED'])->with(['customer', 'service', 'specialistProfile.user'])->orderBy('created_at')->limit(8)->get();
 
-        return view('staff.dashboard', compact('date', 'today', 'cashToCollect', 'needsAttention', 'pending', 'pendingCheckins', 'rescheduleRequests', 'refundsPending', 'newCustomers', 'unreadNotifications', 'notifications', 'urgentAppointments'));
+        // Yêu cầu 1: tải lịch theo từng chuyên viên — số bệnh nhân và số slot trống.
+        $specialistLoad = SpecialistProfile::query()
+            ->where('status', 'ACTIVE')
+            ->with('user')
+            ->orderBy('display_order')
+            ->get()
+            ->map(fn (SpecialistProfile $specialist): object => (object) [
+                'id' => $specialist->id,
+                'name' => $specialist->user->name,
+                ...$slots->dailyLoadFor($specialist, $date),
+            ]);
+
+        // Lưu lượng theo khung giờ trong ngày để nhân viên nắm giờ cao điểm.
+        $hourlyTraffic = $traffic->byHourOfDay($date);
+        $peakHour = $hourlyTraffic->sortByDesc('total')->first();
+
+        $cashAppointments = Appointment::query()->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->with(['customer', 'service'])->latest('completed_at')->limit(6)->get();
+
+        return view('staff.dashboard', compact('date', 'today', 'cashToCollect', 'needsAttention', 'attentionAppointments', 'cashAppointments', 'pending', 'pendingCheckins', 'rescheduleRequests', 'refundsPending', 'newCustomers', 'unreadNotifications', 'notifications', 'urgentAppointments', 'specialistLoad', 'hourlyTraffic', 'peakHour'));
+    }
+
+    public function customerSearch(Request $request): JsonResponse
+    {
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:100']]);
+        $term = trim($data['q']);
+        $appointments = Appointment::query()
+            ->whereDate('start_at', today())
+            ->whereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"))
+            ->with(['customer.customerProfile', 'specialistProfile.user', 'service'])
+            ->orderBy('start_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (Appointment $appointment): array => [
+                'id' => $appointment->id,
+                'appointment_code' => $appointment->appointment_code,
+                'customer' => ['name' => $appointment->customer->name, 'email' => $appointment->customer->email, 'phone' => $appointment->customer->phone, 'code' => $appointment->customer->customerProfile?->customer_code],
+                'service' => $appointment->service->name,
+                'specialist' => $appointment->specialistProfile->user->name,
+                'time' => $appointment->start_at->format('H:i').' - '.$appointment->end_at->format('H:i'),
+                'status' => $appointment->status,
+                'checked_in' => $appointment->checked_in_at !== null,
+                'payment_status' => $appointment->payment_status,
+                'payment_method' => $appointment->payment_method,
+            ]);
+
+        return response()->json(['success' => true, 'data' => $appointments, 'error' => null]);
     }
 
     public function checkin(Request $request): View
@@ -122,7 +173,17 @@ class StaffController extends Controller
         $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
         $services = Service::query()->active()->orderBy('display_order')->get();
 
-        return view('staff.appointment-list', compact('appointments', 'specialists', 'services', 'data'));
+        // Thẻ số liệu tổng quan — bỏ qua bộ lọc đang áp dụng để phản ánh toàn bộ tình hình.
+        $summaryQuery = Appointment::query();
+        $summary = [
+            'pending' => (clone $summaryQuery)->where('status', 'PENDING')->count(),
+            'today' => (clone $summaryQuery)->whereDate('start_at', today())->count(),
+            'attention' => (clone $summaryQuery)->where('needs_attention', true)->count(),
+            'unpaidCash' => (clone $summaryQuery)->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->count(),
+            'total' => (clone $summaryQuery)->count(),
+        ];
+
+        return view('staff.appointment-list', compact('appointments', 'specialists', 'services', 'data', 'summary'));
     }
 
     public function appointments(Request $request): View
@@ -165,12 +226,14 @@ class StaffController extends Controller
         return view('staff.appointments', compact('appointments', 'rescheduleRequests', 'specialists', 'services', 'calendarDays', 'selectedDate', 'view', 'rangeStart', 'rangeEnd', 'data'));
     }
 
-    public function markCheckin(int $id): RedirectResponse
+    public function markCheckin(int $id, NotificationService $notifications): RedirectResponse
     {
         $appointment = Appointment::query()->whereKey($id)->firstOrFail();
         abort_unless(in_array($appointment->status, ['CONFIRMED', 'IN_PROGRESS'], true), 409, 'Lịch hẹn chưa ở trạng thái có thể điểm danh.');
 
         $appointment->update(['checked_in_at' => now(), 'checked_in_by' => auth()->id()]);
+        $appointment->load('customer', 'specialistProfile.user');
+        $notifications->send($appointment->specialistProfile->user, 'Khách đã check-in', $appointment->customer->name.' đã có mặt tại phòng chờ cho lịch '.$appointment->appointment_code.'.', 'appointment.checked_in', route('specialist.appointments.detail', $appointment), $appointment);
 
         return back()->with('success', 'Đã ghi nhận khách đến phòng khám.');
     }
@@ -182,6 +245,29 @@ class StaffController extends Controller
         $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->orderBy('display_order')->get();
 
         return view('staff.booking-onsite', compact('customers', 'services', 'specialists'));
+    }
+
+    /**
+     * Khung giờ còn trống cho đặt lịch tại quầy (Yêu cầu 3 — nhân viên cũng chỉ
+     * thấy slot thật, không phải khung giờ đã có người đặt).
+     */
+    public function bookingOnsiteSlots(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+            'specialist_id' => ['required', 'integer', 'exists:specialist_profiles,id'],
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $service = Service::query()->active()->findOrFail($data['service_id']);
+        $specialist = SpecialistProfile::query()->where('status', 'ACTIVE')->findOrFail($data['specialist_id']);
+        $openSlots = $this->slots->openSlotsFor($specialist, $service, $data['date']);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['date' => $data['date'], 'slots' => $openSlots, 'available_count' => count($openSlots)],
+            'error' => null,
+        ]);
     }
 
     public function storeBookingOnsite(Request $request, AppointmentBookingService $booking): RedirectResponse
@@ -229,9 +315,9 @@ class StaffController extends Controller
 
     public function storeCustomer(Request $request, AuditService $audit, AccountActivationService $activation): RedirectResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', 'unique:users,email'], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
+        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', 'unique:users,email'], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'gender' => ['nullable', Rule::in(['MALE', 'FEMALE', 'OTHER'])], 'address' => ['nullable', 'string', 'max:255'], 'date_of_birth' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
         $user = DB::transaction(function () use ($data, $audit): User {
-            $user = User::query()->create(['name' => $data['name'], 'email' => strtolower((string) ($data['email'] ?? '')), 'phone' => $data['phone'] ?? null, 'password' => Hash::make(Str::random(40)), 'role' => 'customer', 'status' => $data['email'] ? 'PENDING_ACTIVATION' : 'ACTIVE', 'email_verified_at' => null]);
+            $user = User::query()->create(['name' => $data['name'], 'email' => strtolower((string) ($data['email'] ?? '')), 'phone' => $data['phone'] ?? null, 'gender' => $data['gender'] ?? null, 'address' => $data['address'] ?? null, 'password' => Hash::make(Str::random(40)), 'role' => 'customer', 'status' => $data['email'] ? 'PENDING_ACTIVATION' : 'ACTIVE', 'email_verified_at' => null]);
             CustomerProfile::query()->create(['user_id' => $user->id, 'customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $data['date_of_birth'], 'privacy_policy_version' => 'staff-created', 'consented_at' => now()]);
             $audit->record('customer.created', $user, new: ['role' => 'customer']);
 
@@ -248,7 +334,7 @@ class StaffController extends Controller
     public function updateCustomer(Request $request, User $user, AuditService $audit): RedirectResponse
     {
         abort_unless(strtolower((string) $user->role) === 'customer', 404);
-        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'date_of_birth' => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
+        $data = $request->validate(['name' => ['required', 'string', 'min:2', 'max:100'], 'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)], 'phone' => ['nullable', 'regex:/^\+?[0-9]{9,15}$/'], 'gender' => ['nullable', Rule::in(['MALE', 'FEMALE', 'OTHER'])], 'address' => ['nullable', 'string', 'max:255'], 'date_of_birth' => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()]]);
         $user->update(collect($data)->except('date_of_birth')->all());
         CustomerProfile::query()->updateOrCreate(['user_id' => $user->id], ['customer_code' => 'KH-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $data['date_of_birth'] ?? null]);
         $audit->record('customer.updated', $user, new: ['email' => $user->email]);

@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/specialists', [BookingController::class, 'specialistsApi'])->name('api.specialists.index');
 
+// Khung giờ còn trống thực sự, đồng bộ trực tiếp với lịch bác sĩ (Yêu cầu 3).
+Route::get('/slots', [BookingController::class, 'slotsApi'])->name('api.slots.index');
+
 /*
 |--------------------------------------------------------------------------
 | Hồ sơ Tư vấn (Consultation Record) — FR-CONSULT-001…003, mục 29 SRS

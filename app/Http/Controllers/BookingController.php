@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Exceptions\BookingSlotUnavailable;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
-use App\Models\ScheduleException;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Services\AppointmentBookingService;
 use App\Services\PaymentService;
-use Carbon\CarbonImmutable;
+use App\Services\SlotAvailabilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,11 +30,27 @@ use Illuminate\View\View;
  */
 class BookingController extends Controller
 {
+    public function __construct(private readonly SlotAvailabilityService $slots) {}
+
     /**
      * GET /booking hoặc /dat-lich (appointments.book)
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        // Đến từ nút "Đặt lịch ngay" trên thẻ gói dịch vụ (?service=ID):
+        // hiển thị ngay thông tin chi tiết gói + danh sách chuyên viên phụ trách.
+        $requestedServiceId = (int) $request->input('service');
+        if ($requestedServiceId > 0 && Service::query()->active()->whereKey($requestedServiceId)->exists()) {
+            // Bắt đầu phiên đặt lịch mới: xoá dữ liệu cũ để không dùng nhầm
+            // chuyên viên / khung giờ của lần chọn trước đó.
+            $request->session()->forget('booking');
+
+            return redirect()->route('booking.select-specialist', array_filter([
+                'service_id' => $requestedServiceId,
+                'specialist_id' => $request->input('specialist'),
+            ]));
+        }
+
         $services = $this->getAvailableServices();
         $selectedServiceId = (int) ($request->input('service') ?: session('booking.service_id', 0));
 
@@ -60,7 +75,55 @@ class BookingController extends Controller
         $service = Service::query()->active()->with('category')->findOrFail($serviceId);
         $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->whereHas('services', fn ($query) => $query->whereKey($serviceId))->with(['user', 'services'])->withAvg(['reviews as average_rating' => fn ($query) => $query->where('status', 'VISIBLE')], 'rating')->withCount(['reviews as reviews_count' => fn ($query) => $query->where('status', 'VISIBLE')])->get();
 
+        // Đến từ thẻ "Đặt lịch với chuyên gia" (?specialist_id=ID): bỏ qua bước chọn
+        // chuyên viên và chuyển thẳng sang bước chọn thời gian lịch hẹn.
+        $requestedSpecialistId = (int) $request->input('specialist_id');
+        if ($requestedSpecialistId > 0 && $specialists->contains('id', $requestedSpecialistId)) {
+            session(['booking' => [...session('booking', []), 'specialist_id' => $requestedSpecialistId]]);
+
+            return redirect()->route('booking.select-slot');
+        }
+
         return view('booking.step', ['step' => 2, 'service' => $service, 'specialists' => $specialists, 'booking' => session('booking', [])]);
+    }
+
+    /**
+     * GET /api/slots — chỉ trả về khung giờ còn trống thực sự (Yêu cầu 3).
+     *
+     * UI gọi endpoint này mỗi khi khách đổi ngày / dịch vụ / chuyên viên để
+     * danh sách luôn khớp với lịch thật của bác sĩ, tránh chọn xong mới báo hết slot.
+     */
+    public function slotsApi(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+            'specialist_id' => ['required', 'integer', 'exists:specialist_profiles,id'],
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $service = Service::query()->active()->findOrFail($data['service_id']);
+        $specialist = SpecialistProfile::query()
+            ->where('status', 'ACTIVE')
+            ->whereHas('services', fn ($query) => $query->whereKey($service->id))
+            ->with('user')
+            ->findOrFail($data['specialist_id']);
+
+        $slots = $this->slots->openSlotsFor($specialist, $service, $data['date']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'date' => $data['date'],
+                'service_id' => $service->id,
+                'service_name' => $service->name,
+                'duration_minutes' => $service->duration_minutes,
+                'specialist_id' => $specialist->id,
+                'specialist_name' => $specialist->user->name,
+                'slots' => $slots,
+                'available_count' => count($slots),
+            ],
+            'error' => null,
+        ]);
     }
 
     public function selectSlot(Request $request): View|RedirectResponse
@@ -74,7 +137,7 @@ class BookingController extends Controller
         $service = Service::query()->active()->findOrFail($serviceId);
         $specialist = SpecialistProfile::query()->where('status', 'ACTIVE')->with('user')->findOrFail($specialistId);
         $date = $request->date('date')?->toDateString() ?? session('booking.date', now()->addDays(2)->toDateString());
-        $slots = $this->availableSlots($specialist, $service, $date);
+        $slots = $this->slots->openSlotsFor($specialist, $service, $date);
 
         return view('booking.step', ['step' => 3, 'service' => $service, 'specialist' => $specialist, 'date' => $date, 'slots' => $slots, 'booking' => session('booking', [])]);
     }
@@ -124,7 +187,7 @@ class BookingController extends Controller
         $data = $request->validate(['date' => ['required', 'date_format:Y-m-d'], 'time' => ['required', 'date_format:H:i']]);
         $service = Service::query()->active()->findOrFail(session('booking.service_id'));
         $specialist = SpecialistProfile::query()->where('status', 'ACTIVE')->findOrFail(session('booking.specialist_id'));
-        abort_unless(collect($this->availableSlots($specialist, $service, $data['date']))->contains(fn (array $slot): bool => $slot['start'] === $data['time'] && $slot['available']), 422, 'Khung giờ đã chọn không còn khả dụng.');
+        abort_unless($this->slots->isSlotOpen($specialist, $service, $data['date'], $data['time']), 422, 'Khung giờ đã chọn không còn khả dụng. Vui lòng chọn khung giờ khác.');
         session(['booking' => [...session('booking', []), 'date' => $data['date'], 'time' => $data['time'], 'start_at' => $data['date'].' '.$data['time']]]);
 
         return redirect()->route('booking.note');
@@ -212,48 +275,6 @@ class BookingController extends Controller
             ],
             'error' => null,
         ]);
-    }
-
-    /** @return array<int, array{start:string,end:string,available:bool}> */
-    private function availableSlots(SpecialistProfile $specialist, Service $service, string $date): array
-    {
-        $day = CarbonImmutable::parse($date);
-        if ($day->lt(now()->startOfDay()) || $day->gt(now()->addDays(30)->endOfDay())) {
-            return [];
-        }
-        $exception = ScheduleException::query()->where(function ($query) use ($specialist): void {
-            $query->whereNull('specialist_profile_id')->orWhere('specialist_profile_id', $specialist->id);
-        })->whereDate('start_date', '<=', $date)->whereDate('end_date', '>=', $date)->get();
-        if ($exception->contains(fn (ScheduleException $item): bool => ! $item->start_time)) {
-            return [];
-        }
-        $schedule = $specialist->workingSchedules()->where('day_of_week', $day->isoWeekday())->where('is_active', true)->get();
-        $appointments = Appointment::query()->where('specialist_profile_id', $specialist->id)->holdingSlot()->whereDate('start_at', $date)->get();
-        $slots = [];
-        foreach ($schedule as $window) {
-            $cursor = CarbonImmutable::parse($date.' '.$window->start_time);
-            $windowEnd = CarbonImmutable::parse($date.' '.$window->end_time);
-            while ($cursor->addMinutes($service->duration_minutes)->lte($windowEnd)) {
-                $end = $cursor->addMinutes($service->duration_minutes);
-                $blocked = $exception->contains(function (ScheduleException $item) use ($cursor, $end, $date): bool {
-                    $blockedStart = CarbonImmutable::parse($date.' '.$item->start_time);
-                    $blockedEnd = CarbonImmutable::parse($date.' '.$item->end_time);
-
-                    return $cursor->lt($blockedEnd) && $end->gt($blockedStart);
-                });
-                $conflict = $appointments->contains(fn (Appointment $appointment): bool => $cursor->lt($appointment->end_at->copy()->addMinutes($appointment->buffer_minutes)) && $end->gt($appointment->start_at->copy()->subMinutes($service->buffer_minutes)));
-                if ($cursor->gte(now()->addHours(2))) {
-                    $slots[] = [
-                        'start' => $cursor->format('H:i'),
-                        'end' => $end->format('H:i'),
-                        'available' => ! $blocked && ! $conflict,
-                    ];
-                }
-                $cursor = $cursor->addMinutes($service->duration_minutes + $service->buffer_minutes);
-            }
-        }
-
-        return $slots;
     }
 
     public function store(StoreAppointmentRequest $request, AppointmentBookingService $bookingService): JsonResponse

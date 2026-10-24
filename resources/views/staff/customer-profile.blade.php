@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.staff')
 @section('title', 'Hồ sơ khách hàng')
 @section('content')
 <div class="mx-auto max-w-screen-xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">

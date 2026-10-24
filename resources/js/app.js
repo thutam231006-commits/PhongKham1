@@ -82,6 +82,57 @@ Alpine.data('confirmModal', (requiresReason = false, useForm = true, eventName =
     },
 }));
 
+Alpine.data('bookingSlots', (config) => ({
+    endpoint: config.endpoint,
+    serviceId: config.serviceId,
+    specialistId: config.specialistId,
+    date: config.initialDate,
+    slots: config.initialSlots || [],
+    minDate: config.minDate,
+    maxDate: config.maxDate,
+    loading: false,
+    error: '',
+
+    get displayDate() {
+        const [y, m, d] = this.date.split('-');
+
+        return `${d}/${m}/${y}`;
+    },
+
+    async load() {
+        if (!this.date) {
+            return;
+        }
+
+        this.loading = true;
+        this.error = '';
+
+        try {
+            const url = new URL(this.endpoint, window.location.origin);
+            url.searchParams.set('service_id', this.serviceId);
+            url.searchParams.set('specialist_id', this.specialistId);
+            url.searchParams.set('date', this.date);
+
+            const response = await fetch(url, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+            const payload = await response.json();
+
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.error?.message || 'Không tải được khung giờ.');
+            }
+
+            this.slots = payload.data.slots;
+        } catch (exception) {
+            this.error = exception.message || 'Không tải được khung giờ trống.';
+            this.slots = [];
+        } finally {
+            this.loading = false;
+        }
+    },
+}));
+
 Alpine.start();
 
 const revealElements = document.querySelectorAll('.mg-reveal, .mg-stagger');

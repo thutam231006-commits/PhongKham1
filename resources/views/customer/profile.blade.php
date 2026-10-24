@@ -172,6 +172,37 @@
                                placeholder="0912 345 678"
                                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
                     </div>
+
+                    {{-- Giới tính — dùng để điền thông tin trong email nhắc lịch --}}
+                    <div>
+                        <label for="gender" class="block text-xs font-bold text-[#0F172A] mb-1">
+                            Giới tính
+                        </label>
+                        <select id="gender"
+                                name="gender"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
+                            <option value="">Chưa cập nhật</option>
+                            @foreach(\App\Support\CustomerGender::options() as $value => $label)
+                                <option value="{{ $value }}" @selected(old('gender', $user->gender) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="address" class="block text-xs font-bold text-[#0F172A] mb-1">
+                        Địa chỉ
+                    </label>
+                    <input type="text"
+                           id="address"
+                           name="address"
+                           value="{{ old('address', $user->address) }}"
+                           placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+                           maxlength="255"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-[#0F172A] focus:border-[#2D82C4] focus:ring-2 focus:ring-[#2D82C4]/20">
+                    <p class="mt-1 text-[11px] text-gray-500">
+                        Giới tính và địa chỉ giúp phòng khám liên hệ chính xác trong email nhắc lịch.
+                    </p>
                 </div>
 
                 <div class="pt-4 border-t border-gray-100 flex justify-end">

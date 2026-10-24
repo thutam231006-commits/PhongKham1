@@ -19,7 +19,7 @@ class Appointment extends Model
         'appointment_code', 'customer_id', 'specialist_profile_id', 'service_id',
         'rescheduled_from_id', 'reschedule_count',
         'start_at', 'end_at', 'duration_minutes', 'buffer_minutes', 'price',
-        'status', 'payment_status', 'paid_at', 'refunded_at', 'refund_amount', 'refund_status', 'payment_method', 'payment_expires_at', 'reminded_at', 'idempotency_key', 'source', 'customer_note',
+        'status', 'payment_status', 'paid_at', 'refunded_at', 'refund_amount', 'refund_status', 'payment_method', 'payment_expires_at', 'reminded_at', 'reminder_24h_at', 'reminder_30m_at', 'idempotency_key', 'source', 'customer_note',
         'created_by', 'slot_lock_key', 'needs_attention', 'attention_reason', 'attention_flagged_at', 'confirmed_at', 'started_at', 'completed_at',
         'cancelled_at', 'cancel_reason',
         'checked_in_at', 'checked_in_by', 'collected_at', 'collected_by', 'payment_reference',
@@ -36,6 +36,8 @@ class Appointment extends Model
             'paid_at' => 'datetime', 'refunded_at' => 'datetime', 'refund_amount' => 'decimal:0',
             'payment_expires_at' => 'datetime',
             'reminded_at' => 'datetime',
+            'reminder_24h_at' => 'datetime',
+            'reminder_30m_at' => 'datetime',
         ];
     }
 
@@ -99,10 +101,21 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Các lịch còn hiệu lực (đang giữ slot) dùng cho thống kê tải lịch.
+     *
+     * @param  Builder<Appointment>  $query
+     * @return Builder<Appointment>
+     */
+    public function scopeActiveSlot(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::ACTIVE_STATUSES);
+    }
+
     public function scopeHoldingSlot(Builder $query): Builder
     {
         return $query
-            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS'])
+            ->whereIn('status', self::ACTIVE_STATUSES)
             ->where(function (Builder $query): void {
                 $query
                     ->where('status', '!=', 'PENDING')
@@ -110,4 +123,7 @@ class Appointment extends Model
                     ->orWhere('payment_expires_at', '>', now());
             });
     }
+
+    /** Trạng thái vẫn chiếm khung giờ của chuyên viên. */
+    public const ACTIVE_STATUSES = ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED', 'IN_PROGRESS'];
 }

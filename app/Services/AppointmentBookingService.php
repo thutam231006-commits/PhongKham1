@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Notifications\AppointmentConfirmationNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -130,6 +131,10 @@ class AppointmentBookingService
             }
 
             $this->audit->record('appointment.created', $appointment, new: ['status' => $status, 'payment_method' => $data['payment_method']], actor: $actor);
+
+            // Yêu cầu 4: khách luôn nhận email xác nhận kèm đầy đủ thông tin lịch.
+            $customer->notify(new AppointmentConfirmationNotification($appointment));
+
             if ($isOperatorBooking) {
                 $this->notifications->send($customer, 'Đặt lịch thành công', 'Mã lịch của bạn: '.$appointment->appointment_code.'.', 'appointment.created', route('customer.appointments.detail', $appointment), $appointment);
             } else {

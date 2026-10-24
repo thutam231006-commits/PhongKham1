@@ -203,6 +203,7 @@ Route::middleware('auth')->group(function () {
     // ----------------------------------------------------------
     Route::middleware('role:staff')->prefix('staff')->name('staff.')->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/customer-search', [StaffController::class, 'customerSearch'])->name('dashboard.customer-search');
         Route::get('/checkin', [StaffController::class, 'checkin'])->name('checkin');
         Route::post('/checkin/{id}', [StaffController::class, 'markCheckin'])->name('checkin.store');
         Route::get('/appointments', [StaffController::class, 'appointmentList'])->name('appointments');
@@ -223,6 +224,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/customers', [StaffController::class, 'storeCustomer'])->name('customers.store');
         Route::put('/customers/{user}', [StaffController::class, 'updateCustomer'])->name('customers.update');
         Route::get('/booking-onsite', [StaffController::class, 'bookingOnsite'])->name('appointments.book');
+        Route::get('/booking-onsite/slots', [StaffController::class, 'bookingOnsiteSlots'])->name('appointments.slots');
         Route::post('/booking-onsite', [StaffController::class, 'storeBookingOnsite'])->name('appointments.store');
         Route::get('/payments', [StaffController::class, 'payments'])->name('payments');
         Route::post('/payments/{id}/collect', [StaffController::class, 'collectPayment'])->name('payments.collect');

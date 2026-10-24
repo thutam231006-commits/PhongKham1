@@ -17,6 +17,7 @@ use App\Models\SpecialistProfile;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AdminAnalyticsService;
+use App\Services\AppointmentTrafficService;
 use App\Services\AppointmentWorkflowService;
 use App\Services\AttentionService;
 use App\Services\NotificationService;
@@ -210,7 +211,7 @@ class AdminController extends Controller
         return back()->with('success', 'Đã cập nhật dịch vụ.');
     }
 
-    public function reports(Request $request, AdminAnalyticsService $analytics): View
+    public function reports(Request $request, AdminAnalyticsService $analytics, AppointmentTrafficService $traffic): View
     {
         $period = $analytics->period($request->input('from'), $request->input('to'));
         $from = $period['from'];
@@ -220,7 +221,12 @@ class AdminController extends Controller
         $byDay = Appointment::query()->whereBetween('start_at', [$from, $to])->selectRaw('DATE(start_at) AS day, COUNT(*) AS total')->groupBy('day')->orderBy('day')->get();
         $financial = $analytics->summary($period);
 
-        return view('admin.reports', compact('from', 'to', 'byStatus', 'byService', 'byDay', 'financial'));
+        // Yêu cầu 1: lưu lượng theo thời gian — theo ngày và theo khung giờ trong ngày.
+        $patientsByDay = $traffic->dailyPatients($from, $to);
+        $hourlyTraffic = $traffic->byHourOfDay($to->toDateString());
+        $peakHour = $hourlyTraffic->sortByDesc('total')->first();
+
+        return view('admin.reports', compact('from', 'to', 'byStatus', 'byService', 'byDay', 'financial', 'patientsByDay', 'hourlyTraffic', 'peakHour'));
     }
 
     public function auditLogs(Request $request): View

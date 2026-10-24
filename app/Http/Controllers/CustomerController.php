@@ -84,7 +84,7 @@ class CustomerController extends Controller
     public function profile(ConsultationRecordService $records): View
     {
         $model = auth()->user()->load('customerProfile');
-        $user = (object) ['id' => $model->id, 'name' => $model->name, 'email' => $model->email, 'phone' => $model->phone, 'code' => $model->customerProfile?->customer_code ?? 'KH-'.str_pad((string) $model->id, 5, '0', STR_PAD_LEFT), 'dob' => $model->customerProfile?->date_of_birth?->format('Y-m-d'), 'created_at' => $model->created_at?->format('d/m/Y'), 'email_verified' => $model->email_verified_at !== null];
+        $user = (object) ['id' => $model->id, 'name' => $model->name, 'email' => $model->email, 'phone' => $model->phone, 'gender' => $model->gender, 'address' => $model->address, 'code' => $model->customerProfile?->customer_code ?? 'KH-'.str_pad((string) $model->id, 5, '0', STR_PAD_LEFT), 'dob' => $model->customerProfile?->date_of_birth?->format('Y-m-d'), 'created_at' => $model->created_at?->format('d/m/Y'), 'email_verified' => $model->email_verified_at !== null];
 
         // Kết quả các buổi tư vấn tâm lý — chỉ bản tóm lược đã lọc cho khách
         // (nội dung chuyên môn thuộc về chuyên viên phụ trách — BR-049).
@@ -114,6 +114,8 @@ class CustomerController extends Controller
             'name' => 'required|string|min:2|max:100',
             'phone' => 'nullable|string|regex:/^[0-9+\s\-]{9,15}$/',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($request->user()->id)],
+            'gender' => ['nullable', Rule::in(['MALE', 'FEMALE', 'OTHER'])],
+            'address' => ['nullable', 'string', 'max:255'],
             'date_of_birth' => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
         ], [
             'name.required' => 'Họ và tên không được để trống (2-100 ký tự).',
@@ -121,7 +123,7 @@ class CustomerController extends Controller
             'email.email' => 'Địa chỉ email không đúng định dạng.',
         ]);
 
-        $request->user()->update($request->only(['name', 'phone', 'email']));
+        $request->user()->update($request->only(['name', 'phone', 'email', 'gender', 'address']));
         CustomerProfile::query()->updateOrCreate(['user_id' => $request->user()->id], ['customer_code' => 'KH-'.str_pad((string) $request->user()->id, 5, '0', STR_PAD_LEFT), 'date_of_birth' => $request->input('date_of_birth')]);
 
         return back()->with('success', 'Hồ sơ cá nhân đã được cập nhật thành công.');

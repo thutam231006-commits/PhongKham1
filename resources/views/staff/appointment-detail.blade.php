@@ -7,7 +7,7 @@
     Mọi hành động không hoàn tác mở hộp xác nhận nêu rõ đối tượng và hậu quả.
 --}}
 
-@extends('layouts.app')
+@extends('layouts.staff')
 
 @section('title', 'Chi tiết lịch hẹn ' . $appointment->appointment_code)
 

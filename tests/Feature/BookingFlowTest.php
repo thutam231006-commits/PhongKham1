@@ -332,6 +332,45 @@ class BookingFlowTest extends TestCase
             ->assertSee('KHUAT THU TAM');
     }
 
+    public function test_booking_from_a_service_card_redirects_to_specialist_step_with_service_details(): void
+    {
+        [$service, $specialist] = $this->bookingSetup();
+
+        $this->get(route('appointments.book', ['service' => $service->id]))
+            ->assertRedirect(route('booking.select-specialist', ['service_id' => $service->id]));
+
+        $response = $this->get(route('booking.select-specialist', ['service_id' => $service->id]));
+
+        $response->assertOk()
+            ->assertSee($service->name)
+            ->assertSee($specialist->user->name)
+            ->assertSee('Xem chi tiết')
+            ->assertSee('Chọn chuyên viên');
+    }
+
+    public function test_booking_with_a_preselected_specialist_skips_the_specialist_step(): void
+    {
+        [$service, $specialist] = $this->bookingSetup();
+
+        $this->get(route('appointments.book', ['service' => $service->id, 'specialist' => $specialist->id]))
+            ->assertRedirect(route('booking.select-specialist', ['service_id' => $service->id, 'specialist_id' => $specialist->id]));
+
+        $this->get(route('booking.select-specialist', ['service_id' => $service->id, 'specialist_id' => $specialist->id]))
+            ->assertRedirect(route('booking.select-slot'))
+            ->assertSessionHas('booking.specialist_id', $specialist->id);
+    }
+
+    public function test_starting_a_booking_from_a_service_card_clears_the_previous_booking_session(): void
+    {
+        [$service, $specialist] = $this->bookingSetup();
+
+        $this->withSession(['booking' => ['service_id' => $service->id, 'specialist_id' => $specialist->id, 'start_at' => '2026-01-01 10:00:00']])
+            ->get(route('appointments.book', ['service' => $service->id]))
+            ->assertRedirect(route('booking.select-specialist', ['service_id' => $service->id]));
+
+        $this->assertNull(session('booking.start_at'));
+    }
+
     /** @return array{0: Service, 1: SpecialistProfile} */
     private function bookingSetup(): array
     {

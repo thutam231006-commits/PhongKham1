@@ -125,6 +125,32 @@ class StaffFlowTest extends TestCase
         $this->assertSame($staff->id, $appointment->checked_in_by);
     }
 
+    public function test_staff_dashboard_customer_search_returns_today_appointment_details(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->makeAppointment(['start_at' => now()->setTime(10, 0), 'end_at' => now()->setTime(11, 0)]);
+        $appointment->customer->update(['name' => 'Nguyễn Quầy', 'email' => 'counter@example.test', 'phone' => '0901234567']);
+
+        $this->actingAs($staff)
+            ->getJson(route('staff.dashboard.customer-search', ['q' => '090123']))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonFragment(['appointment_code' => $appointment->appointment_code])
+            ->assertJsonFragment(['name' => 'Nguyễn Quầy']);
+    }
+
+    public function test_checkin_notifies_the_assigned_specialist(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->makeAppointment(['status' => 'CONFIRMED']);
+
+        $this->actingAs($staff)->post(route('staff.checkin.store', $appointment->id))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $appointment->specialistProfile->user_id,
+        ]);
+    }
+
     public function test_staff_can_find_todays_appointment_by_customer_code_email_or_phone(): void
     {
         $staff = User::factory()->create(['role' => 'staff']);

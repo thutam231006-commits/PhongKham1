@@ -541,69 +541,200 @@
     @endphp
 
     @if ($showPublicFooter)
-    <footer class="mt-auto border-t border-[#D7E8F3] bg-[#EDF6FC]">
-        <div class="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-10">
-            <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    {{--
+        Bố cục 3 cột trên nền xanh navy (theo thiết kế tham chiếu):
+          Cột 1 — Thương hiệu: logo, mô tả, nút Đặt lịch, mạng xã hội
+          Cột 2 — Hỗ trợ: các liên kết điều hướng pháp lý & thông tin
+          Cột 3 — Liên hệ: địa chỉ, hotline, email, giờ làm việc (có icon)
+    --}}
+    <footer class="mt-auto bg-[#2D3E50] text-white">
 
-                {{-- Thương hiệu --}}
-                <div class="col-span-1 sm:col-span-2 lg:col-span-1">
-                    <a href="{{ url('/') }}" class="flex items-center gap-2 text-[#2D82C4] font-semibold text-lg">
-                        <svg class="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                            <circle cx="16" cy="16" r="14" fill="#6FA6CF" />
-                            <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                            <circle cx="16" cy="12" r="3" fill="white"/>
-                        </svg>
-                        Mind Guide
+        {{-- Đường nhấn màu phía trên footer --}}
+        <div class="h-1 w-full bg-gradient-to-r from-[#2D82C4] via-[#6FA6CF] to-[#2D82C4]" aria-hidden="true"></div>
+
+        <div class="mx-auto max-w-screen-xl px-4 py-14 sm:px-6 lg:px-8">
+            <div class="grid gap-12 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+
+                {{-- ── CỘT 1: THƯƠNG HIỆU ── --}}
+                <div class="lg:col-span-5">
+                    <a href="{{ url('/') }}"
+                       class="group inline-flex items-center gap-3 rounded focus:outline-none focus:ring-2 focus:ring-[#6FA6CF] focus:ring-offset-4 focus:ring-offset-[#2D3E50]">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2D82C4] to-[#6FA6CF] shadow-lg shadow-black/30 transition group-hover:scale-105">
+                            <svg class="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                                <path d="M10 20 Q16 10 22 20" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                                <circle cx="16" cy="12" r="3" fill="white"/>
+                            </svg>
+                        </span>
+                        <span>
+                            <strong class="block text-2xl font-extrabold leading-none tracking-tight">Mind Guide</strong>
+                            <small class="mt-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9FC4DF]">
+                                Tâm lý &amp; sức khỏe tinh thần
+                            </small>
+                        </span>
                     </a>
-                    <p class="mt-3 text-sm text-[#52637A] leading-relaxed">
-                        Phòng khám tâm lý đồng hành cùng bạn trên hành trình chăm sóc sức khỏe tinh thần.
+
+                    <p class="mt-5 max-w-md text-sm leading-relaxed text-[#C3D3E2]">
+                        Phòng khám tâm lý đồng hành cùng bạn trên hành trình chăm sóc sức khỏe tinh thần —
+                        lắng nghe thấu hiểu, đồng hành bền bỉ.
                     </p>
+
+                    <a href="{{ route('appointments.book') }}"
+                       class="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2D82C4] px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-black/30 transition hover:-translate-y-0.5 hover:bg-[#23689C] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#6FA6CF] focus:ring-offset-2 focus:ring-offset-[#2D3E50]">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"/>
+                        </svg>
+                        Đặt lịch tư vấn
+                    </a>
+
+                    {{-- Mạng xã hội --}}
+                    <div class="mt-8">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8FA9BE]">Kết nối với chúng tôi</p>
+                        <div class="mt-3 flex items-center gap-3">
+                            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook của Mind Guide"
+                               class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/80 ring-1 ring-inset ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#2D82C4] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                <svg class="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 22v-8h3l1-4h-4V8c0-1.1.3-1.8 1.9-1.8H17V2.6C16.7 2.6 15.5 2.5 14.2 2.5c-2.9 0-4.9 1.8-4.9 5.1V10H6v4h3.3v8H13z"/></svg>
+                            </a>
+                            <a href="https://zalo.me" target="_blank" rel="noopener noreferrer" aria-label="Zalo của Mind Guide"
+                               class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/80 ring-1 ring-inset ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#2D82C4] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.5-4.4A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/><path stroke-linecap="round" d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>
+                            </a>
+                            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram của Mind Guide"
+                               class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/80 ring-1 ring-inset ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#2D82C4] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+                            </a>
+                            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube của Mind Guide"
+                               class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/80 ring-1 ring-inset ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#2D82C4] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                <svg class="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.5 7.2a2.8 2.8 0 0 0-2-2C18.7 4.7 12 4.7 12 4.7s-6.7 0-8.5.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.8 2.8 2.8 0 0 0 2 2c1.8.5 8.5.5 8.5.5s6.7 0 8.5-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.8zM9.8 15.3V8.7l5.7 3.3-5.7 3.3z"/></svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                {{-- Liên kết nhanh --}}
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-[#1A202C]">Khám phá</h3>
-                    <ul class="mt-4 space-y-2">
-                        <li><a href="{{ route('services.index') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Dịch vụ</a></li>
-                        <li><a href="{{ route('specialists.index') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Chuyên viên</a></li>
-                        <li><a href="{{ route('appointments.book') }}" class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">Đặt lịch</a></li>
+                {{-- ── CỘT 2: HỖ TRỢ ── --}}
+                <div class="lg:col-span-3">
+                    <h2 class="flex items-center gap-2.5 text-sm font-extrabold uppercase tracking-[0.14em]">
+                        <span class="h-4 w-1 shrink-0 rounded-full bg-[#6FA6CF]" aria-hidden="true"></span>
+                        Hỗ trợ
+                    </h2>
+
+                    <ul class="mt-5 space-y-3.5">
+                        @foreach ([
+                            ['Về Mind Guide', 'about'],
+                            ['Câu hỏi thường gặp', 'faq'],
+                            ['Gửi tin nhắn cho phòng khám', 'contact'],
+                            ['Chính sách quyền riêng tư', 'privacy'],
+                            ['Điều khoản sử dụng', 'terms'],
+                        ] as [$footerLinkLabel, $footerLinkRoute])
+                            <li>
+                                <a href="{{ route($footerLinkRoute) }}"
+                                   class="group inline-flex items-center gap-2 rounded text-sm text-[#C3D3E2] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                    {{ $footerLinkLabel }}
+                                    <svg class="h-3.5 w-3.5 text-[#6FA6CF] opacity-50 transition group-hover:translate-x-1 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </li>
+                        @endforeach
+
+                        @guest
+                            <li>
+                                <a href="{{ route('specialists.index') }}"
+                                   class="group inline-flex items-center gap-2 rounded text-sm text-[#C3D3E2] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                    Chuyên viên tâm lý
+                                    <svg class="h-3.5 w-3.5 text-[#6FA6CF] opacity-50 transition group-hover:translate-x-1 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </li>
+                        @else
+                            <li>
+                                <a href="{{ route('customer.appointments') }}"
+                                   class="group inline-flex items-center gap-2 rounded text-sm text-[#C3D3E2] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                    Lịch hẹn của tôi
+                                    <svg class="h-3.5 w-3.5 text-[#6FA6CF] opacity-50 transition group-hover:translate-x-1 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </li>
+                        @endguest
                     </ul>
                 </div>
 
-                {{-- Liên hệ phòng khám --}}
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-[#1A202C]">Liên hệ</h3>
-                    <address class="mt-4 not-italic space-y-2 text-sm text-[#4A5568]">
-                        <p>Tư vấn trực tuyến và trực tiếp tại phòng khám.</p>
-                        <p>
-                            Điện thoại:
-                            <a href="tel:19001567" class="font-semibold hover:text-[#2D82C4] transition">1900 1567</a>
-                        </p>
-                        <p>
-                            Email:
-                            <a href="mailto:hotro@mindguide.vn" class="hover:text-[#2D82C4] transition">hotro@mindguide.vn</a>
-                        </p>
-                        <p>Giờ hỗ trợ: 08:00 - 21:00 mỗi ngày</p>
+                {{-- ── CỘT 3: LIÊN HỆ ── --}}
+                <div class="lg:col-span-4">
+                    <h2 class="flex items-center gap-2.5 text-sm font-extrabold uppercase tracking-[0.14em]">
+                        <span class="h-4 w-1 shrink-0 rounded-full bg-[#6FA6CF]" aria-hidden="true"></span>
+                        Liên hệ
+                    </h2>
+
+                    <address class="mt-5 not-italic">
+                        <ul class="space-y-5">
+                            {{-- Địa chỉ --}}
+                            <li class="flex gap-4">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#8FC7F0] ring-1 ring-inset ring-white/10">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/>
+                                        <circle cx="12" cy="10" r="2.5"/>
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-[#8FA9BE]">Địa chỉ</span>
+                                    <p class="mt-1 text-sm font-bold text-white">Nguyễn Chí Thanh, Hà Nội</p>
+                                </div>
+                            </li>
+
+                            {{-- Hotline --}}
+                            <li class="flex gap-4">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#8FC7F0] ring-1 ring-inset ring-white/10">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 5.5A2.5 2.5 0 0 1 5.5 3H7l2 5-2 1.5A13 13 0 0 0 14.5 17L16 15l5 2v1.5a2.5 2.5 0 0 1-2.5 2.5C10.492 21 3 13.508 3 5.5z"/>
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-[#8FA9BE]">Hotline liên hệ</span>
+                                    <a href="tel:0967283126"
+                                       class="mt-1 inline-flex items-center gap-2 rounded text-sm font-bold text-white transition hover:text-[#8FC7F0] focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                        0967283126
+                                        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[#2D82C4]" aria-hidden="true">
+                                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/>
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </div>
+                            </li>
+
+                            {{-- Email --}}
+                            <li class="flex gap-4">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#8FC7F0] ring-1 ring-inset ring-white/10">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l9 6 9-6M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/>
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-[#8FA9BE]">Email</span>
+                                    <a href="mailto:hotro@mindguide.vn"
+                                       class="mt-1 block truncate rounded text-sm font-bold text-white transition hover:text-[#8FC7F0] focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
+                                        hotro@mindguide.vn
+                                    </a>
+                                </div>
+                            </li>
+
+                            {{-- Giờ làm việc --}}
+                            <li class="flex gap-4">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#8FC7F0] ring-1 ring-inset ring-white/10">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3.5 2"/>
+                                    </svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-[#8FA9BE]">Giờ làm việc</span>
+                                    <p class="mt-1 text-sm font-bold text-white">08:00 - 21:00 &middot; Mỗi ngày</p>
+                                </div>
+                            </li>
+                        </ul>
                     </address>
-                </div>
-
-                {{-- Pháp lý --}}
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-[#1A202C]">Pháp lý</h3>
-                    <ul class="mt-4 space-y-2">
-                        <li>
-                            <a href="{{ route('privacy') }}"
-                               class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">
-                                Chính sách quyền riêng tư
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('terms') }}"
-                               class="text-sm text-[#4A5568] hover:text-[#2D82C4] transition">
-                                Điều khoản sử dụng
-                            </a>
-                        </li>
-                    </ul>
                 </div>
             </div>
 
@@ -612,23 +743,29 @@
                 "Dịch vụ này không dành cho tình huống khẩn cấp" — luôn hiển thị
                 ngay cả khi banner trên đã bị đóng.
             --}}
-            <div class="mt-8 rounded-lg border border-[#FED7AA] bg-[#FFEDD5] px-4 py-3">
-                <p class="text-xs text-[#7C2D12] leading-relaxed">
-                    <strong>Lưu ý quan trọng:</strong>
+            <div class="mt-12 flex gap-4 rounded-2xl border border-[#F5B978]/25 bg-[#F5B978]/10 px-5 py-4">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-[#F5B978]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                </svg>
+                <p class="text-xs leading-relaxed text-[#F7DCC2]">
+                    <strong class="font-extrabold text-white">Lưu ý quan trọng:</strong>
                     Dịch vụ tư vấn của Mind Guide <strong>không</strong> thay thế can thiệp y tế khẩn cấp.
                     Nếu bạn hoặc người thân đang trong tình trạng nguy hiểm, hãy gọi ngay
-                    <a href="tel:115" class="font-bold underline hover:opacity-80">115</a>
+                    <a href="tel:115" class="font-extrabold text-white underline decoration-2 underline-offset-2 hover:text-[#F5B978]">115</a>
                     (cấp cứu) hoặc
-                    <a href="tel:19001567" class="font-bold underline hover:opacity-80">1900&nbsp;1567</a>
+                    <a href="tel:19001567" class="font-extrabold text-white underline decoration-2 underline-offset-2 hover:text-[#F5B978]">1900&nbsp;1567</a>
                     (hỗ trợ sức khỏe tâm thần, miễn phí, 24/7).
                 </p>
             </div>
 
             {{-- Copyright --}}
-            <div class="mt-6 border-t border-gray-100 pt-6 text-center">
-                <p class="text-xs text-[#4A5568]">
-                    &copy; {{ date('Y') }} Mind Guide. Mọi quyền được bảo lưu.
-                </p>
+            <div class="mt-8 border-t border-white/10 pt-7">
+                <div class="flex flex-col items-center justify-between gap-3 text-xs text-[#9FB3C6] sm:flex-row">
+                    <p>&copy; {{ date('Y') }} Mind Guide. Mọi quyền được bảo lưu.</p>
+                    <p class="text-center sm:text-right">
+                        Giấy phép hoạt động số 1234/GH-UB/NĐ &middot; Cơ sở tại Nguyễn Chí Thanh, Hà Nội
+                    </p>
+                </div>
             </div>
         </div>
     </footer>
