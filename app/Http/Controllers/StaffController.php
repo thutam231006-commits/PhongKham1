@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CollectPaymentRequest;
 use App\Models\Appointment;
+use App\Models\ConsultationRoom;
 use App\Models\CustomerProfile;
 use App\Models\RefundRequest;
 use App\Models\RescheduleRequest;
@@ -14,9 +15,13 @@ use App\Services\AccountActivationService;
 use App\Services\AppointmentBookingService;
 use App\Services\AppointmentTrafficService;
 use App\Services\AppointmentWorkflowService;
+use App\Services\AttentionService;
 use App\Services\AuditService;
+use App\Services\EmailVerificationService;
+use App\Services\MailHealthService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
+use App\Services\RoomAllocationService;
 use App\Services\SlotAvailabilityService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -26,17 +31,28 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class StaffController extends Controller
 {
+    /**
+     * Trạng thái lịch hẹn mà lễ tân được phép xác nhận thu tiền mặt.
+     *
+     * Bao gồm cả thu trước giờ tư vấn (PENDING/CONFIRMED), thu trong buổi tư vấn
+     * (IN_PROGRESS) và thu sau buổi tư vấn (COMPLETED).
+     *
+     * @var list<string>
+     */
+    private const CASH_COLLECTIBLE_STATUSES = ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED'];
+
     public function __construct(private readonly SlotAvailabilityService $slots) {}
 
-    public function dashboard(Request $request, NotificationService $notifications, SlotAvailabilityService $slots, AppointmentTrafficService $traffic): View
+    public function dashboard(Request $request, NotificationService $notifications, SlotAvailabilityService $slots, AppointmentTrafficService $traffic, MailHealthService $mailHealth): View
     {
         $date = $request->date('date')?->toDateString() ?? today()->toDateString();
         $today = Appointment::query()->whereDate('start_at', $date)->with(['customer', 'specialistProfile.user', 'service'])->orderBy('start_at')->get();
-        $cashToCollect = Appointment::query()->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->count();
+        $cashToCollect = Appointment::query()->whereIn('status', self::CASH_COLLECTIBLE_STATUSES)->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->count();
         $needsAttention = Appointment::query()->where('needs_attention', true)->count();
         $attentionAppointments = Appointment::query()->where('needs_attention', true)->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->with(['customer', 'service', 'specialistProfile.user'])->orderBy('start_at')->limit(6)->get();
         $pendingAppointments = Appointment::query()->where('status', 'PENDING')->with(['customer', 'service', 'specialistProfile.user'])->oldest('created_at')->get();
@@ -74,9 +90,11 @@ class StaffController extends Controller
         $hourlyTraffic = $traffic->byHourOfDay($date);
         $peakHour = $hourlyTraffic->sortByDesc('total')->first();
 
-        $cashAppointments = Appointment::query()->where('status', 'COMPLETED')->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->with(['customer', 'service'])->latest('completed_at')->limit(6)->get();
+        $cashAppointments = Appointment::query()->whereIn('status', self::CASH_COLLECTIBLE_STATUSES)->where('payment_status', 'UNPAID')->where('payment_method', 'CASH')->with(['customer', 'service'])->orderBy('start_at')->limit(6)->get();
 
-        return view('staff.dashboard', compact('date', 'today', 'cashToCollect', 'needsAttention', 'attentionAppointments', 'cashAppointments', 'pending', 'pendingCheckins', 'rescheduleRequests', 'refundsPending', 'newCustomers', 'unreadNotifications', 'notifications', 'urgentAppointments', 'specialistLoad', 'hourlyTraffic', 'peakHour'));
+        $mailHealthStatus = $mailHealth->inspectConfiguration();
+
+        return view('staff.dashboard', compact('date', 'today', 'cashToCollect', 'needsAttention', 'attentionAppointments', 'cashAppointments', 'pending', 'pendingCheckins', 'rescheduleRequests', 'refundsPending', 'newCustomers', 'unreadNotifications', 'notifications', 'urgentAppointments', 'specialistLoad', 'hourlyTraffic', 'peakHour', 'mailHealthStatus'));
     }
 
     public function customerSearch(Request $request): JsonResponse
@@ -238,6 +256,112 @@ class StaffController extends Controller
         return back()->with('success', 'Đã ghi nhận khách đến phòng khám.');
     }
 
+    /**
+     * SCR-STF-03 — Bảng xếp phòng tư vấn của lễ tân.
+     *
+     * Cho phép lễ tân theo dõi 8 phòng, xem lịch chiếm phòng trong ngày và
+     * xếp phòng thủ công khi hệ thống chưa tự phân bổ được.
+     */
+    public function roomBoard(Request $request, RoomAllocationService $allocation): View
+    {
+        $data = $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
+        $date = $data['date'] ?? today()->toDateString();
+
+        $capacity = $allocation->dailyCapacity($date);
+        $rooms = ConsultationRoom::query()->where('is_active', true)->orderBy('id')->pluck('name', 'id');
+        $appointments = Appointment::query()
+            ->whereDate('start_at', $date)
+            ->whereNotNull('consultation_room_id')
+            ->holdingSlot()
+            ->with(['customer', 'service', 'specialistProfile.user'])
+            ->orderBy('start_at')
+            ->get()
+            ->groupBy('consultation_room_id');
+
+        $board = collect($capacity['rooms'])->map(function (array $room) use ($rooms, $appointments): array {
+            $room['name'] = $rooms[$room['id']] ?? $room['name'];
+            $room['appointments'] = $appointments[$room['id']] ?? collect();
+
+            return $room;
+        })->all();
+
+        $unassigned = Appointment::query()
+            ->whereDate('start_at', $date)
+            ->whereNull('consultation_room_id')
+            ->where('consultation_type', 'OFFLINE')
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])
+            ->with(['customer', 'service', 'specialistProfile.user'])
+            ->orderBy('start_at')
+            ->get();
+
+        return view('staff.room-board', compact('board', 'unassigned', 'date', 'capacity'));
+    }
+
+    /**
+     * SCR-STF-03 — Lễ tân xếp phòng thủ công cho một lịch hẹn.
+     */
+    public function assignRoom(Request $request, Appointment $appointment, RoomAllocationService $allocation): RedirectResponse
+    {
+        $data = $request->validate([
+            'consultation_room_id' => ['required', 'integer', 'exists:consultation_rooms,id'],
+        ]);
+
+        $room = ConsultationRoom::query()->where('is_active', true)->findOrFail($data['consultation_room_id']);
+
+        $conflict = Appointment::query()
+            ->whereKeyNot($appointment->id)
+            ->where('consultation_room_id', $room->id)
+            ->holdingSlot()
+            ->where('start_at', '<', $appointment->end_at)
+            ->where('end_at', '>', $appointment->start_at)
+            ->exists();
+
+        abort_if($conflict, 409, 'Phòng '.$room->name.' đang có lịch trùng khung giờ này.');
+
+        $appointment->update([
+            'consultation_room_id' => $room->id,
+            'needs_attention' => false,
+            'attention_reason' => null,
+            'attention_flagged_at' => null,
+        ]);
+
+        return back()->with('success', 'Đã xếp '.$room->name.' cho lịch '.$appointment->appointment_code.'.');
+    }
+
+    /**
+     * SCR-STF-03 — Tự động xếp phòng cho các lịch chưa có phòng.
+     */
+    public function autoAssignRooms(RoomAllocationService $allocation): RedirectResponse
+    {
+        $pending = Appointment::query()
+            ->whereNull('consultation_room_id')
+            ->where('consultation_type', 'OFFLINE')
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])
+            ->orderBy('start_at')
+            ->get();
+
+        $assigned = 0;
+        foreach ($pending as $appointment) {
+            if ($allocation->allocate($appointment) !== null) {
+                $assigned++;
+            }
+        }
+
+        if ($assigned > 0) {
+            $pending->whereNull('consultation_room_id')->each(function (Appointment $appointment): void {
+                $appointment->update([
+                    'needs_attention' => true,
+                    'attention_reason' => AttentionService::REASON_NO_ROOM,
+                    'attention_flagged_at' => now(),
+                ]);
+            });
+        }
+
+        return back()->with('success', $assigned > 0
+            ? 'Đã xếp phòng tự động cho '.$assigned.' lịch hẹn.'
+            : 'Không còn lịch nào cần xếp phòng.');
+    }
+
     public function bookingOnsite(): View
     {
         $customers = User::query()->where('role', 'customer')->orderBy('name')->get();
@@ -310,7 +434,71 @@ class StaffController extends Controller
         abort_unless($user->status === 'PENDING_ACTIVATION' && filled($user->email), 422, 'Khách hàng chưa đủ điều kiện nhận email kích hoạt.');
         $activation->createAndSend($user);
 
-        return back()->with('success', 'Đã gửi lại email kích hoạt tài khoản.');
+        return back()->with($this->activationEmailFeedback($user));
+    }
+
+    /**
+     * Thông báo kết quả gửi email kích hoạt — nêu rõ lý do nếu gửi thất bại.
+     */
+    private function activationEmailFeedback(User $user): array    {
+        $user->refresh();
+
+        if ($user->activation_email_status === AccountActivationService::STATUS_SENT) {
+            return ['success' => 'Đã gửi email kích hoạt tài khoản cho khách. Nhắc khách kiểm tra cả hộp thư spam.'];
+        }
+
+        if ($user->activation_email_status === AccountActivationService::STATUS_MISCONFIGURED) {
+            return [
+                'error' => 'Chưa cấu hình tài khoản gửi mail nên không gửi được email kích hoạt. '
+                    .($user->activation_email_error ?? 'Cần cấu hình MAIL_USERNAME/MAIL_PASSWORD trong .env rồi chạy `php artisan config:clear`.'),
+            ];
+        }
+
+        return [
+            'error' => 'Không gửi được email kích hoạt: '.($user->activation_email_error ?? 'không rõ nguyên nhân'),
+        ];
+    }
+
+    /**
+     * Gửi mã xác thực 6 số cho khách — phương án thay thế khi khách không
+     * mở được email (mail bị lọc, khách không dùng email đó nữa).
+     */
+    public function sendActivationCode(User $user, EmailVerificationService $verification): RedirectResponse
+    {
+        abort_unless(strtolower((string) $user->role) === 'customer', 404);
+        abort_unless($user->status === 'PENDING_ACTIVATION' && filled($user->email), 422, 'Khách hàng chưa đủ điều kiện nhận mã xác thực.');
+
+        $result = $verification->resend($user, EmailVerificationService::PURPOSE_ACTIVATION);
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['ok']
+            ? 'Đã gửi mã xác thực 6 số tới '.$user->email.'. Mã hết hạn sau '.config('auth.verification.otp_expire', 15).' phút.'
+            : $result['message']);
+    }
+
+    /**
+     * Lễ tân xác nhận email của khách trực tiếp tại quầy khi khách không nhận
+     * được email (điện thoại hỏng, email sai, khách không mang email…).
+     *
+     * Thao tác được ghi vào nhật ký kiểm tra để truy vết được.
+     */
+    public function verifyCustomerManually(Request $request, User $user, AccountActivationService $activation, AuditService $audit): RedirectResponse
+    {
+        abort_unless(strtolower((string) $user->role) === 'customer', 404);
+
+        $data = $request->validate([
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'reason' => ['required', 'string', 'max:255'],
+        ], [
+            'reason.required' => 'Vui lòng ghi rõ lý do xác nhận thủ công để phòng khám truy vết được.',
+        ]);
+
+        $activation->activateManually($user, $data['password']);
+        $audit->record('customer.email_verified_manually', $user, new: [
+            'email_verified_via' => 'STAFF',
+            'reason' => $data['reason'],
+        ]);
+
+        return back()->with('success', 'Đã xác thực email cho khách '.$user->name.' theo phương án thủ công. Khách có thể đăng nhập ngay bằng mật khẩu vừa đặt.');
     }
 
     public function storeCustomer(Request $request, AuditService $audit, AccountActivationService $activation): RedirectResponse
@@ -326,9 +514,11 @@ class StaffController extends Controller
 
         if ($user->status === 'PENDING_ACTIVATION') {
             $activation->createAndSend($user);
+
+            return back()->with($this->activationEmailFeedback($user));
         }
 
-        return back()->with('success', $user->status === 'PENDING_ACTIVATION' ? 'Đã tạo hồ sơ và gửi email kích hoạt tài khoản cho khách.' : 'Đã tạo hồ sơ khách. Khách chưa có email nên chưa thể đăng nhập.');
+        return back()->with('success', 'Đã tạo hồ sơ khách. Khách chưa có email nên chưa thể đăng nhập.');
     }
 
     public function updateCustomer(Request $request, User $user, AuditService $audit): RedirectResponse
@@ -467,11 +657,17 @@ class StaffController extends Controller
     public function payments(): View
     {
         $appointments = Appointment::query()
-            ->where('status', 'COMPLETED')
+            ->whereIn('status', self::CASH_COLLECTIBLE_STATUSES)
             ->where('payment_status', 'UNPAID')
             ->where('payment_method', 'CASH')
             ->with(['customer', 'specialistProfile.user', 'service'])
-            ->latest('completed_at')
+            ->orderByRaw("CASE status
+                WHEN 'PENDING' THEN 1
+                WHEN 'CONFIRMED' THEN 2
+                WHEN 'IN_PROGRESS' THEN 3
+                ELSE 4
+            END")
+            ->orderBy('start_at')
             ->paginate(20);
 
         $refunds = RefundRequest::query()->where('status', 'PENDING')->with(['appointment.customer', 'appointment.service'])->latest()->get();
@@ -481,18 +677,44 @@ class StaffController extends Controller
 
     public function collectPayment(CollectPaymentRequest $request, int $id): RedirectResponse
     {
-        DB::transaction(function () use ($id, $request): void {
+        $appointment = DB::transaction(function () use ($id, $request): Appointment {
             $appointment = Appointment::query()->whereKey($id)->lockForUpdate()->firstOrFail();
-            abort_unless($appointment->status === 'COMPLETED' && $appointment->payment_status === 'UNPAID' && $appointment->payment_method === 'CASH', 409, 'Lịch hẹn không đủ điều kiện xác nhận thu tiền.');
+
+            abort_unless(
+                in_array($appointment->status, self::CASH_COLLECTIBLE_STATUSES, true),
+                409,
+                'Lịch hẹn không đủ điều kiện xác nhận thu tiền. Chỉ thu được khi lịch ở trạng thái chờ xác nhận, đã xác nhận, đang tư vấn hoặc đã hoàn tất.'
+            );
+
+            abort_unless(
+                $appointment->payment_status === 'UNPAID' && $appointment->payment_method === 'CASH',
+                409,
+                'Lịch hẹn không dùng thanh toán tiền mặt hoặc đã được thanh toán.'
+            );
+
             $appointment->update([
                 'payment_status' => 'PAID',
                 'collected_at' => now(),
                 'collected_by' => auth()->id(),
                 'payment_reference' => $request->validated('payment_reference'),
             ]);
+
+            return $appointment;
         });
 
-        return back()->with('success', 'Đã xác nhận thu tiền mặt cho lịch hẹn.');
+        return back()->with('success', $this->collectPaymentMessage($appointment));
+    }
+
+    private function collectPaymentMessage(Appointment $appointment): string
+    {
+        $timing = match ($appointment->status) {
+            'PENDING' => 'trước giờ tư vấn',
+            'CONFIRMED' => 'trước giờ tư vấn',
+            'IN_PROGRESS' => 'trong buổi tư vấn',
+            default => 'sau buổi tư vấn',
+        };
+
+        return "Đã xác nhận thu tiền mặt ({$timing}) cho lịch hẹn #{$appointment->id}.";
     }
 
     public function markRefunded(Request $request, RefundRequest $refundRequest, PaymentService $payments): RedirectResponse

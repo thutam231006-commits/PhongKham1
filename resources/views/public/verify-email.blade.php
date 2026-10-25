@@ -40,6 +40,11 @@
                 Đăng nhập tài khoản
             </a>
 
+            <a href="{{ route('verification.code') }}"
+               class="block w-full rounded-xl border border-[#2D82C4] py-3 text-sm font-bold text-[#2D82C4] hover:bg-[#EAF4FB] transition">
+                Nhập mã xác thực 6 số
+            </a>
+
             <form method="POST" action="{{ route('verification.resend') }}" class="space-y-2">@csrf<input type="email" name="email" required placeholder="Email cần xác thực" class="w-full rounded-xl border-gray-300 text-sm"><button class="block w-full rounded-xl border border-gray-300 bg-white py-3 text-sm font-bold text-[#0F172A] hover:bg-gray-50 transition">Chưa nhận được thư? Gửi lại email</button></form>
         </div>
 

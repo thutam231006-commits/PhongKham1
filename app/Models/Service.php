@@ -15,14 +15,18 @@ class Service extends Model
     use HasFactory;
 
     protected $fillable = [
-        'category_id', 'name', 'description', 'image_url', 'target_audience', 'session_process',
-        'duration_minutes', 'buffer_minutes',
+        'category_id', 'name', 'description', 'introduction', 'image_url', 'target_audience', 'session_process',
+        'benefits', 'symptoms', 'duration_minutes', 'buffer_minutes',
         'price', 'status', 'display_order',
     ];
 
     protected function casts(): array
     {
-        return ['price' => 'decimal:0'];
+        return [
+            'price' => 'decimal:0',
+            'benefits' => 'array',
+            'symptoms' => 'array',
+        ];
     }
 
     public function category(): BelongsTo

@@ -7,6 +7,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AccountActivationService;
 use App\Services\AuditService;
+use App\Services\EmailVerificationService;
 use App\Services\NotificationService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -112,7 +113,7 @@ class AuthController extends Controller
     /**
      * POST /dang-ky (xử lý đăng ký)
      */
-    public function register(Request $request, NotificationService $notifications): RedirectResponse
+    public function register(Request $request, NotificationService $notifications, EmailVerificationService $verification): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|min:2|max:100',
@@ -155,7 +156,11 @@ class AuthController extends Controller
         if (SystemSetting::valueOf('email_verification_required', false)) {
             $user->sendEmailVerificationNotification();
 
-            return redirect()->route('verification.notice')->with('success', 'Vui lòng kiểm tra email để xác thực tài khoản.');
+            // Gửi kèm mã 6 số: khách có thể bấm link hoặc nhập mã để xác thực.
+            $verification->resend($user, EmailVerificationService::PURPOSE_VERIFICATION);
+            $request->session()->put('verification_email', $user->email);
+
+            return redirect()->route('verification.notice')->with('success', 'Vui lòng kiểm tra email để xác thực tài khoản. Email kèm cả liên kết và mã 6 số.');
         }
 
         Auth::login($user);
@@ -246,7 +251,7 @@ class AuthController extends Controller
     {
         $user = User::query()->findOrFail($id);
         abort_unless(hash_equals($hash, sha1($user->getEmailForVerification())), 403);
-        $user->forceFill(['email_verified_at' => now()])->saveQuietly();
+        $user->forceFill(['email_verified_at' => now(), 'email_verified_via' => 'LINK'])->saveQuietly();
 
         return redirect()->route('login')->with('success', 'Email đã được xác thực thành công.');
     }
@@ -260,5 +265,119 @@ class AuthController extends Controller
         }
 
         return back()->with('success', 'Nếu tài khoản cần xác thực, email hướng dẫn đã được gửi.');
+    }
+
+    /**
+     * GET /kich-hoat-tai-khoan — nhập mã 6 số để kích hoạt tài khoản.
+     */
+    public function activationCodeForm(Request $request): View
+    {
+        return view('public.activation-code', [
+            'email' => (string) $request->session()->get('activation_email', ''),
+        ]);
+    }
+
+    /**
+     * POST /kich-hoat-tai-khoan/mien-code — gửi lại mã kích hoạt.
+     */
+    public function resendActivationCode(Request $request, EmailVerificationService $verification): RedirectResponse
+    {
+        $data = $request->validate(['email' => ['required', 'email']]);
+        $user = User::query()->where('email', strtolower($data['email']))->first();
+
+        if (! $user || $user->status !== 'PENDING_ACTIVATION') {
+            return back()->with('success', 'Nếu tài khoản cần kích hoạt, mã xác thực đã được gửi.');
+        }
+
+        $result = $verification->resend($user, EmailVerificationService::PURPOSE_ACTIVATION);
+        $request->session()->put('activation_email', $user->email);
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
+
+    /**
+     * POST /kich-hoat-tai-khoan/nhap-ma — kích hoạt bằng mã 6 số.
+     */
+    public function activateWithCode(Request $request, AccountActivationService $activation): RedirectResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+        ]);
+
+        $user = User::query()->where('email', strtolower($data['email']))->first();
+
+        if (! $user || $user->status !== 'PENDING_ACTIVATION') {
+            return back()->withInput()->with('error', 'Không tìm thấy tài khoản cần kích hoạt với email này.');
+        }
+
+        try {
+            $activation->activateWithCode($user, $data['code'], $data['password']);
+        } catch (HttpException $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('login')->with('success', 'Tài khoản đã được kích hoạt bằng mã xác thực. Vui lòng đăng nhập bằng mật khẩu bạn vừa tạo.');
+    }
+
+    /**
+     * GET /xac-thuc-email/nhap-ma — nhập mã 6 số để xác thực email.
+     */
+    public function verifyCodeForm(Request $request): View
+    {
+        return view('public.verify-code', [
+            'email' => (string) $request->session()->get('verification_email', ''),
+        ]);
+    }
+
+    /**
+     * POST /xac-thuc-email/gui-lai-ma — gửi lại mã xác thực email.
+     */
+    public function resendVerificationCode(Request $request, EmailVerificationService $verification): RedirectResponse
+    {
+        $data = $request->validate(['email' => ['required', 'email']]);
+        $user = User::query()->where('email', strtolower($data['email']))->first();
+
+        if (! $user || $user->hasVerifiedEmail()) {
+            return back()->with('success', 'Nếu tài khoản cần xác thực, mã xác thực đã được gửi.');
+        }
+
+        $result = $verification->resend($user, EmailVerificationService::PURPOSE_VERIFICATION);
+        $request->session()->put('verification_email', $user->email);
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
+
+    /**
+     * POST /xac-thuc-email/nhap-ma — xác thực email bằng mã 6 số.
+     */
+    public function verifyWithCode(Request $request, EmailVerificationService $verification): RedirectResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+        ]);
+
+        $user = User::query()->where('email', strtolower($data['email']))->first();
+
+        if (! $user) {
+            return back()->withInput()->with('error', 'Không tìm thấy tài khoản với email này.');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->route('login')->with('success', 'Email của bạn đã được xác thực. Vui lòng đăng nhập.');
+        }
+
+        if (! $verification->verifyCode($user, EmailVerificationService::PURPOSE_VERIFICATION, $data['code'])) {
+            return back()->withInput()->with('error', 'Mã xác thực không đúng hoặc đã hết hạn. Vui lòng yêu cầu gửi lại mã.');
+        }
+
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'email_verified_via' => 'CODE',
+        ])->saveQuietly();
+
+        return redirect()->route('login')->with('success', 'Email đã được xác thực thành công.');
     }
 }

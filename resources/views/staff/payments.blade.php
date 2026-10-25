@@ -10,7 +10,7 @@
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-[#6FA6CF]">Quầy thu tiền</p>
             <h1 class="mt-1 text-2xl font-black tracking-tight text-[#102A43]">Thu tiền & Hoàn tiền</h1>
-            <p class="mt-1 text-sm text-[#52637A]">Xác nhận tiền mặt sau khi buổi tư vấn hoàn tất. Chỉ bấm xác nhận sau khi đã nhận đủ tiền thực tế.</p>
+            <p class="mt-1 text-sm text-[#52637A]">Xác nhận tiền mặt cho khách tại quầy — có thể thu <strong>trước giờ tư vấn</strong>, trong buổi tư vấn hoặc sau buổi tư vấn. Mã tham chiếu là tùy chọn.</p>
         </div>
     </div>
 
@@ -29,7 +29,9 @@
             </svg>
             <div class="text-xs text-blue-800 space-y-0.5">
                 <p class="font-bold">Quy tắc thu tiền mặt</p>
+                <p>• Thu được ở mọi giai đoạn: chờ xác nhận, đã xác nhận, đang tư vấn hoặc đã hoàn tất.</p>
                 <p>• Chỉ xác nhận sau khi đã nhận đủ tiền và đối chiếu số tiền trên hệ thống.</p>
+                <p>• Mã tham chiếu là tùy chọn — có thể bỏ qua nếu khách không cung cấp.</p>
                 <p>• Không xác nhận thanh toán hai lần — hệ thống sẽ chặn thao tác nếu đã ghi PAID.</p>
                 <p>• Nếu cần hoàn tiền, sử dụng phần "Yêu cầu hoàn tiền" phía dưới — không sửa giao dịch cũ.</p>
             </div>
@@ -41,7 +43,7 @@
         <div class="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-4">
             <div>
                 <h2 id="cash-heading" class="text-lg font-black text-[#102A43]">Tiền mặt chờ thu</h2>
-                <p class="mt-0.5 text-xs text-[#718096]">Lịch đã hoàn tất, khách chọn thanh toán tiền mặt tại quầy.</p>
+                <p class="mt-0.5 text-xs text-[#718096]">Khách chọn thanh toán tiền mặt — lễ tân xác nhận thu tại quầy, kể cả trước giờ tư vấn.</p>
             </div>
             <span class="rounded-full bg-emerald-500 px-3 py-1 text-xs font-black text-white">{{ $appointments->count() }}</span>
         </div>
@@ -53,6 +55,7 @@
                         <th class="px-5 py-3.5">Khách hàng</th>
                         <th class="px-5 py-3.5">Dịch vụ</th>
                         <th class="px-5 py-3.5">Chuyên viên</th>
+                        <th class="px-5 py-3.5">Thời điểm tư vấn</th>
                         <th class="px-5 py-3.5">Số tiền</th>
                         <th class="px-5 py-3.5">Xác nhận thu</th>
                     </tr>
@@ -67,6 +70,25 @@
                         </td>
                         <td class="px-5 py-4 text-[#52637A]">{{ $appointment->service->name }}</td>
                         <td class="px-5 py-4 text-[#52637A]">{{ $appointment->specialistProfile->user->name }}</td>
+                        <td class="px-5 py-4">
+                            <p class="text-sm font-semibold text-[#102A43]">{{ $appointment->start_at->format('d/m/Y H:i') }}</p>
+                            @php
+                                $timingLabel = match ($appointment->status) {
+                                    'PENDING'    => 'Thu trước giờ tư vấn',
+                                    'CONFIRMED'  => 'Thu trước giờ tư vấn',
+                                    'IN_PROGRESS'=> 'Thu trong buổi tư vấn',
+                                    default      => 'Thu sau buổi tư vấn',
+                                };
+                                $timingClass = match ($appointment->status) {
+                                    'PENDING', 'CONFIRMED' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                    'IN_PROGRESS'           => 'bg-blue-50 text-blue-700 border-blue-200',
+                                    default                => 'bg-slate-50 text-slate-600 border-slate-200',
+                                };
+                            @endphp
+                            <span class="mt-1 inline-block rounded-full border px-2 py-0.5 text-[11px] font-bold {{ $timingClass }}">
+                                {{ $timingLabel }}
+                            </span>
+                        </td>
                         <td class="px-5 py-4">
                             <span class="text-base font-black text-emerald-700">
                                 {{ number_format($appointment->price, 0, ',', '.') }} VNĐ
@@ -85,7 +107,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-5 py-12 text-center text-sm text-[#718096]">
+                        <td colspan="7" class="px-5 py-12 text-center text-sm text-[#718096]">
                             Không có lịch nào chờ thu tiền mặt.
                         </td>
                     </tr>

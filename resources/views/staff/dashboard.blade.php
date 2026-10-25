@@ -27,6 +27,38 @@
         </div>
     </div>
 
+    {{-- ── CẢNH BÁO CẤU HÌNH GỬI EMAIL ── --}}
+    @if(!($mailHealthStatus['ok'] ?? true))
+        <div role="alert" class="rounded-2xl border {{ ($mailHealthStatus['blocking'] ?? false) ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50' }} p-5 shadow-sm">
+            <div class="flex items-start gap-3">
+                <svg class="mt-0.5 h-6 w-6 shrink-0 {{ ($mailHealthStatus['blocking'] ?? false) ? 'text-red-600' : 'text-amber-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-base font-black {{ ($mailHealthStatus['blocking'] ?? false) ? 'text-red-900' : 'text-amber-900' }}">
+                        {{ ($mailHealthStatus['blocking'] ?? false) ? 'Hệ thống chưa gửi được email cho khách' : 'Hệ thống đang chạy ở chế độ không gửi email thật' }}
+                    </h2>
+                    <p class="mt-1 text-sm leading-relaxed {{ ($mailHealthStatus['blocking'] ?? false) ? 'text-red-800' : 'text-amber-800' }}">{{ $mailHealthStatus['message'] }}</p>
+                    @if(!empty($mailHealthStatus['details']))
+                        <dl class="mt-3 grid gap-1 text-xs {{ ($mailHealthStatus['blocking'] ?? false) ? 'text-red-700' : 'text-amber-700' }} sm:grid-cols-3">
+                            @foreach($mailHealthStatus['details'] as $label => $value)
+                                <div>
+                                    <dt class="font-bold">{{ $label }}</dt>
+                                    <dd class="break-all">{{ $value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    @endif
+                    @if($mailHealthStatus['blocking'] ?? false)
+                        <p class="mt-3 text-xs font-semibold text-red-900">
+                            Khách hàng chờ kích hoạt sẽ không nhận được link đặt mật khẩu. Cần quản trị viên cấu hình lại tài khoản gửi mail.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- ── KHU VỰC TÌM KIẾM KHÁCH TẠI QUẦY ── --}}
     <section class="rounded-2xl border border-[#B8D2E4] bg-white p-5 shadow-sm" aria-labelledby="search-heading">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -110,7 +142,7 @@
            class="group rounded-xl border border-emerald-200 bg-emerald-50 p-5 hover:shadow-md transition">
             <p class="text-xs font-bold uppercase tracking-wide text-emerald-800">Chờ thu tiền mặt</p>
             <p class="mt-2 text-4xl font-black text-emerald-800">{{ $cashToCollect }}</p>
-            <p class="mt-1 text-xs text-emerald-700">Sau khi hoàn tất buổi →</p>
+            <p class="mt-1 text-xs text-emerald-700">Trước / trong / sau buổi tư vấn →</p>
         </a>
     </section>
 
@@ -186,7 +218,7 @@
                 <a href="{{ route('staff.payments') }}" class="flex items-center justify-between px-5 py-4 hover:bg-[#F7FBFE] transition">
                     <span>
                         <strong class="block text-sm text-[#102A43]">Thu tiền mặt</strong>
-                        <small class="text-xs text-[#718096]">Kiểm tra lịch đã hoàn tất</small>
+                        <small class="text-xs text-[#718096]">Kiểm tra lịch chờ thu tiền mặt</small>
                     </span>
                     <b class="text-xl font-black text-emerald-700">{{ $cashToCollect }}</b>
                 </a>

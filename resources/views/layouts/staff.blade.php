@@ -38,6 +38,7 @@
                         $navItems = [
                             ['route' => 'staff.dashboard',              'label' => 'Tổng quan'],
                             ['route' => 'staff.appointments',           'label' => 'Quản lý lịch hẹn'],
+                            ['route' => 'staff.appointments.rooms',     'label' => 'Xếp phòng'],
                             ['route' => 'staff.appointments.attention', 'label' => 'Lịch cần xử lý'],
                             ['route' => 'staff.customers',              'label' => 'Khách hàng'],
                             ['route' => 'staff.payments',               'label' => 'Thanh toán'],

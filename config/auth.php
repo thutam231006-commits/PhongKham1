@@ -114,4 +114,25 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | Cấu hình cho luồng xác thực email. Ngoài phương án bấm link trong email,
+    | khách có thể dùng mã 6 số (OTP) gửi kèm email. Thời gian sống của mã
+    | và số lần gửi lại tối đa được quy định tại đây.
+    |
+    */
+
+    'verification' => [
+        'expire' => (int) env('AUTH_VERIFICATION_EXPIRE', 60),
+
+        // Thời gian sống (phút) của mã xác thực 6 số.
+        'otp_expire' => (int) env('AUTH_VERIFICATION_OTP_EXPIRE', 15),
+
+        // Số lần gửi lại mã tối đa trong một khoảng thời gian.
+        'otp_resend_limit' => (int) env('AUTH_VERIFICATION_OTP_RESEND_LIMIT', 5),
+    ],
+
 ];

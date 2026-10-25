@@ -321,22 +321,7 @@
                                     <a href="{{ route('staff.appointments.detail', $appointment) }}"
                                        class="rounded-lg border border-[#B8D2E4] px-3 py-2 text-xs font-bold text-[#52637A] transition hover:bg-[#F7FBFE]">Xem chi tiết</a>
 
-                                    @if($appointment->status === 'COMPLETED' && $appointment->payment_method === 'CASH' && $appointment->payment_status === 'UNPAID')
-                                        <x-modal-confirm id="list-collect-{{ $appointment->id }}"
-                                                       title="Xác nhận đã thu tiền mặt"
-                                                       description="Xác nhận đã thu {{ number_format((int) $appointment->price, 0, ',', '.') }} VNĐ tiền mặt cho lịch {{ $appointment->appointment_code }}. Người thu được ghi là nhân viên đang đăng nhập. Chỉ thực hiện một lần."
-                                                       confirmLabel="Xác nhận đã thu tiền"
-                                                       :action="route('staff.payments.collect', $appointment->id)">
-                                            <x-slot:trigger>
-                                                <button type="button" class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100">Xác nhận đã thu tiền</button>
-                                            </x-slot:trigger>
-                                            <div>
-                                                <label for="list-collect-reference-{{ $appointment->id }}" class="block text-sm font-medium text-[#1A202C]">Mã tham chiếu</label>
-                                                <input id="list-collect-reference-{{ $appointment->id }}" type="text" name="payment_reference" maxlength="100"
-                                                       class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                                            </div>
-                                        </x-modal-confirm>
-                                    @endif
+                                    <x-collect-payment :appointment="$appointment" id-prefix="list-collect" />
 
                                     @if($appointment->status === 'PENDING')
                                         <form method="POST" action="{{ route('staff.appointments.confirm', $appointment) }}">

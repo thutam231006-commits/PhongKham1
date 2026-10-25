@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 
 class ConsultationSetupService
 {
+    public function __construct(private readonly RoomAllocationService $rooms) {}
+
     /**
      * Sinh link phòng họp trực tuyến duy nhất theo mã lịch hẹn.
      *
@@ -25,20 +27,12 @@ class ConsultationSetupService
 
     /**
      * Tìm phòng tư vấn còn trống cho khung giờ của lịch hẹn.
+     *
+     * Phòng được chọn theo tải thấp nhất để trải đều 8 phòng của phòng khám.
      */
     public function findAvailableRoom(Appointment $appointment): ?ConsultationRoom
     {
-        return ConsultationRoom::query()
-            ->where('is_active', true)
-            ->whereDoesntHave('appointments', function ($query) use ($appointment): void {
-                $query->whereKeyNot($appointment->id)
-                    ->holdingSlot()
-                    ->where('start_at', '<', $appointment->end_at)
-                    ->where('end_at', '>', $appointment->start_at);
-            })
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->first();
+        return $this->rooms->findAvailableRoom($appointment);
     }
 
     /**

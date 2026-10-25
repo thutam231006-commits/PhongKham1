@@ -186,22 +186,7 @@
                         </x-slot:trigger>
                     </x-modal-confirm>
 
-                    @if($appointment->status === 'COMPLETED' && $appointment->payment_method === 'CASH' && $appointment->payment_status === 'UNPAID')
-                        <x-modal-confirm
-                            id="staff-collect-{{ $appointment->id }}"
-                            title="Xác nhận đã thu tiền mặt"
-                            description="Xác nhận đã thu {{ number_format((int) $appointment->price, 0, ',', '.') }} VNĐ tiền mặt cho lịch {{ $appointment->appointment_code }}. Người thu được ghi là nhân viên đang đăng nhập. Chỉ thực hiện một lần."
-                            confirmLabel="Xác nhận đã thu tiền"
-                            :action="route('staff.payments.collect', $appointment->id)">
-                            <x-slot:trigger>
-                                <button type="button" class="w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-100">Xác nhận đã thu tiền</button>
-                            </x-slot:trigger>
-                            <div>
-                                <label for="staff-collect-reference" class="block text-sm font-medium text-[#1A202C]">Mã tham chiếu</label>
-                                <input id="staff-collect-reference" type="text" name="payment_reference" maxlength="100" class="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                            </div>
-                        </x-modal-confirm>
-                    @endif
+                    <x-collect-payment :appointment="$appointment" id-prefix="staff-collect" size="md" :full-width="true" />
                 </div>
             </section>
 

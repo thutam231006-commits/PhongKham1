@@ -101,10 +101,20 @@ Route::post('/dat-lai-mat-khau', [AuthController::class, 'resetPassword'])->name
 Route::get('/kich-hoat-tai-khoan/{token}', [AuthController::class, 'activationForm'])->name('account.activation.form');
 Route::post('/kich-hoat-tai-khoan', [AuthController::class, 'activateAccount'])->name('account.activation.store');
 
+// Kích hoạt tài khoản bằng mã 6 số (thay thế cho bấm link trong email)
+Route::get('/kich-hoat-tai-khoan', [AuthController::class, 'activationCodeForm'])->name('account.activation.code');
+Route::post('/kich-hoat-tai-khoan/mien-code', [AuthController::class, 'resendActivationCode'])->middleware('throttle:5,60')->name('account.activation.code.resend');
+Route::post('/kich-hoat-tai-khoan/nhap-ma', [AuthController::class, 'activateWithCode'])->middleware('throttle:10,60')->name('account.activation.code.store');
+
 // SCR-PUB-10 — Xác thực email
 Route::get('/xac-thuc-email', [AuthController::class, 'verifyNotice'])->name('verification.notice');
 Route::get('/xac-thuc-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
 Route::post('/xac-thuc-email/gui-lai', [AuthController::class, 'resendVerification'])->middleware('throttle:3,60')->name('verification.resend');
+
+// Xác thực email bằng mã 6 số
+Route::get('/xac-thuc-email/nhap-ma', [AuthController::class, 'verifyCodeForm'])->name('verification.code');
+Route::post('/xac-thuc-email/gui-lai-ma', [AuthController::class, 'resendVerificationCode'])->middleware('throttle:5,60')->name('verification.code.resend');
+Route::post('/xac-thuc-email/nhap-ma', [AuthController::class, 'verifyWithCode'])->middleware('throttle:10,60')->name('verification.code.store');
 
 // ============================================================
 // AUTH — Yêu cầu đăng nhập (middleware 'auth')
@@ -217,10 +227,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/appointments/{appointment}/reschedule', [StaffController::class, 'rescheduleAppointment'])->name('appointments.reschedule');
         Route::post('/appointments/{appointment}/notify', [StaffController::class, 'notifyAppointment'])->name('appointments.notify');
         Route::get('/attention', [StaffController::class, 'attentionList'])->name('appointments.attention');
+        Route::get('/rooms', [StaffController::class, 'roomBoard'])->name('appointments.rooms');
+        Route::post('/rooms/auto-assign', [StaffController::class, 'autoAssignRooms'])->name('appointments.rooms.auto-assign');
+        Route::post('/appointments/{appointment}/room', [StaffController::class, 'assignRoom'])->name('appointments.room.assign');
         Route::post('/reschedule-requests/{rescheduleRequest}', [StaffController::class, 'resolveReschedule'])->name('reschedule-requests.resolve');
         Route::get('/customers', [StaffController::class, 'customers'])->name('customers');
         Route::get('/customers/{user}', [StaffController::class, 'customerProfile'])->name('customers.profile');
         Route::post('/customers/{user}/resend-activation', [StaffController::class, 'resendActivation'])->name('customers.resend-activation');
+        Route::post('/customers/{user}/activation-code', [StaffController::class, 'sendActivationCode'])->name('customers.activation-code');
+        Route::post('/customers/{user}/verify-manual', [StaffController::class, 'verifyCustomerManually'])->name('customers.verify-manual');
         Route::post('/customers', [StaffController::class, 'storeCustomer'])->name('customers.store');
         Route::put('/customers/{user}', [StaffController::class, 'updateCustomer'])->name('customers.update');
         Route::get('/booking-onsite', [StaffController::class, 'bookingOnsite'])->name('appointments.book');

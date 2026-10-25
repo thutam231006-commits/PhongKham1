@@ -104,8 +104,17 @@
                         <td class="px-5 py-4">
                             @if($customer->email_verified_at)
                                 <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">Đã xác thực</span>
+                            @elseif($customer->activation_email_status === \App\Services\AccountActivationService::STATUS_SENT)
+                                <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800">Đã gửi email — chờ kích hoạt</span>
+                            @elseif($customer->activation_email_status === \App\Services\AccountActivationService::STATUS_FAILED || $customer->activation_email_status === \App\Services\AccountActivationService::STATUS_MISCONFIGURED)
+                                <span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-800" title="{{ $customer->activation_email_error }}">Gửi email lỗi</span>
                             @else
                                 <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Chờ xác thực</span>
+                            @endif
+                            @if($customer->activation_email_error)
+                                <p class="mt-1 max-w-[240px] text-[11px] leading-snug text-red-700">{{ $customer->activation_email_error }}</p>
+                            @elseif($customer->activation_email_sent_at)
+                                <p class="mt-1 text-[11px] text-[#718096]">Gửi lúc {{ $customer->activation_email_sent_at->format('d/m/Y H:i') }}</p>
                             @endif
                         </td>
                         <td class="px-5 py-4">

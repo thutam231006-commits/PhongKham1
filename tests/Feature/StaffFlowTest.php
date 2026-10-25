@@ -183,7 +183,7 @@ class StaffFlowTest extends TestCase
             ->assertSessionHasErrors('q');
     }
 
-    public function test_staff_can_collect_cash_only_after_completion(): void
+    public function test_staff_can_collect_cash_after_completion(): void
     {
         $staff = User::factory()->create(['role' => 'staff']);
         $appointment = $this->makeAppointment(['status' => 'COMPLETED', 'payment_method' => 'CASH', 'payment_status' => 'UNPAID']);
@@ -196,13 +196,40 @@ class StaffFlowTest extends TestCase
         $this->assertSame('CASH-001', $appointment->payment_reference);
     }
 
-    public function test_staff_cannot_collect_an_uncompleted_appointment(): void
+    public function test_staff_can_collect_cash_before_the_consultation_starts(): void
     {
         $staff = User::factory()->create(['role' => 'staff']);
-        $appointment = $this->makeAppointment(['status' => 'CONFIRMED', 'payment_method' => 'CASH']);
+        $appointment = $this->makeAppointment(['status' => 'CONFIRMED', 'payment_method' => 'CASH', 'payment_status' => 'UNPAID']);
+
+        $this->actingAs($staff)
+            ->post(route('staff.payments.collect', $appointment->id))
+            ->assertSessionHas('success');
+
+        $appointment->refresh();
+        $this->assertSame('PAID', $appointment->payment_status);
+        $this->assertSame($staff->id, $appointment->collected_by);
+        $this->assertNull($appointment->payment_reference);
+    }
+
+    public function test_staff_cannot_collect_cash_for_a_non_cash_appointment(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->makeAppointment(['status' => 'CONFIRMED', 'payment_method' => 'BANK_QR']);
 
         $this->actingAs($staff)->post(route('staff.payments.collect', $appointment->id))->assertRedirect()->assertSessionHas('error');
         $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'payment_status' => 'UNPAID']);
+    }
+
+    public function test_staff_cannot_collect_cash_twice(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $appointment = $this->makeAppointment(['status' => 'CONFIRMED', 'payment_method' => 'CASH', 'payment_status' => 'UNPAID']);
+
+        $this->actingAs($staff)->post(route('staff.payments.collect', $appointment->id))->assertSessionHas('success');
+        $this->actingAs($staff)->post(route('staff.payments.collect', $appointment->id))->assertRedirect()->assertSessionHas('error');
+
+        $appointment->refresh();
+        $this->assertSame('PAID', $appointment->payment_status);
     }
 
     /** @param array<string, mixed> $overrides */

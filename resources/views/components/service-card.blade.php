@@ -41,6 +41,7 @@
     'detailRoute' => '#',
     'showDetail'  => true,
     'featured'    => false,
+    'image'       => null,
 ])
 
 @php
@@ -52,7 +53,8 @@
         5 => 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=85',
         6 => 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=85',
     ];
-    $serviceImage = $serviceImages[(int) $id] ?? $serviceImages[1];
+    // Ảnh trong DB được ưu tiên; chỉ fallback sang ảnh mặc định khi thiếu
+    $serviceImage = $image ?: ($serviceImages[(int) $id] ?? $serviceImages[1]);
 
     // Cắt mô tả ≤120 ký tự theo spec SCR-PUB-02
     $shortDesc = $description

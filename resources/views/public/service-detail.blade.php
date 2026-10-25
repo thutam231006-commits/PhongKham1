@@ -113,21 +113,79 @@
 
                 {{-- Mô tả đầy đủ --}}
                 <div class="mt-6 prose prose-slate max-w-none text-sm sm:text-base leading-relaxed text-[#334155]">
-                    <h3 class="text-lg font-bold text-[#0F172A] mb-2">Giới thiệu về gói dịch vụ</h3>
-                    <p class="whitespace-pre-line">{{ $service->description }}</p>
+                    @if($service->introduction)
+                        <h3 class="text-lg font-bold text-[#0F172A] mb-2">Giới thiệu về gói dịch vụ</h3>
+                        <p class="whitespace-pre-line">{{ $service->introduction }}</p>
+                    @else
+                        <h3 class="text-lg font-bold text-[#0F172A] mb-2">Giới thiệu về gói dịch vụ</h3>
+                        <p class="whitespace-pre-line">{{ $service->description }}</p>
+                    @endif
+
                     @if($service->target_audience)
                         <h3 class="mt-6 text-lg font-bold text-[#0F172A] mb-2">Gói này phù hợp với</h3>
                         <p class="whitespace-pre-line">{{ $service->target_audience }}</p>
                     @endif
-                    <p class="mt-3">
-                        Tại Mind Guide, chúng tôi tin rằng mỗi tâm hồn đều có những trăn trở riêng biệt.
-                        Gói tham vấn được cấu trúc khoa học dựa trên các trường phái tâm lý học hành vi (CBT) và chánh niệm,
-                        giúp thân chủ không chỉ tháo gỡ nút thắt hiện tại mà còn xây dựng năng lực tự chữa lành và thích ứng lâu dài.
-                    </p>
                 </div>
+
+                {{-- Dấu hiệu nhận biết --}}
+                @if($service->symptoms && count($service->symptoms) > 0)
+                    <div class="mt-8 rounded-2xl border border-amber-200 bg-amber-50/60 p-6">
+                        <h3 class="flex items-center gap-2 text-base font-bold text-amber-900">
+                            <svg class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            Dấu hiệu nhận biết
+                        </h3>
+                        <ul class="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-amber-900">
+                            @foreach($service->symptoms as $symptom)
+                                <li class="flex items-start gap-2">
+                                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true"></span>
+                                    <span>{{ $symptom }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- Cam kết / lợi ích mang lại --}}
+                @if($service->benefits && count($service->benefits) > 0)
+                    <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
+                        <h3 class="flex items-center gap-2 text-base font-bold text-emerald-900">
+                            <svg class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            Cam kết khi đồng hành cùng Mind Guide
+                        </h3>
+                        <ul class="mt-3 space-y-2 text-sm text-emerald-900">
+                            @foreach($service->benefits as $benefit)
+                                <li class="flex items-start gap-2">
+                                    <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <span>{{ $benefit }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
 
-            {{-- Quy trình một buổi tư vấn chuẩn mực --}}
+            {{-- QUY TRÌNH ĐIỀU TRỊ THEO TỪNG BUỔI --}}
+            @if($service->session_process)
+                <div class="rounded-2xl bg-white p-6 sm:p-8 border border-gray-200/80 shadow-xs">
+                    <h2 class="text-lg font-bold text-[#0F172A] mb-4">Lộ trình đồng hành theo từng buổi</h2>
+                    <div class="space-y-4 text-sm sm:text-base leading-relaxed text-[#334155]">
+                        @foreach(explode("\n\n", $service->session_process) as $step)
+                            <div class="flex gap-3">
+                                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#2D82C4]" aria-hidden="true"></span>
+                                <p class="whitespace-pre-line">{{ trim($step) }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Quy trình làm việc chuẩn trong buổi tư vấn --}}
             <div class="rounded-2xl bg-white p-6 sm:p-8 border border-gray-200/80 shadow-xs">
                 <h2 class="text-lg font-bold text-[#0F172A] mb-4">Quy trình làm việc chuẩn trong buổi tư vấn</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -146,7 +204,7 @@
                     <div class="rounded-xl border border-gray-200 bg-[#F5FAFE] p-4 text-center">
                         <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#2D82C4] text-white font-bold text-sm mb-2">3</span>
                         <h4 class="font-bold text-[#0F172A] text-sm">Kế hoạch can thiệp</h4>
-                        <p class="text-xs text-[#4A5568] mt-1">{{ $service->session_process ?: 'Thống nhất mục tiêu, thực hành kỹ năng phù hợp và xây dựng lộ trình đồng hành tiếp theo.' }}</p>
+                        <p class="text-xs text-[#4A5568] mt-1">Thống nhất mục tiêu, thực hành kỹ năng phù hợp và xây dựng lộ trình đồng hành tiếp theo.</p>
                     </div>
                 </div>
             </div>
@@ -167,9 +225,13 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         @foreach($specialists as $spc)
                             <div class="flex items-start gap-3.5 p-4 rounded-xl border border-gray-200 bg-[#F5FAFE] hover:border-[#6FA6CF] transition">
-                                <div class="h-12 w-12 rounded-full bg-[#EAF4FB] text-[#2D82C4] font-bold text-base flex items-center justify-center flex-shrink-0">
-                                    {{ mb_substr($spc->name, 0, 1) }}
-                                </div>
+                                <img src="{{ $spc->avatar_url ?? asset('images/default-avatar.svg') }}"
+                                     alt="Ảnh chuyên gia {{ e($spc->name) }}"
+                                     width="96"
+                                     height="96"
+                                     loading="lazy"
+                                     onerror="this.onerror=null;this.src='{{ asset('images/default-avatar.svg') }}'"
+                                     class="h-12 w-12 rounded-full object-cover ring-2 ring-[#2D82C4]/20 flex-shrink-0">
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-bold text-sm text-[#0F172A] truncate">
                                         <a href="{{ route('specialists.show', ['specialist' => $spc->id]) }}" class="hover:text-[#2D82C4]">
@@ -263,6 +325,7 @@
                         :description="$rel->description"
                         :duration="$rel->duration_minutes ?? $rel->duration ?? null"
                         :price="$rel->price"
+                        :image="$rel->image_url"
                         :detailRoute="route('services.show', ['service' => $rel->id])"
                         :bookRoute="route('appointments.book', ['service' => $rel->id])"
                     />
