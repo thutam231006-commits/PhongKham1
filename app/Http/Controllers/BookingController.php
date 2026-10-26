@@ -317,6 +317,7 @@ class BookingController extends Controller
                     return (object) [
                         'id' => $service->id,
                         'name' => $service->name,
+                        'image_url' => $service->image_url,
                         'description' => $service->description ?? $service->target_audience ?? 'Gói tư vấn tâm lý được thiết kế theo nhu cầu của bạn.',
                         'category_name' => $service->category?->name ?? 'Dịch vụ tư vấn',
                         'duration_minutes' => $service->duration_minutes,

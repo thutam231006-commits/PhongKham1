@@ -6,7 +6,17 @@
     @if(session('error'))<div role="alert" class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ session('error') }}</div>@endif
 
     @if($step === 1)
-        <section class="space-y-6"><div><h1 class="text-3xl font-black text-[#2D82C4]">Chọn gói dịch vụ tư vấn</h1><p class="mt-2 text-[#4A5568]">Chọn nhu cầu phù hợp, bạn có thể thay đổi trước khi xác nhận.</p></div><div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">@foreach($services as $service)<article class="flex flex-col rounded-xl border bg-white p-5 shadow-sm"><div class="mb-4 h-32 rounded-lg bg-[#EAF4FB]"></div><h2 class="text-lg font-bold text-[#2D82C4]">{{ $service->name }}</h2><p class="mt-2 flex-1 text-sm text-[#4A5568]">{{ $service->description }}</p><div class="mt-4 flex items-center justify-between text-sm"><span>{{ $service->duration_minutes }} phút</span><strong>{{ number_format($service->price,0,',','.') }} VNĐ</strong></div><form method="POST" action="{{ route('booking.step.service') }}" class="mt-4">@csrf<input type="hidden" name="service_id" value="{{ $service->id }}"><button class="w-full rounded-lg bg-[#2D82C4] px-4 py-3 text-sm font-bold text-white">Đặt lịch ngay</button></form></article>@endforeach</div></section>
+        @php
+            $serviceImageFallbacks = [
+                1 => 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=1000&q=82',
+                2 => 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=1000&q=82',
+                3 => 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1000&q=82',
+                4 => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=82',
+                5 => 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1000&q=82',
+                6 => 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=82',
+            ];
+        @endphp
+        <section class="space-y-6"><div><h1 class="text-3xl font-black text-[#2D82C4]">Chọn gói dịch vụ tư vấn</h1><p class="mt-2 text-[#4A5568]">Chọn nhu cầu phù hợp, bạn có thể thay đổi trước khi xác nhận.</p></div><div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">@foreach($services as $service)@php $serviceImage = $service->image_url ?: ($serviceImageFallbacks[(int) $service->id] ?? $serviceImageFallbacks[1]); @endphp<article class="group flex flex-col overflow-hidden rounded-xl border border-[#D7E8F3] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"><div class="relative mb-4 aspect-[16/9] overflow-hidden bg-[#EAF4FB]"><img src="{{ $serviceImage }}" alt="Minh họa {{ $service->name }}" width="1000" height="563" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.onerror=null;this.src='{{ $serviceImageFallbacks[1] }}'"><div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#102A43]/25 to-transparent"></div></div><div class="flex flex-1 flex-col px-5 pb-5"><h2 class="text-lg font-bold text-[#2D82C4]">{{ $service->name }}</h2><p class="mt-2 flex-1 text-sm leading-6 text-[#4A5568]">{{ $service->description }}</p><div class="mt-4 flex items-center justify-between text-sm"><span>{{ $service->duration_minutes }} phút</span><strong>{{ number_format($service->price,0,',','.') }} VNĐ</strong></div><form method="POST" action="{{ route('booking.step.service') }}" class="mt-4">@csrf<input type="hidden" name="service_id" value="{{ $service->id }}"><button class="w-full rounded-lg bg-[#2D82C4] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#23689C] active:translate-y-px">Đặt lịch ngay</button></form></div></article>@endforeach</div></section>
     @elseif($step === 2)
         <section class="space-y-6">
 
@@ -127,12 +137,13 @@
             các khung giờ còn trống — không bao giờ hiện khung đã có người đặt.
         --}}
         <section class="mx-auto max-w-3xl space-y-6"
+                 data-initial-slots='@json($slots)'
                  x-data="bookingSlots({
                     endpoint: @js(route('api.slots.index')),
                     serviceId: {{ (int) $service->id }},
                     specialistId: {{ (int) $specialist->id }},
                     initialDate: @js($date),
-                    initialSlots: @js($slots),
+                    initialSlots: [],
                     minDate: @js(now()->addHours(2)->toDateString()),
                     maxDate: @js(now()->addDays(30)->toDateString()),
                  })">

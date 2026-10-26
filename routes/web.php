@@ -263,6 +263,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+        Route::post('/users/{user}/status', [AdminController::class, 'changeUserStatus'])->name('users.status');
+        Route::post('/users/{user}/password-reset', [AdminController::class, 'sendPasswordResetLink'])->name('users.password-reset');
         Route::get('/specialists', [AdminController::class, 'specialists'])->name('specialists');
         Route::post('/specialists', [AdminController::class, 'storeSpecialist'])->name('specialists.store');
         Route::put('/specialists/{specialistProfile}', [AdminController::class, 'updateSpecialist'])->name('specialists.update');

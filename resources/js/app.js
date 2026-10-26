@@ -43,6 +43,59 @@ Alpine.data('heroSlider', () => ({
     },
 }));
 
+/**
+ * Thanh menu ngang khu vực Quản trị.
+ *
+ * Bản Alpine đang dùng là @alpinejs/csp nên không cho phép biểu thức inline
+ * dạng object; toàn bộ trạng thái menu được khai báo ở đây và view chỉ gọi
+ * các hàm đã đăng ký.
+ */
+Alpine.data('adminNav', () => ({
+    openMenu: null,
+    mobileOpen: false,
+
+    toggleMenu(key) {
+        this.openMenu = this.openMenu === key ? null : key;
+    },
+
+    closeMenu() {
+        this.openMenu = null;
+    },
+
+    menuIsOpen(key) {
+        return this.openMenu === key;
+    },
+
+    toggleMobile() {
+        this.mobileOpen = !this.mobileOpen;
+        this.openMenu = null;
+    },
+
+    closeMobile() {
+        this.mobileOpen = false;
+    },
+}));
+
+/**
+ * Theo dõi trạng thái đang mở của các khối gập trong trang quản trị
+ * (bộ lọc, chi tiết bản ghi...). Dùng chung để không lặp biểu thức inline.
+ */
+Alpine.data('adminPanel', (initial = null) => ({
+    openKey: initial,
+
+    isOpen(key) {
+        return this.openKey === key;
+    },
+
+    toggle(key) {
+        this.openKey = this.openKey === key ? null : key;
+    },
+
+    close() {
+        this.openKey = null;
+    },
+}));
+
 Alpine.data('confirmModal', (requiresReason = false, useForm = true, eventName = '') => ({
     isOpen: false,
     reason: '',
@@ -92,6 +145,20 @@ Alpine.data('bookingSlots', (config) => ({
     maxDate: config.maxDate,
     loading: false,
     error: '',
+
+    init() {
+        const initialSlots = this.$root.dataset.initialSlots;
+
+        if (initialSlots) {
+            try {
+                this.slots = JSON.parse(initialSlots);
+            } catch {
+                this.slots = [];
+            }
+        }
+
+        this.load();
+    },
 
     get displayDate() {
         const [y, m, d] = this.date.split('-');

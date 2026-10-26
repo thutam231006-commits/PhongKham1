@@ -375,7 +375,7 @@ class AppointmentScheduleTest extends TestCase
             ->assertSee('Hỗ trợ')
             ->assertSee('Liên hệ')
             ->assertSee('Về Mind Guide')
-            ->assertSee('hotro@mindguide.vn')
+            ->assertSee('thutam23102006@gmail.com')
             ->assertSee('0967283126')
             ->assertSee('Nguyễn Chí Thanh, Hà Nội')
             ->assertSee('Đặt lịch tư vấn');

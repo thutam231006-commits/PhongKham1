@@ -74,7 +74,7 @@ class ScheduleException extends Model
         return match ($this->review_status) {
             self::REVIEW_PENDING => 'Chờ Lễ tân điều phối',
             self::REVIEW_APPROVED => 'Đã ghi nhận',
-            default => $this->review_status,
+            default => (string) $this->review_status,
         };
     }
 }

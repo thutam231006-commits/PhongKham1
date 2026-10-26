@@ -381,91 +381,6 @@
     </header>
 
     {{-- =========================================================
-         BANNER CẢNH BÁO AN TOÀN KHẨN CẤP (NFR-USA-003)
-         Quy định: #FFEDD5 bg · #7C2D12 text · Hotline 115 / 1900 1567
-         Hiển thị NGAY dưới Header trên mọi trang công khai và
-         trang customer — ẩn với Staff/Admin nội bộ (tùy chọn).
-         ========================================================= --}}
-    @php
-        $showSafetyBanner = true;
-        // Ẩn banner trên các trang thuần nội bộ (Staff / Admin)
-        // để giảm nhiễu; vẫn giữ trên public và customer.
-        if (auth()->check() && in_array(auth()->user()->role, ['staff', 'admin'])) {
-            $showSafetyBanner = false;
-        }
-        // View con có thể ghi đè: @section('show_safety_banner', false)
-        $showSafetyBanner = $showSafetyBanner && (bool) View::yieldContent('show_safety_banner', true);
-    @endphp
-
-    @if ($showSafetyBanner)
-    {{--
-        Emergency Safety Banner — NFR-USA-003
-        Nền: #FFEDD5  •  Chữ: #7C2D12
-        Hotline chính: 115  •  Hotline tư vấn: 1900 1567
-    --}}
-    <div role="alert"
-         aria-live="polite"
-         aria-label="Thông báo an toàn"
-         class="w-full border-b border-[#FED7AA] bg-[#FFEDD5] px-4 py-3">
-        <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between gap-2">
-
-            {{-- Icon cảnh báo + nội dung chính --}}
-            <div class="flex items-start gap-3">
-                {{-- Icon cảnh báo (không phải màu đỏ — tránh gây hoảng loạn theo mục 3 bảng màu) --}}
-                <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-[#C2410C]" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                </svg>
-
-                <div>
-                    <p class="text-sm font-semibold text-[#7C2D12]">
-                        Nếu bạn đang trong tình huống nguy hiểm hoặc cần hỗ trợ khẩn cấp:
-                    </p>
-                    <p class="mt-0.5 text-sm text-[#7C2D12]">
-                        Gọi ngay
-                        <a href="tel:115"
-                           class="font-bold underline decoration-2 underline-offset-2 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[#7C2D12] rounded"
-                           aria-label="Gọi đường dây khẩn cấp 115">115</a>
-                        (cấp cứu)
-                        hoặc đường dây hỗ trợ sức khỏe tâm thần
-                        <a href="tel:19001567"
-                           class="font-bold underline decoration-2 underline-offset-2 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[#7C2D12] rounded"
-                           aria-label="Gọi đường dây hỗ trợ tâm thần 1900 1567">1900&nbsp;1567</a>
-                        (miễn phí, 24/7).
-                    </p>
-                    <p class="mt-1 text-xs text-[#9A3412]">
-                        Dịch vụ tư vấn của chúng tôi <strong>không</strong> thay thế can thiệp khẩn cấp.
-                    </p>
-                </div>
-            </div>
-
-            {{-- Nút đóng banner (không xóa khỏi DOM — chỉ ẩn trong session tab) --}}
-            <button type="button"
-                    aria-label="Đóng thông báo an toàn"
-                    class="rounded p-1 text-[#7C2D12] hover:bg-[#FED7AA] focus:outline-none focus:ring-2 focus:ring-[#7C2D12] transition"
-                    onclick="
-                        this.closest('[role=alert]').setAttribute('hidden', '');
-                        sessionStorage.setItem('mg_safety_dismissed', '1');
-                    ">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-    {{-- Khôi phục trạng thái đóng nếu người dùng đã đóng trước đó trong tab này --}}
-    <script>
-        (function () {
-            if (sessionStorage.getItem('mg_safety_dismissed') === '1') {
-                var el = document.querySelector('[role="alert"][aria-label="Thông báo an toàn"]');
-                if (el) el.setAttribute('hidden', '');
-            }
-        })();
-    </script>
-    @endif
-
-    {{-- =========================================================
          FLASH MESSAGES (Toast / Session notifications)
          Success, Error, Warning, Info — đặt ngay dưới banner
          ========================================================= --}}
@@ -718,9 +633,9 @@
                                 </span>
                                 <div class="min-w-0">
                                     <span class="block text-[11px] font-semibold uppercase tracking-wider text-[#8FA9BE]">Email</span>
-                                    <a href="mailto:hotro@mindguide.vn"
+                                    <a href="mailto:thutam23102006@gmail.com"
                                        class="mt-1 block truncate rounded text-sm font-bold text-white transition hover:text-[#8FC7F0] focus:outline-none focus:ring-2 focus:ring-[#6FA6CF]">
-                                        hotro@mindguide.vn
+                                        thutam23102006@gmail.com
                                     </a>
                                 </div>
                             </li>

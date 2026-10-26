@@ -23,6 +23,7 @@ use App\Services\AttentionService;
 use App\Services\MailHealthService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,13 +43,33 @@ class AdminController extends Controller
             'customers' => User::query()->where('role', 'customer')->count(),
             'active_specialists' => SpecialistProfile::query()->where('status', 'ACTIVE')->count(),
         ]);
+        $trend = $analytics->trend($period);
         $statusCounts = $analytics->statusCounts($period);
         $dailyRevenue = $analytics->dailyRevenue($period);
         $serviceCounts = $analytics->serviceCounts($period);
+        $workQueue = $analytics->workQueue();
         $from = $period['from'];
         $to = $period['to'];
 
-        return view('admin.dashboard', compact('stats', 'statusCounts', 'dailyRevenue', 'serviceCounts', 'from', 'to'));
+        $upcomingAppointments = Appointment::query()
+            ->with(['customer', 'service', 'specialistProfile.user'])
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])
+            ->where('start_at', '>=', now())
+            ->orderBy('start_at')
+            ->limit(6)
+            ->get();
+
+        $attentionAppointments = Appointment::query()
+            ->with(['customer', 'service', 'specialistProfile.user'])
+            ->where('needs_attention', true)
+            ->orderBy('start_at')
+            ->limit(5)
+            ->get();
+
+        return view('admin.dashboard', compact(
+            'stats', 'trend', 'statusCounts', 'dailyRevenue', 'serviceCounts',
+            'workQueue', 'upcomingAppointments', 'attentionAppointments', 'from', 'to'
+        ));
     }
 
     public function users(Request $request): View
@@ -56,7 +77,7 @@ class AdminController extends Controller
         $query = User::query()->orderBy('name');
         if ($request->filled('q')) {
             $term = $request->string('q')->toString();
-            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%"));
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%"));
         }
         if ($request->filled('role')) {
             $query->where('role', $request->string('role')->toString());
@@ -67,7 +88,10 @@ class AdminController extends Controller
 
         $users = $query->paginate(20)->withQueryString();
 
-        return view('admin.users', compact('users'));
+        $roleCounts = User::query()->selectRaw('role, COUNT(*) AS total')->groupBy('role')->pluck('total', 'role');
+        $statusCounts = User::query()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+
+        return view('admin.users', compact('users', 'roleCounts', 'statusCounts'));
     }
 
     public function storeUser(StoreAdminUserRequest $request): RedirectResponse
@@ -128,10 +152,39 @@ class AdminController extends Controller
         return back()->with('success', 'Đã gửi liên kết đặt lại mật khẩu tới email của người dùng.');
     }
 
-    public function specialists(): View
+    /**
+     * Hồ sơ chuyên viên — đặc tả §2.3.
+     *
+     * Màn hình tách rõ nhóm thông tin CÔNG KHAI (khách nhìn thấy) và NỘI BỘ
+     * (chỉ quản trị). Trước khi ngừng hoạt động, giao diện phải hiển thị
+     * được số lịch tương lai bị ảnh hưởng để Admin quyết định phương án.
+     */
+    public function specialists(Request $request): View
     {
-        $specialists = SpecialistProfile::query()->with(['user', 'services'])->withCount('appointments')->orderBy('display_order')->paginate(20);
-        $services = Service::query()->where('status', 'ACTIVE')->orderBy('name')->get();
+        $query = SpecialistProfile::query()
+            ->with(['user', 'services', 'workingSchedules'])
+            ->withCount([
+                'appointments',
+                'appointments as future_appointments_count' => fn ($sub) => $sub->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])->where('start_at', '>', now()),
+                'appointments as paid_future_count' => fn ($sub) => $sub->where('payment_status', 'PAID')->where('start_at', '>', now())->whereNotIn('status', ['CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_CLINIC']),
+            ])
+            ->orderBy('display_order')
+            ->orderBy('id');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(function ($sub) use ($term): void {
+                $sub->whereHas('user', fn ($user) => $user->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%"))
+                    ->orWhere('title', 'like', "%{$term}%")
+                    ->orWhere('expertise', 'like', "%{$term}%");
+            });
+        }
+
+        $specialists = $query->paginate(15)->withQueryString();
+        $services = Service::query()->where('status', 'ACTIVE')->orderBy('name')->get(['id', 'name']);
 
         return view('admin.specialists', compact('specialists', 'services'));
     }
@@ -169,12 +222,15 @@ class AdminController extends Controller
         return back()->with('success', 'Đã cập nhật hồ sơ chuyên viên.');
     }
 
-    public function toggleSpecialist(SpecialistProfile $specialistProfile, AttentionService $attention): RedirectResponse
+    public function toggleSpecialist(Request $request, SpecialistProfile $specialistProfile, AttentionService $attention): RedirectResponse
     {
         $newStatus = $specialistProfile->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         if ($newStatus === 'ACTIVE' && ($specialistProfile->services()->count() === 0 || $specialistProfile->workingSchedules()->where('is_active', true)->count() === 0)) {
             return back()->withErrors(['specialist' => 'Chuyên viên cần có ít nhất một dịch vụ và một ca làm việc trước khi kích hoạt.']);
         }
+
+        $reason = $request->validate(['reason' => ['nullable', 'string', 'max:500']])['reason'] ?? null;
+
         $old = ['status' => $specialistProfile->status];
         $specialistProfile->update(['status' => $newStatus]);
         if ($newStatus === 'INACTIVE') {
@@ -183,17 +239,44 @@ class AdminController extends Controller
                 AttentionService::REASON_SPECIALIST_INACTIVE
             );
         }
-        $this->audit('specialist.status_changed', 'specialist_profiles', $specialistProfile->id, $old, ['status' => $newStatus]);
+        $this->audit('specialist.status_changed', 'specialist_profiles', $specialistProfile->id, $old, ['status' => $newStatus, 'reason' => $reason]);
 
         return back()->with('success', 'Đã cập nhật trạng thái chuyên viên.');
     }
 
     public function services(Request $request): View
     {
-        $services = Service::query()->with('category')->orderBy('display_order')->paginate(20);
-        $categories = ServiceCategory::query()->where('is_active', true)->orderBy('display_order')->get();
+        $query = Service::query()->with('category')->orderBy('display_order')->orderBy('name');
 
-        return view('admin.services', compact('services', 'categories'));
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->integer('category_id'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(fn ($sub) => $sub->where('name', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
+        }
+
+        $services = $query->paginate(20)->withQueryString();
+
+        $categories = ServiceCategory::query()->where('is_active', true)->orderBy('display_order')->get();
+        $allCategories = ServiceCategory::query()->orderBy('display_order')->get();
+
+        // Thống kê số lịch đã đặt theo gói — để Admin thấy ảnh hưởng trước khi ngừng bán.
+        $usage = Appointment::query()
+            ->selectRaw('service_id, COUNT(*) AS total, SUM(CASE WHEN payment_status = "PAID" THEN price ELSE 0 END) AS collected')
+            ->groupBy('service_id')
+            ->pluck('total', 'service_id');
+
+        $categoryUsage = ServiceCategory::query()
+            ->withCount('services')
+            ->withCount(['services as appointments_count' => fn ($sub) => $sub->join('appointments', 'appointments.service_id', '=', 'services.id')])
+            ->orderBy('display_order')
+            ->get();
+
+        return view('admin.services', compact('services', 'categories', 'allCategories', 'usage', 'categoryUsage'));
     }
 
     public function storeService(StoreAdminServiceRequest $request): RedirectResponse
@@ -221,28 +304,59 @@ class AdminController extends Controller
         $byStatus = $analytics->statusCounts($period);
         $byService = $analytics->serviceCounts($period);
         $byDay = Appointment::query()->whereBetween('start_at', [$from, $to])->selectRaw('DATE(start_at) AS day, COUNT(*) AS total')->groupBy('day')->orderBy('day')->get();
-        $financial = $analytics->summary($period);
+        $financial = $analytics->financials($period);
+        $trend = $analytics->trend($period);
+        $dailyRevenue = $analytics->dailyRevenue($period);
+        $revenueByService = $analytics->revenueByService($period);
+        $paymentMethods = $analytics->paymentMethodBreakdown($period);
 
         // Yêu cầu 1: lưu lượng theo thời gian — theo ngày và theo khung giờ trong ngày.
         $patientsByDay = $traffic->dailyPatients($from, $to);
         $hourlyTraffic = $traffic->byHourOfDay($to->toDateString());
         $peakHour = $hourlyTraffic->sortByDesc('total')->first();
 
-        return view('admin.reports', compact('from', 'to', 'byStatus', 'byService', 'byDay', 'financial', 'patientsByDay', 'hourlyTraffic', 'peakHour'));
+        return view('admin.reports', compact(
+            'from', 'to', 'byStatus', 'byService', 'byDay', 'financial', 'trend',
+            'dailyRevenue', 'revenueByService', 'paymentMethods',
+            'patientsByDay', 'hourlyTraffic', 'peakHour'
+        ));
     }
 
     public function auditLogs(Request $request): View
     {
         $query = AuditLog::query()->with('actor')->latest('created_at');
+
         if ($request->filled('action')) {
             $query->where('action', 'like', '%'.$request->string('action')->toString().'%');
         }
         if ($request->filled('entity_type')) {
             $query->where('entity_type', $request->string('entity_type')->toString());
         }
+        if ($request->filled('actor_id')) {
+            $query->where('actor_id', $request->integer('actor_id'));
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->date('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->date('to'));
+        }
+
         $logs = $query->paginate(30)->withQueryString();
 
-        return view('admin.audit-logs', compact('logs'));
+        $actors = User::query()->whereNotNull('id')
+            ->whereHas('auditLogs')
+            ->orderBy('name')
+            ->get(['id', 'name', 'role']);
+
+        $actionCounts = AuditLog::query()
+            ->selectRaw('action, COUNT(*) AS total')
+            ->groupBy('action')
+            ->orderByDesc('total')
+            ->limit(12)
+            ->pluck('total', 'action');
+
+        return view('admin.audit-logs', compact('logs', 'actors', 'actionCounts'));
     }
 
     public function categories(): View
@@ -270,12 +384,50 @@ class AdminController extends Controller
         return back()->with('success', 'Đã cập nhật danh mục.');
     }
 
-    public function schedule(): View
+    /**
+     * Ngày nghỉ phòng khám & ngoại lệ lịch — đặc tả §3.1.
+     *
+     * Màn hình cho phép Admin xem trước số lịch bị ảnh hưởng trước khi áp dụng,
+     * đồng thời tách riêng nghỉ toàn phòng khám (HOLIDAY) và nghỉ riêng từng chuyên viên.
+     */
+    public function schedule(Request $request): View
     {
-        $exceptions = ScheduleException::query()->with('specialistProfile.user')->latest('start_date')->paginate(20);
-        $specialists = SpecialistProfile::query()->with('user')->where('status', 'ACTIVE')->get();
+        $query = ScheduleException::query()->with(['specialistProfile.user', 'creator'])->latest('start_date')->latest('id');
 
-        return view('admin.schedule', compact('exceptions', 'specialists'));
+        if ($request->filled('type')) {
+            $query->where('type', $request->string('type')->toString());
+        }
+        if ($request->filled('scope')) {
+            $query->when(
+                $request->string('scope')->toString() === 'clinic',
+                fn ($sub) => $sub->whereNull('specialist_profile_id'),
+                fn ($sub) => $sub->whereNotNull('specialist_profile_id')
+            );
+        }
+
+        $exceptions = $query->paginate(20)->withQueryString();
+
+        $specialists = SpecialistProfile::query()->with('user')->where('status', 'ACTIVE')->orderBy('display_order')->get();
+
+        // Ngoại lệ đang chờ phòng khám đánh giá (quy trình 4 bước của chuyên viên).
+        $pendingReview = ScheduleException::query()
+            ->with(['specialistProfile.user'])
+            ->pendingReview()
+            ->orderBy('created_at')
+            ->get();
+
+        // Lịch sắp tới đang chờ xác nhận — dùng làm mẫu xem trước ảnh hưởng.
+        $upcoming = Appointment::query()
+            ->with(['customer', 'service', 'specialistProfile.user'])
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'RESCHEDULE_REQUESTED'])
+            ->where('start_at', '>=', now())
+            ->orderBy('start_at')
+            ->limit(12)
+            ->get();
+
+        $typeCounts = ScheduleException::query()->selectRaw('type, COUNT(*) AS total')->groupBy('type')->pluck('total', 'type');
+
+        return view('admin.schedule', compact('exceptions', 'specialists', 'pendingReview', 'upcoming', 'typeCounts'));
     }
 
     public function storeScheduleException(Request $request, AttentionService $attention): RedirectResponse
@@ -294,9 +446,30 @@ class AdminController extends Controller
     public function appointments(Request $request): View
     {
         $query = Appointment::query()->with(['customer', 'service', 'specialistProfile.user'])->latest('start_at');
+
         if ($request->filled('status')) {
             $query->where('status', $request->string('status')->toString());
         }
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->string('payment_status')->toString());
+        }
+        if ($request->filled('q')) {
+            $term = $request->string('q')->toString();
+            $query->where(function ($sub) use ($term): void {
+                $sub->where('appointment_code', 'like', "%{$term}%")
+                    ->orWhereHas('customer', fn ($customer) => $customer->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('service', fn ($service) => $service->where('name', 'like', "%{$term}%"));
+            });
+        }
+        if ($request->boolean('attention')) {
+            $query->where('needs_attention', true);
+        }
+        if ($request->boolean('unpaid_cash')) {
+            $query->where('status', 'COMPLETED')
+                ->where('payment_method', 'CASH')
+                ->where('payment_status', 'UNPAID');
+        }
+
         $appointments = $query->paginate(30)->withQueryString();
 
         return view('admin.appointments', compact('appointments'));
@@ -310,20 +483,52 @@ class AdminController extends Controller
         return back()->with('success', 'Đã hủy lịch và tạo yêu cầu hoàn tiền khi cần.');
     }
 
-    public function reviews(): View
+    /**
+     * Hàng đợi kiểm duyệt đánh giá (đặc tả §4.1–4.2).
+     *
+     * Đánh giá tiêu cực không tự động bị coi là vi phạm — Admin phải chọn
+     * giữ nguyên, ẩn hoặc chuyển cấp xử lý và ghi lại lý do khi ẩn.
+     */
+    public function reviews(Request $request): View
     {
-        $reviews = Review::query()->with(['appointment', 'specialistProfile.user'])->latest()->paginate(30);
+        $query = Review::query()->with(['appointment', 'customer', 'specialistProfile.user'])->latest();
 
-        return view('admin.reviews', compact('reviews'));
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+        if ($request->filled('rating')) {
+            $query->where('rating', $request->integer('rating'));
+        }
+
+        $reviews = $query->paginate(20)->withQueryString();
+
+        $statusCounts = Review::query()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+
+        return view('admin.reviews', compact('reviews', 'statusCounts'));
     }
 
     public function moderateReview(Request $request, Review $review): RedirectResponse
     {
-        $data = $request->validate(['status' => ['required', Rule::in(['VISIBLE', 'HIDDEN'])], 'reason' => ['required_if:status,HIDDEN', 'nullable', 'string', 'max:500']]);
-        $review->update(['status' => $data['status'], 'moderation_reason' => $data['reason'] ?? null, 'moderated_by' => auth()->id(), 'moderated_at' => now()]);
-        $this->audit('review.moderated', 'reviews', $review->id, null, ['status' => $review->status]);
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['VISIBLE', 'HIDDEN', 'RESTORED', 'PENDING_REVIEW'])],
+            'reason' => ['required_if:status,HIDDEN', 'nullable', 'string', 'max:500'],
+        ]);
 
-        return back()->with('success', 'Đã cập nhật trạng thái đánh giá.');
+        $old = ['status' => $review->status];
+
+        $review->update([
+            'status' => $data['status'],
+            'moderation_reason' => $data['reason'] ?? null,
+            'moderated_by' => auth()->id(),
+            'moderated_at' => now(),
+        ]);
+
+        $this->audit('review.moderated', 'reviews', $review->id, $old, [
+            'status' => $review->status,
+            'reason' => $data['reason'] ?? null,
+        ]);
+
+        return back()->with('success', 'Đã cập nhật trạng thái đánh giá và lưu lịch sử xử lý.');
     }
 
     public function notifications(): View
@@ -351,7 +556,20 @@ class AdminController extends Controller
     {
         $settings = SystemSetting::query()->orderBy('group')->orderBy('key')->get();
 
-        return view('admin.settings', compact('settings'));
+        $grouped = $settings->groupBy(fn (SystemSetting $setting): string => (string) ($setting->group ?: 'khac'));
+
+        $groupLabels = [
+            'booking' => 'Đặt lịch',
+            'appointment' => 'Vận hành lịch hẹn',
+            'schedule' => 'Quy tắc lịch',
+            'policy' => 'Chính sách đổi/hủy & hoàn tiền',
+            'review' => 'Đánh giá',
+            'authentication' => 'Xác thực',
+            'notification' => 'Thông báo',
+            'khac' => 'Khác',
+        ];
+
+        return view('admin.settings', compact('settings', 'grouped', 'groupLabels'));
     }
 
     /**
@@ -381,13 +599,31 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request): RedirectResponse
     {
-        $data = $request->validate(['settings' => ['required', 'array'], 'settings.*' => ['nullable', 'string', 'max:500']]);
-        foreach ($data['settings'] as $key => $value) {
-            SystemSetting::query()->whereKey($key)->update(['value' => $value]);
-        }
-        $this->audit('settings.updated', 'system_settings', 0, null, ['keys' => array_keys($data['settings'])]);
+        $data = $request->validate([
+            'settings' => ['required', 'array'],
+            'settings.*' => ['nullable', 'string', 'max:500'],
+        ]);
 
-        return back()->with('success', 'Đã cập nhật cấu hình hệ thống.');
+        $changed = [];
+        $previous = [];
+
+        foreach ($data['settings'] as $key => $value) {
+            $setting = SystemSetting::query()->find($key);
+            if (! $setting) {
+                continue;
+            }
+            if ((string) $setting->value !== (string) $value) {
+                $previous[$key] = $setting->value;
+                $changed[$key] = $value;
+            }
+            $setting->update(['value' => $value]);
+        }
+
+        $this->audit('settings.updated', 'system_settings', 0, $previous ?: null, $changed ?: null);
+
+        return back()->with('success', $changed
+            ? 'Đã cập nhật '.count($changed).' tham số vận hành.'
+            : 'Không có tham số nào thay đổi.');
     }
 
     public function roles(): View
@@ -425,7 +661,26 @@ class AdminController extends Controller
     public function exportReport(Request $request, AdminAnalyticsService $analytics): StreamedResponse
     {
         $period = $analytics->period($request->input('from'), $request->input('to'));
-        $rows = Appointment::query()->whereBetween('start_at', [$period['from'], $period['to']])->selectRaw('DATE(start_at) AS day, status, COUNT(*) AS total, SUM(CASE WHEN payment_status = "PAID" THEN price ELSE 0 END) AS collected')->groupBy('day', 'status')->orderBy('day')->get();
+        $type = $request->string('type')->toString() === 'revenue' ? 'revenue' : 'appointments';
+
+        if ($type === 'revenue') {
+            return $this->exportRevenueCsv($period, $analytics);
+        }
+
+        $rows = Appointment::query()
+            ->whereBetween('start_at', [$period['from'], $period['to']])
+            ->selectRaw('DATE(start_at) AS day, status, COUNT(*) AS total, SUM(CASE WHEN payment_status IN ("PAID", "REFUND_PENDING", "REFUNDED") THEN price ELSE 0 END) AS collected')
+            ->groupBy('day', 'status')
+            ->orderBy('day')
+            ->get();
+
+        // Xuất dữ liệu là thao tác nhạy cảm — đặc tả §7 yêu cầu ghi lại nhật ký.
+        $this->audit('report.exported', 'reports', 0, null, [
+            'type' => $type,
+            'from' => $period['from']->toDateString(),
+            'to' => $period['to']->toDateString(),
+            'rows' => $rows->count(),
+        ]);
 
         return response()->streamDownload(function () use ($rows): void {
             $output = fopen('php://output', 'w');
@@ -434,7 +689,42 @@ class AdminController extends Controller
                 fputcsv($output, [$this->csvSafe($row->day), $this->csvSafe($row->status), $row->total, $row->collected]);
             }
             fclose($output);
-        }, 'mind-guide-report-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }, 'mind-guide-lich-hen-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Xuất CSV dòng tiền — dùng đúng cùng nguồn số liệu với biểu đồ trên màn hình
+     * (gom theo ngày thanh toán, không phải ngày diễn ra lịch).
+     *
+     * @param  array{from: CarbonImmutable, to: CarbonImmutable}  $period
+     */
+    private function exportRevenueCsv(array $period, AdminAnalyticsService $analytics): StreamedResponse
+    {
+        $series = $analytics->dailyRevenue($period);
+        $methods = $analytics->paymentMethodBreakdown($period);
+
+        $this->audit('report.exported', 'reports', 0, null, [
+            'type' => 'revenue',
+            'from' => $period['from']->toDateString(),
+            'to' => $period['to']->toDateString(),
+            'rows' => $series->count(),
+        ]);
+
+        return response()->streamDownload(function () use ($series, $methods): void {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['Ngày', 'Tiền thực thu', 'Tiền đã hoàn', 'Dòng tiền thuần']);
+            foreach ($series as $row) {
+                fputcsv($output, [$this->csvSafe($row['day']), $row['collected'], $row['refunded'], $row['net']]);
+            }
+
+            fputcsv($output, []);
+            fputcsv($output, ['Cơ cấu tiền thực thu theo phương thức']);
+            fputcsv($output, ['Phương thức', 'Số giao dịch', 'Tổng tiền']);
+            foreach ($methods as $method) {
+                fputcsv($output, [$this->csvSafe($method['label']), $method['count'], $method['total']]);
+            }
+            fclose($output);
+        }, 'mind-guide-dong-tien-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function placeholder(string $section): View
