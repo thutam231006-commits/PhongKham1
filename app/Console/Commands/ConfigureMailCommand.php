@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Support\EnvFileWriter;
 use Illuminate\Console\Command;
+use RuntimeException;
 
 /**
  * Thiết lập tài khoản email gửi đi (SMTP) trong file .env mà không lộ mật khẩu
@@ -33,15 +35,13 @@ class ConfigureMailCommand extends Command
             return self::FAILURE;
         }
 
-        $envPath = base_path('.env');
+        $envPath = app()->environmentFilePath();
 
         if (! is_file($envPath)) {
             $this->components->error('Không tìm thấy file .env tại '.$envPath);
 
             return self::FAILURE;
         }
-
-        $contents = (string) file_get_contents($envPath);
 
         $values = [
             'MAIL_MAILER' => 'smtp',
@@ -59,14 +59,16 @@ class ConfigureMailCommand extends Command
         }
 
         if (filled($this->option('name'))) {
-            $values['MAIL_FROM_NAME'] = '"'.(string) $this->option('name').'"';
+            $values['MAIL_FROM_NAME'] = (string) $this->option('name');
         }
 
-        foreach ($values as $key => $value) {
-            $contents = $this->setEnvValue($contents, $key, $value);
-        }
+        try {
+            EnvFileWriter::set($envPath, $values);
+        } catch (RuntimeException $exception) {
+            $this->components->error('Không thể cập nhật .env: '.$exception->getMessage());
 
-        file_put_contents($envPath, $contents);
+            return self::FAILURE;
+        }
 
         $this->components->info('Đã cập nhật cấu hình mail trong .env.');
 
@@ -82,19 +84,5 @@ class ConfigureMailCommand extends Command
         $this->components->info('Kiểm tra kết nối: php artisan mail:diagnose --to=dia-chi-nhan@email.com');
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Gán (hoặc thay thế) một biến trong nội dung .env, giữ nguyên phần còn lại.
-     */
-    private function setEnvValue(string $contents, string $key, string $value): string
-    {
-        $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
-
-        if (preg_match($pattern, $contents) === 1) {
-            return (string) preg_replace($pattern, $key.'='.$value, $contents, 1);
-        }
-
-        return rtrim($contents, "\r\n")."\n".$key.'='.$value."\n";
     }
 }

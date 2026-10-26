@@ -122,8 +122,8 @@ class MailHealthService
         $message = $exception->getMessage();
 
         return match (true) {
-            str_contains($message, '530'), str_contains($message, 'Authentication Required'), str_contains($message, 'Authentication failed') => 'SMTP chưa xác thực được (lỗi 530 Authentication Required). Tài khoản gửi chưa được cấu hình hoặc sai mật khẩu — cần dùng Mật khẩu ứng dụng cho Gmail.',
-            str_contains($message, 'Could not authenticate') => 'SMTP không xác thực được. Kiểm tra lại MAIL_USERNAME và MAIL_PASSWORD.',
+            str_contains($message, '530'), str_contains($message, '535'), str_contains($message, 'Authentication Required'), str_contains($message, 'Authentication failed'), str_contains($message, 'BadCredentials') => 'SMTP chưa xác thực được (lỗi 530/535 Authentication Required). Tài khoản gửi chưa được cấu hình hoặc sai mật khẩu — cần dùng Mật khẩu ứng dụng (App Password) cho Gmail, không phải mật khẩu tài khoản.',
+            str_contains($message, 'Could not authenticate'), str_contains($message, 'Failed to authenticate') => 'SMTP không xác thực được. Kiểm tra lại MAIL_USERNAME và MAIL_PASSWORD.',
             str_contains($message, 'Connection refused'), str_contains($message, 'failed to connect') => 'Không kết nối được tới máy chủ SMTP. Kiểm tra MAIL_HOST/MAIL_PORT hoặc tường lửa/hạ tầng mạng.',
             str_contains($message, '550'), str_contains($message, '553') => 'Máy chủ SMTP từ chối địa chỉ gửi. MAIL_FROM_ADDRESS phải là địa chỉ đã được xác thực trong tài khoản gửi.',
             str_contains($message, '554') => 'Máy chủ SMTP từ chối nội dung email — có thể do địa chỉ người nhận không hợp lệ.',

@@ -154,10 +154,8 @@ class AuthController extends Controller
         );
 
         if (SystemSetting::valueOf('email_verification_required', false)) {
-            $user->sendEmailVerificationNotification();
-
-            // Gửi kèm mã 6 số: khách có thể bấm link hoặc nhập mã để xác thực.
-            $verification->resend($user, EmailVerificationService::PURPOSE_VERIFICATION);
+            // Một email duy nhất chứa cả link xác thực và mã 6 số.
+            $verification->sendVerificationMail($user);
             $request->session()->put('verification_email', $user->email);
 
             return redirect()->route('verification.notice')->with('success', 'Vui lòng kiểm tra email để xác thực tài khoản. Email kèm cả liên kết và mã 6 số.');
@@ -256,12 +254,12 @@ class AuthController extends Controller
         return redirect()->route('login')->with('success', 'Email đã được xác thực thành công.');
     }
 
-    public function resendVerification(Request $request): RedirectResponse
+    public function resendVerification(Request $request, EmailVerificationService $verification): RedirectResponse
     {
         $data = $request->validate(['email' => ['required', 'email']]);
         $user = User::query()->where('email', strtolower($data['email']))->first();
         if ($user && ! $user->hasVerifiedEmail()) {
-            $user->sendEmailVerificationNotification();
+            $verification->sendVerificationMail($user);
         }
 
         return back()->with('success', 'Nếu tài khoản cần xác thực, email hướng dẫn đã được gửi.');

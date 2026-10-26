@@ -3,7 +3,31 @@
 @section('content')
 <div class="mx-auto max-w-screen-xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-col gap-4 border-b border-[#D7E8F3] pb-6 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-sm font-semibold text-[#6FA6CF]">Hồ sơ khách hàng</p><h1 class="mt-1 text-3xl font-black text-[#102A43]">{{ $user->name }}</h1><p class="mt-2 text-sm text-[#52637A]">Mã khách: {{ $user->customerProfile?->customer_code ?? 'Chưa cấp' }}</p></div><a href="{{ route('staff.customers') }}" class="rounded-lg border border-[#2D82C4] px-4 py-2.5 text-sm font-bold text-[#2D82C4]">Quay lại danh sách</a></div>
-    <section class="grid gap-4 sm:grid-cols-4"><div class="rounded-xl border border-[#D7E8F3] bg-white p-5"><p class="text-xs font-bold uppercase text-[#718096]">Họ tên</p><p class="mt-2 font-bold text-[#102A43]">{{ $user->name }}</p></div><div class="rounded-xl border border-[#D7E8F3] bg-white p-5"><p class="text-xs font-bold uppercase text-[#718096]">Email</p><p class="mt-2 break-all font-bold text-[#102A43]">{{ $user->email ?: 'Chưa cập nhật' }}</p><p class="mt-1 text-xs text-[#718096]">Trạng thái xác thực: {{ $user->email_verified_at ? 'Đã xác thực ('.$user->email_verified_via.')' : 'Chưa xác thực' }}</p></div><div class="rounded-xl border border-[#D7E8F3] bg-white p-5"><p class="text-xs font-bold uppercase text-[#718096]">Số điện thoại</p><p class="mt-2 font-bold text-[#102A43]">{{ $user->phone ?: 'Chưa cập nhật' }}</p></div><div class="rounded-xl border border-[#D7E8F3] bg-white p-5"><p class="text-xs font-bold uppercase text-[#718096]">Trạng thái tài khoản</p><p class="mt-2 font-bold text-[#102A43]">{{ $user->status === 'PENDING_ACTIVATION' ? 'Chưa kích hoạt' : 'Đang hoạt động' }}</p>@if($user->activation_email_status && $user->activation_email_status !== 'NOT_SENT')<p class="mt-1 text-xs text-[#718096]">Email kích hoạt: {{ $user->activation_email_status }}{{ $user->activation_email_sent_at ? ' ('.$user->activation_email_sent_at->format('d/m H:i').')' : '' }}</p>@endif@if($user->activation_email_error)<p class="mt-1 text-xs text-red-600">{{ $user->activation_email_error }}</p>@endif</div></section>
+    <section class="grid gap-4 sm:grid-cols-4">
+        <div class="rounded-xl border border-[#D7E8F3] bg-white p-5">
+            <p class="text-xs font-bold uppercase text-[#718096]">Họ tên</p>
+            <p class="mt-2 font-bold text-[#102A43]">{{ $user->name }}</p>
+        </div>
+        <div class="rounded-xl border border-[#D7E8F3] bg-white p-5">
+            <p class="text-xs font-bold uppercase text-[#718096]">Email</p>
+            <p class="mt-2 break-all font-bold text-[#102A43]">{{ $user->email ?: 'Chưa cập nhật' }}</p>
+            <p class="mt-1 text-xs text-[#718096]">Trạng thái xác thực: {{ $user->email_verified_at ? 'Đã xác thực ('.$user->email_verified_via.')' : 'Chưa xác thực' }}</p>
+        </div>
+        <div class="rounded-xl border border-[#D7E8F3] bg-white p-5">
+            <p class="text-xs font-bold uppercase text-[#718096]">Số điện thoại</p>
+            <p class="mt-2 font-bold text-[#102A43]">{{ $user->phone ?: 'Chưa cập nhật' }}</p>
+        </div>
+        <div class="rounded-xl border border-[#D7E8F3] bg-white p-5">
+            <p class="text-xs font-bold uppercase text-[#718096]">Trạng thái tài khoản</p>
+            <p class="mt-2 font-bold text-[#102A43]">{{ $user->status === 'PENDING_ACTIVATION' ? 'Chưa kích hoạt' : 'Đang hoạt động' }}</p>
+            @if($user->activation_email_status && $user->activation_email_status !== 'NOT_SENT')
+                <p class="mt-1 text-xs text-[#718096]">Email kích hoạt: {{ $user->activation_email_status }}{{ $user->activation_email_sent_at ? ' ('.$user->activation_email_sent_at->format('d/m H:i').')' : '' }}</p>
+            @endif
+            @if($user->activation_email_error)
+                <p class="mt-1 text-xs text-red-600">{{ $user->activation_email_error }}</p>
+            @endif
+        </div>
+    </section>
 
     @if($user->status === 'PENDING_ACTIVATION')
     <section class="rounded-xl border border-[#D7E8F3] bg-white p-6">

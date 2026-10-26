@@ -245,74 +245,74 @@
 
         {{-- Bảng (desktop) --}}
         <div class="hidden overflow-x-auto md:block">
-            <table class="min-w-full text-left text-sm">
+            <table class="min-w-[1180px] text-left text-sm">
                 <thead class="bg-[#EDF6FC] text-xs uppercase tracking-wide text-[#49647D]">
                     <tr>
-                        <th class="px-5 py-3 font-bold">Lịch hẹn</th>
-                        <th class="px-5 py-3 font-bold">Khách hàng</th>
-                        <th class="px-5 py-3 font-bold">Chuyên viên</th>
-                        <th class="px-5 py-3 font-bold">Thời gian</th>
-                        <th class="px-5 py-3 font-bold">Hình thức</th>
-                        <th class="px-5 py-3 font-bold">Trạng thái</th>
-                        <th class="px-5 py-3 font-bold">Thanh toán</th>
-                        <th class="px-5 py-3 font-bold">Thao tác</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Lịch hẹn</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Khách hàng</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Chuyên viên</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Thời gian</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Hình thức</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Trạng thái</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Thanh toán</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#EEF4F8]">
                     @forelse($appointments as $appointment)
                         <tr class="align-top transition hover:bg-[#F3F9FD]">
                             {{-- Mã lịch + dịch vụ --}}
-                            <td class="px-5 py-4">
-                                <p class="font-mono text-xs font-bold text-[#2D82C4]">{{ $appointment->appointment_code }}</p>
-                                <p class="mt-0.5 max-w-[11rem] text-xs font-semibold text-[#52637A]">{{ $appointment->service->name }}</p>
+                            <td class="px-5 py-4 align-top">
+                                <p class="whitespace-nowrap font-mono text-xs font-bold text-[#2D82C4]">{{ $appointment->appointment_code }}</p>
+                                <p class="mt-0.5 max-w-[13rem] text-xs font-semibold text-[#52637A]">{{ $appointment->service->name }}</p>
                                 @if($appointment->needs_attention)
-                                    <span class="mt-1.5 inline-flex items-center gap-1 rounded-full border border-orange-300 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#C2410C]">
+                                    <span class="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-orange-300 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#C2410C]">
                                         <span aria-hidden="true">⚠</span> Cần xử lý
                                     </span>
                                 @endif
                             </td>
 
                             {{-- Khách hàng --}}
-                            <td class="px-5 py-4">
-                                <p class="font-semibold text-[#102A43]">{{ $appointment->customer->name }}</p>
-                                <p class="mt-0.5 text-xs text-[#718096]">{{ $appointment->customer->email }}</p>
+                            <td class="px-5 py-4 align-top">
+                                <p class="whitespace-nowrap font-semibold text-[#102A43]">{{ $appointment->customer->name }}</p>
+                                <p class="mt-0.5 whitespace-nowrap text-xs text-[#718096]">{{ $appointment->customer->email }}</p>
                                 @if($appointment->customer->phone)
-                                    <p class="text-xs text-[#718096]">{{ $appointment->customer->phone }}</p>
+                                    <p class="whitespace-nowrap text-xs text-[#718096]">{{ $appointment->customer->phone }}</p>
                                 @endif
                             </td>
 
                             {{-- Chuyên viên --}}
-                            <td class="px-5 py-4 text-sm text-[#334E68]">
+                            <td class="px-5 py-4 align-top text-sm text-[#334E68]">
                                 {{ $appointment->specialistProfile->user->name }}
                             </td>
 
                             {{-- Thời gian --}}
-                            <td class="whitespace-nowrap px-5 py-4">
-                                <p class="font-semibold text-[#102A43]">{{ $appointment->start_at->format('d/m/Y') }}</p>
-                                <p class="text-xs font-bold tabular-nums text-[#2D82C4]">{{ $appointment->start_at->format('H:i') }} – {{ $appointment->end_at->format('H:i') }}</p>
+                            <td class="whitespace-nowrap px-5 py-4 align-top">
+                                <p class="whitespace-nowrap font-semibold text-[#102A43]">{{ $appointment->start_at->format('d/m/Y') }}</p>
+                                <p class="whitespace-nowrap text-xs font-bold tabular-nums text-[#2D82C4]">{{ $appointment->start_at->format('H:i') }} – {{ $appointment->end_at->format('H:i') }}</p>
                             </td>
 
                             {{-- Hình thức --}}
-                            <td class="px-5 py-4 text-xs">
-                                <p class="font-semibold text-[#334E68]">
+                            <td class="px-5 py-4 align-top text-xs">
+                                <p class="whitespace-nowrap font-semibold text-[#334E68]">
                                     {{ $appointment->consultation_type === 'ONLINE' ? 'Trực tuyến' : ($appointment->consultationRoom?->name ?? 'Trực tiếp') }}
                                 </p>
                                 @if($appointment->consultation_type === 'ONLINE' && $appointment->meeting_url)
-                                    <a href="{{ $appointment->meeting_url }}" target="_blank" rel="noopener" class="mt-1 inline-block font-bold text-[#2D82C4] hover:underline">Vào phòng họp →</a>
+                                    <a href="{{ $appointment->meeting_url }}" target="_blank" rel="noopener" class="mt-1 inline-block whitespace-nowrap font-bold text-[#2D82C4] hover:underline">Vào phòng họp →</a>
                                 @elseif($appointment->consultation_type === 'OFFLINE' && ! $appointment->consultation_room_id)
-                                    <span class="mt-1 inline-block font-bold text-[#C2410C]">Chưa xếp phòng</span>
+                                    <span class="mt-1 inline-block whitespace-nowrap font-bold text-[#C2410C]">Chưa xếp phòng</span>
                                 @endif
                             </td>
 
                             {{-- Trạng thái --}}
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 align-top">
                                 <x-status-chip type="appointment" :status="$appointment->status" />
                             </td>
 
                             {{-- Thanh toán --}}
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 align-top">
                                 <x-status-chip type="payment" :status="$appointment->payment_status" />
-                                <p class="mt-1 text-[11px] text-[#718096]">{{ $appointment->payment_method === 'BANK_QR' ? 'Chuyển khoản QR' : 'Tiền mặt' }}</p>
+                                <p class="mt-1 whitespace-nowrap text-[11px] text-[#718096]">{{ $appointment->payment_method === 'BANK_QR' ? 'Chuyển khoản QR' : 'Tiền mặt' }}</p>
                             </td>
 
                             {{-- Thao tác --}}

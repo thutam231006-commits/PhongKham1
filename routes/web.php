@@ -191,16 +191,25 @@ Route::middleware('auth')->group(function () {
     // ----------------------------------------------------------
     Route::middleware('role:specialist')->prefix('specialist')->name('specialist.')->group(function () {
         Route::get('/dashboard', [SpecialistController::class, 'dashboard'])->name('dashboard');
+
+        // Nghiệp vụ 1 — Lịch làm việc: một màn hình, hai tab Ca cố định và Ngoại lệ.
         Route::get('/schedule', [SpecialistController::class, 'schedule'])->name('schedule');
         Route::get('/leaves', [SpecialistController::class, 'schedule'])->name('leaves');
         Route::post('/schedule', [SpecialistController::class, 'storeSchedule'])->name('schedule.store');
-        Route::post('/leaves', [SpecialistController::class, 'storeScheduleException'])->name('leaves.store');
         Route::put('/schedule/{workingSchedule}', [SpecialistController::class, 'updateSchedule'])->name('schedule.update');
+        Route::delete('/schedule/{workingSchedule}', [SpecialistController::class, 'destroySchedule'])->name('schedule.destroy');
+        // Bước xem trước tác động (Impact Preview) trước khi đăng ký nghỉ/chặn giờ.
+        Route::post('/leaves/preview', [SpecialistController::class, 'previewScheduleException'])->name('leaves.preview');
+        Route::post('/leaves', [SpecialistController::class, 'storeScheduleException'])->name('leaves.store');
+        Route::delete('/leaves/{exception}', [SpecialistController::class, 'destroyScheduleException'])->name('leaves.destroy');
+
+        // Nghiệp vụ 2 — Ca tư vấn: một trang danh sách, thao tác theo trạng thái.
         Route::get('/appointments', [SpecialistController::class, 'appointments'])->name('appointments');
         Route::get('/appointments/{id}', [SpecialistController::class, 'appointmentDetail'])->name('appointments.detail');
         Route::post('/appointments/{id}/start', [SpecialistController::class, 'startAppointment'])->name('appointments.start');
         Route::post('/appointments/{id}/complete', [SpecialistController::class, 'completeAppointment'])->name('appointments.complete');
         Route::post('/appointments/{id}/no-show', [SpecialistController::class, 'noShowAppointment'])->name('appointments.no-show');
+        Route::post('/appointments/{id}/send-information', [SpecialistController::class, 'sendInformation'])->name('appointments.send-information');
         Route::get('/appointments/{id}/consultation-note', [SpecialistController::class, 'consultationNote'])->name('consultation-note');
         Route::post('/appointments/{id}/consultation-note', [SpecialistController::class, 'storeConsultationNote'])->name('consultation-note.store');
         Route::get('/customers/{customer}', [SpecialistController::class, 'customerProfile'])->name('customers.profile');
@@ -281,6 +290,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/refunds/{refundRequest}', [AdminController::class, 'markRefunded'])->name('refunds.complete');
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::put('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/settings/mail', [AdminController::class, 'mailSettings'])->name('settings.mail');
+        Route::post('/settings/mail/test', [AdminController::class, 'sendTestMail'])->name('settings.mail.test');
     });
 
 });

@@ -9,8 +9,11 @@ use App\Models\RescheduleRequest;
 use App\Models\ScheduleException;
 use App\Models\SpecialistProfile;
 use App\Models\User;
+use App\Notifications\AppointmentInformationNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AppointmentWorkflowService
 {
@@ -18,6 +21,7 @@ class AppointmentWorkflowService
         private readonly AuditService $audit,
         private readonly NotificationService $notifications,
         private readonly ConsultationSetupService $consultationSetup,
+        private readonly MailHealthService $mailHealth,
     ) {}
 
     public function confirm(Appointment $appointment, User $actor): Appointment
@@ -266,6 +270,56 @@ class AppointmentWorkflowService
         $appointment->loadMissing('customer');
         $this->notifications->send($appointment->customer, 'Thông báo từ phòng khám', $message, 'appointment.manual_notice', route('customer.appointments.detail', $appointment), $appointment);
         $this->audit->record('appointment.manual_notice', $appointment, new: ['message' => $message], actor: $actor);
+    }
+
+    /**
+     * Gửi thông tin buổi tư vấn cho khách hàng (chỉ khách nhận, không gửi bản sao
+     * cho người thực hiện). Dùng cho thao tác thủ công từ module chuyên viên.
+     *
+     * @return array{sent:bool, message:string}
+     */
+    public function sendSessionInformation(Appointment $appointment, User $actor, ?string $note = null): array
+    {
+        $appointment->loadMissing(['customer', 'service', 'specialistProfile.user', 'consultationRoom']);
+
+        $customer = $appointment->customer;
+
+        if (! $customer) {
+            return ['sent' => false, 'message' => 'Lịch hẹn không có thông tin khách hàng để gửi.'];
+        }
+
+        if (blank($customer->email)) {
+            return ['sent' => false, 'message' => 'Khách hàng chưa có địa chỉ email nên không thể gửi thông tin buổi tư vấn.'];
+        }
+
+        $configuration = $this->mailHealth->inspectConfiguration();
+
+        if ($configuration['blocking']) {
+            return ['sent' => false, 'message' => $configuration['message']];
+        }
+
+        try {
+            $customer->notify(new AppointmentInformationNotification($appointment, $note));
+        } catch (Throwable $exception) {
+            Log::error('Không gửi được thông tin buổi tư vấn.', [
+                'appointment_id' => $appointment->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return ['sent' => false, 'message' => $this->mailHealth->describeException($exception)];
+        }
+
+        $this->audit->record(
+            'appointment.information_sent',
+            $appointment,
+            new: ['to' => $customer->email, 'note' => $note],
+            actor: $actor,
+        );
+
+        return [
+            'sent' => true,
+            'message' => 'Đã gửi thông tin buổi tư vấn tới '.$customer->email.($configuration['ok'] ? '' : ' Lưu ý: '.$configuration['message']),
+        ];
     }
 
     private function transition(Appointment $appointment, string $to, string $action, User $actor, array $attributes = [], ?string $reason = null): void

@@ -142,12 +142,17 @@
                             <x-nav-link href="{{ route('customer.profile') }}">Hồ sơ cá nhân</x-nav-link>
                         @endif
 
-                        {{-- Specialist --}}
+                        {{-- Specialist — menu ngang năm mục chính (Specialist Module) --}}
+                        {{-- "Hồ sơ tư vấn" mở danh sách ca đã hoàn thành để chọn hồ sơ cần ghi. --}}
                         @if ($role === 'specialist')
-                            <x-nav-link href="{{ route('specialist.dashboard') }}">Trang chủ</x-nav-link>
-                            <x-nav-link href="{{ route('specialist.appointments') }}">Lịch hẹn</x-nav-link>
-                            <x-nav-link href="{{ route('specialist.schedule') }}">Lịch làm việc</x-nav-link>
-                            <x-nav-link href="{{ route('specialist.leaves') }}">Ngày nghỉ và chặn giờ</x-nav-link>
+                            @foreach ([
+                                ['Tổng quan', 'specialist.dashboard'],
+                                ['Lịch làm việc', 'specialist.schedule'],
+                                ['Ca tư vấn', 'specialist.appointments'],
+                                ['Cá nhân', 'specialist.profile'],
+                            ] as [$menuLabel, $menuRoute])
+                                <x-nav-link href="{{ route($menuRoute) }}">{{ $menuLabel }}</x-nav-link>
+                            @endforeach
                         @endif
 
                         {{-- Staff --}}
@@ -325,10 +330,10 @@
                     @endif
 
                     @if ($role === 'specialist')
-                        <x-mobile-nav-link href="{{ route('specialist.dashboard') }}">Trang chủ</x-mobile-nav-link>
-                        <x-mobile-nav-link href="{{ route('specialist.appointments') }}">Lịch hẹn</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('specialist.dashboard') }}">Tổng quan</x-mobile-nav-link>
                         <x-mobile-nav-link href="{{ route('specialist.schedule') }}">Lịch làm việc</x-mobile-nav-link>
-                        <x-mobile-nav-link href="{{ route('specialist.leaves') }}">Ngày nghỉ và chặn giờ</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('specialist.appointments') }}">Ca tư vấn</x-mobile-nav-link>
+                        <x-mobile-nav-link href="{{ route('specialist.profile') }}">Cá nhân</x-mobile-nav-link>
                     @endif
 
                     @if ($role === 'staff')

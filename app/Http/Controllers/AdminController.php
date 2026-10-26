@@ -20,12 +20,14 @@ use App\Services\AdminAnalyticsService;
 use App\Services\AppointmentTrafficService;
 use App\Services\AppointmentWorkflowService;
 use App\Services\AttentionService;
+use App\Services\MailHealthService;
 use App\Services\NotificationService;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -350,6 +352,31 @@ class AdminController extends Controller
         $settings = SystemSetting::query()->orderBy('group')->orderBy('key')->get();
 
         return view('admin.settings', compact('settings'));
+    }
+
+    /**
+     * Trang chẩn đoán cấu hình gửi email — quản trị viên kiểm tra ngay được
+     * hệ thống có gửi được email cho khách hay không.
+     */
+    public function mailSettings(MailHealthService $mailHealth): View
+    {
+        return view('admin.mail-settings', [
+            'configuration' => $mailHealth->inspectConfiguration(),
+            'fromAddress' => (string) config('mail.from.address'),
+            'fromName' => (string) config('mail.from.name'),
+        ]);
+    }
+
+    /**
+     * Gửi email thử tới một địa chỉ để kiểm tra kết nối thật.
+     */
+    public function sendTestMail(Request $request, MailHealthService $mailHealth): RedirectResponse
+    {
+        $data = $request->validate(['email' => ['required', 'email']]);
+
+        $result = $mailHealth->verifyConnection($data['email']);
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
     }
 
     public function updateSettings(Request $request): RedirectResponse

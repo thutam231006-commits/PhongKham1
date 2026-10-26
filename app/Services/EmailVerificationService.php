@@ -3,8 +3,12 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Notifications\EmailVerificationCodeNotification;
+use App\Notifications\EmailVerificationNotification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 /**
  * EmailVerificationService — xác thực email bằng mã 6 số (OTP).
@@ -15,6 +19,10 @@ use Illuminate\Support\Facades\Log;
  */
 class EmailVerificationService
 {
+    public function __construct(
+        private readonly MailHealthService $mailHealth,
+    ) {}
+
     /** Mã xác thực dùng để kích hoạt tài khoản tạo bởi lễ tân. */
     public const PURPOSE_ACTIVATION = 'ACTIVATION';
 
@@ -129,7 +137,7 @@ class EmailVerificationService
         $code = $this->issueCode($user, $purpose);
 
         try {
-            $user->notify(new \App\Notifications\EmailVerificationCodeNotification($code, $purpose));
+            $user->notify(new EmailVerificationCodeNotification($code, $purpose));
         } catch (\Throwable $exception) {
             Log::error('Không gửi được mã xác thực email.', [
                 'user_id' => $user->id,
@@ -138,9 +146,45 @@ class EmailVerificationService
                 'exception' => $exception->getMessage(),
             ]);
 
-            return ['ok' => false, 'message' => 'Không gửi được mã xác thực: '.$exception->getMessage()];
+            return ['ok' => false, 'message' => 'Không gửi được mã xác thực: '.$this->mailHealth->describeException($exception)];
         }
 
         return ['ok' => true, 'message' => 'Mã xác thực mới đã được gửi tới '.$user->email.'.'];
+    }
+
+    /**
+     * Gửi một email xác thực duy nhất chứa cả link kích hoạt và mã 6 số.
+     *
+     * @return array{ok:bool, message:string}
+     */
+    public function sendVerificationMail(User $user): array
+    {
+        $code = $this->issueCode($user, self::PURPOSE_VERIFICATION);
+
+        try {
+            $user->notify(new EmailVerificationNotification($code, $this->verificationUrl($user)));
+        } catch (\Throwable $exception) {
+            Log::error('Không gửi được email xác thực.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return ['ok' => false, 'message' => 'Không gửi được email xác thực: '.$this->mailHealth->describeException($exception)];
+        }
+
+        return ['ok' => true, 'message' => 'Email xác thực đã được gửi tới '.$user->email.'.'];
+    }
+
+    /**
+     * Link kích hoạt có chữ ký và hạn dùng.
+     */
+    private function verificationUrl(User $user): string
+    {
+        return URL::temporarySignedRoute(
+            'verification.verify',
+            Carbon::now()->addMinutes((int) config('auth.verification.expire', 60)),
+            ['id' => $user->getKey(), 'hash' => sha1($user->getEmailForVerification())],
+        );
     }
 }

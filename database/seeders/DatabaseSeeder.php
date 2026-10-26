@@ -538,7 +538,7 @@ class DatabaseSeeder extends Seeder
             ['key' => 'start_early_minutes', 'value' => '15', 'type' => 'integer', 'group' => 'appointment', 'label' => 'Số phút được bắt đầu sớm'],
             ['key' => 'no_show_grace_minutes', 'value' => '15', 'type' => 'integer', 'group' => 'appointment', 'label' => 'Số phút chờ trước khi no-show'],
             ['key' => 'review_window_days', 'value' => '30', 'type' => 'integer', 'group' => 'review', 'label' => 'Số ngày được gửi đánh giá'],
-            ['key' => 'email_verification_required', 'value' => '0', 'type' => 'boolean', 'group' => 'authentication', 'label' => 'Bắt buộc xác thực email'],
+            ['key' => 'email_verification_required', 'value' => '1', 'type' => 'boolean', 'group' => 'authentication', 'label' => 'Bắt buộc xác thực email'],
             ['key' => 'email_notifications_enabled', 'value' => '0', 'type' => 'boolean', 'group' => 'notification', 'label' => 'Bật gửi thông báo qua email'],
         ];
         foreach ($settings as $setting) {

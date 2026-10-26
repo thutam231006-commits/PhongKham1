@@ -145,35 +145,35 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
+            <table class="min-w-[900px] text-left text-sm">
                 <thead class="bg-[#F7FBFE] text-xs uppercase tracking-wide text-[#52637A]">
                     <tr>
-                        <th class="px-5 py-3 font-bold">Thời gian</th>
-                        <th class="px-5 py-3 font-bold">Khách hàng</th>
-                        <th class="px-5 py-3 font-bold">Chuyên viên</th>
-                        <th class="px-5 py-3 font-bold">Dịch vụ</th>
-                        <th class="px-5 py-3 font-bold">Phòng</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Thời gian</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Khách hàng</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Chuyên viên</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Dịch vụ</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-bold">Phòng</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#EEF4F8]">
                     @forelse($unassigned as $appointment)
                         <tr class="align-top transition hover:bg-[#F3F9FD]">
                             <td class="whitespace-nowrap px-5 py-4">
-                                <p class="font-semibold text-[#102A43]">{{ $appointment->start_at->format('d/m/Y') }}</p>
-                                <p class="text-xs font-bold tabular-nums text-[#2D82C4]">{{ $appointment->start_at->format('H:i') }} – {{ $appointment->end_at->format('H:i') }}</p>
-                                <p class="mt-1 font-mono text-[11px] text-[#718096]">{{ $appointment->appointment_code }}</p>
+                                <p class="whitespace-nowrap font-semibold text-[#102A43]">{{ $appointment->start_at->format('d/m/Y') }}</p>
+                                <p class="whitespace-nowrap text-xs font-bold tabular-nums text-[#2D82C4]">{{ $appointment->start_at->format('H:i') }} – {{ $appointment->end_at->format('H:i') }}</p>
+                                <p class="mt-1 whitespace-nowrap font-mono text-[11px] text-[#718096]">{{ $appointment->appointment_code }}</p>
                             </td>
                             <td class="px-5 py-4">
-                                <p class="font-semibold text-[#102A43]">{{ $appointment->customer->name }}</p>
-                                <p class="mt-0.5 text-xs text-[#718096]">{{ $appointment->customer->phone ?? $appointment->customer->email }}</p>
+                                <p class="whitespace-nowrap font-semibold text-[#102A43]">{{ $appointment->customer->name }}</p>
+                                <p class="mt-0.5 whitespace-nowrap text-xs text-[#718096]">{{ $appointment->customer->phone ?? $appointment->customer->email }}</p>
                             </td>
-                            <td class="px-5 py-4 text-[#334E68]">{{ $appointment->specialistProfile->user->name }}</td>
+                            <td class="whitespace-nowrap px-5 py-4 text-[#334E68]">{{ $appointment->specialistProfile->user->name }}</td>
                             <td class="px-5 py-4 text-xs text-[#52637A]">{{ $appointment->service->name }}</td>
                             <td class="px-5 py-4">
                                 <form method="POST" action="{{ route('staff.appointments.room.assign', $appointment) }}" class="flex gap-2">
                                     @csrf
                                     <select name="consultation_room_id" required
-                                            class="rounded-lg border-[#B8D2E4] text-xs focus:border-[#2D82C4] focus:ring-[#2D82C4]">
+                                            class="min-w-[11rem] rounded-lg border-[#B8D2E4] text-xs focus:border-[#2D82C4] focus:ring-[#2D82C4]">
                                         <option value="">Chọn phòng…</option>
                                         @foreach($board as $room)
                                             <option value="{{ $room['id'] }}">{{ $room['name'] }}</option>

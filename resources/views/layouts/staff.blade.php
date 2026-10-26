@@ -9,7 +9,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body class="h-full bg-[#F0F7FC] text-[#102A43] antialiased">
+<body class="mg-app h-full bg-[#F0F7FC] text-[#102A43] antialiased">
 
     {{-- ============================================================
          HEADER: Top navigation bar — xanh #2D82C4, full width
@@ -33,31 +33,36 @@
                 </a>
 
                 {{-- ── MENU ĐIỀU HƯỚNG PHÍA TRÊN — desktop ── --}}
-                <nav aria-label="Menu lễ tân" class="hidden flex-1 items-center justify-center gap-1 lg:flex">
+                <nav aria-label="Menu lễ tân" class="hidden flex-1 items-center justify-center gap-1.5 lg:flex">
                     @php
+                        /*
+                         * Mỗi mục khai báo đúng danh sách route thuộc về nó.
+                         * Không dùng wildcard `staff.appointments.*` vì sẽ khiến
+                         * "Quản lý lịch hẹn" và "Xếp phòng" cùng được đánh dấu active.
+                         */
                         $navItems = [
-                            ['route' => 'staff.dashboard',              'label' => 'Tổng quan'],
-                            ['route' => 'staff.appointments',           'label' => 'Quản lý lịch hẹn'],
-                            ['route' => 'staff.appointments.rooms',     'label' => 'Xếp phòng'],
-                            ['route' => 'staff.appointments.attention', 'label' => 'Lịch cần xử lý'],
-                            ['route' => 'staff.customers',              'label' => 'Khách hàng'],
-                            ['route' => 'staff.payments',               'label' => 'Thanh toán'],
+                            ['label' => 'Tổng quan', 'routes' => ['staff.dashboard', 'staff.dashboard.*']],
+                            ['label' => 'Quản lý lịch hẹn', 'routes' => ['staff.appointments', 'staff.appointments.pending', 'staff.appointments.detail', 'staff.appointments.book', 'staff.checkin']],
+                            ['label' => 'Xếp phòng', 'routes' => ['staff.appointments.rooms', 'staff.appointments.rooms.*']],
+                            ['label' => 'Lịch cần xử lý', 'routes' => ['staff.appointments.attention']],
+                            ['label' => 'Khách hàng', 'routes' => ['staff.customers', 'staff.customers.*']],
+                            ['label' => 'Thanh toán', 'routes' => ['staff.payments']],
                         ];
                     @endphp
 
                     @foreach($navItems as $nav)
                         @php
-                            $isActive = request()->routeIs($nav['route']) || request()->routeIs($nav['route'] . '.*');
+                            $isActive = request()->routeIs(...$nav['routes']);
                         @endphp
-                        <a href="{{ route($nav['route']) }}"
-                           class="relative rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors
+                        <a href="{{ route($nav['routes'][0]) }}"
+                           class="relative whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold leading-5 transition-colors
                                   {{ $isActive
-                                     ? 'bg-white/20 text-white'
+                                     ? 'bg-white/20 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.18)]'
                                      : 'text-white/85 hover:bg-white/10 hover:text-white' }}"
                            @if($isActive) aria-current="page" @endif>
                             {{ $nav['label'] }}
                             @if($isActive)
-                                <span class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-px h-0.5 w-5 rounded-full bg-white"></span>
+                                <span class="absolute bottom-0 left-1/2 h-0.5 w-5 -translate-x-1/2 translate-y-px rounded-full bg-white"></span>
                             @endif
                         </a>
                     @endforeach
@@ -151,9 +156,9 @@
              class="border-t border-white/20 lg:hidden">
             <nav class="mx-auto max-w-screen-xl space-y-1 px-4 py-3" aria-label="Menu di động lễ tân">
                 @foreach($navItems as $nav)
-                    @php $isActive = request()->routeIs($nav['route']) || request()->routeIs($nav['route'] . '.*'); @endphp
-                    <a href="{{ route($nav['route']) }}"
-                       class="block rounded-lg px-3 py-2.5 text-sm font-semibold transition
+                    @php $isActive = request()->routeIs(...$nav['routes']); @endphp
+                    <a href="{{ route($nav['routes'][0]) }}"
+                       class="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition
                               {{ $isActive ? 'bg-white/20 text-white' : 'text-white/85 hover:bg-white/10 hover:text-white' }}"
                        @if($isActive) aria-current="page" @endif>
                         {{ $nav['label'] }}

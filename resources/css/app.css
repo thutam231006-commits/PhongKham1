@@ -191,6 +191,45 @@
         box-shadow: 0 8px 20px rgb(45 130 196 / 0.16);
     }
 
+    /*
+     * Bảng dữ liệu: giữ từng cột ở chiều rộng ổn định để nội dung
+     * không bị bóp và chữ không nhảy dòng khi co giãn cửa sổ.
+     */
+    .mg-app main table {
+        min-width: 100%;
+    }
+
+    .mg-app main table th,
+    .mg-app main table td {
+        vertical-align: top;
+    }
+
+    .mg-app main table td p,
+    .mg-app main table td span:not([role='status']) {
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    /*
+     * Nhãn trạng thái: giữ trên một dòng, không cắt chữ.
+     */
+    .mg-app main [role='status'] {
+        white-space: nowrap;
+    }
+
+    /*
+     * Ô nhập liệu: chữ không nhảy dòng bên trong select/date.
+     */
+    .mg-app main select,
+    .mg-app main input[type='date'],
+    .mg-app main input[type='text'],
+    .mg-app main input[type='email'],
+    .mg-app main input[type='password'],
+    .mg-app main input[type='tel'],
+    .mg-app main input[type='number'] {
+        white-space: nowrap;
+    }
+
     .mg-reveal {
         opacity: 1;
         transform: none;
