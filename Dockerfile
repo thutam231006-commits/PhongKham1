@@ -39,4 +39,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # 8. Lệnh khởi chạy server chuẩn (xóa cache và bật PHP-FPM + Nginx)
-CMD ["sh", "-c", "APP_PORT=${PORT:-10000}; sed -i \"s/listen 80;/listen ${APP_PORT};/\" /etc/nginx/sites-available/default; php artisan config:clear || true; php artisan migrate --force || echo 'Migration failed; application will start so the error remains visible in logs'; php artisan optimize:clear || true; php artisan optimize || true; php-fpm -D; exec nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "APP_PORT=${PORT:-10000}; sed -i \"s/listen 80;/listen ${APP_PORT};/\" /etc/nginx/sites-available/default; php artisan config:clear || true; php-fpm -D; (php artisan migrate --force && php artisan optimize:clear && php artisan optimize || echo 'Post-start Laravel maintenance failed; inspect application logs') & exec nginx -g 'daemon off;'"]
