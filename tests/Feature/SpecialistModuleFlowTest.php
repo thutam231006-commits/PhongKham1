@@ -183,6 +183,7 @@ class SpecialistModuleFlowTest extends TestCase
 
     public function test_specialist_can_start_a_late_appointment_after_its_scheduled_end(): void
     {
+        $this->travelTo(Carbon::parse('2026-10-27 15:00:00'));
         [$specialist, $profile] = $this->specialist();
         // Ca 60 phút đã kết thúc 2 tiếng trước (khách đến muộn / ca trôi giờ).
         $appointment = $this->appointment($profile, now()->subHours(3), 'CONFIRMED');
