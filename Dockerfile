@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-# Cài đặt thư viện hệ thống và PHP extension
+# 1. Cài đặt các thư viện hệ thống (bao gồm PostgreSQL và Node.js để build Tailwind/Vite)
 RUN apt-get update && apt-get install -y \
     nginx \
     git \
@@ -11,27 +11,32 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring gd
 
-# Copy Composer
+# 2. Copy Composer từ Image chính thức
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy toàn bộ mã nguồn
+# 3. Copy toàn bộ mã nguồn
 COPY . .
 
-# Copy cấu hình Nginx chuẩn
+# 4. Copy file cấu hình Nginx
 COPY nginx.conf /etc/nginx/sites-available/default
 
-# Cài đặt thư viện qua Composer
+# 5. Cài đặt các thư viện PHP via Composer
 RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Phân quyền lưu trữ cho Laravel
+# 6. Build file giao diện Frontend (Tailwind / Vite / Assets)
+RUN npm install && npm run build
+
+# 7. Phân quyền lưu trữ cho Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
 
-# Chạy server Nginx + PHP-FPM an toàn
-CMD php artisan config:clear && php artisan cache:clear && php-fpm -D && nginx -g "daemon off;"
+# 8. Lệnh khởi chạy server chuẩn (xóa cache và bật PHP-FPM + Nginx)
+CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php-fpm -D && nginx -g 'daemon off;'"]
