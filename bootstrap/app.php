@@ -38,6 +38,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['webhooks/sepay']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // CHÈN ĐOẠN NÀY VÀO ĐẦU KHỐI EXCEPTIONS:
+        $exceptions->render(function (\Throwable $e) {
+            dd($e);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
