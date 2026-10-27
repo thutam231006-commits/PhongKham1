@@ -28,7 +28,7 @@ RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-interacti
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Cấu hình Nginx đơn giản cho Laravel
+# Cấu hình Nginx cho Laravel
 RUN echo 'server { \
     listen 80; \
     root /var/www/html/public; \
@@ -45,4 +45,5 @@ RUN echo 'server { \
 
 EXPOSE 80
 
-CMD php-fpm -D && nginx -g 'daemon off;'
+# Tự động chạy migration, clear cache khi khởi chạy container
+CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
