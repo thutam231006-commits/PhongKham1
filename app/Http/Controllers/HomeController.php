@@ -94,8 +94,8 @@ class HomeController extends Controller
                 ->where('status', 'ACTIVE')
                 ->with(['user', 'services'])
                 ->withCount(['reviews as visible_reviews_count' => fn ($q) => $q->where('status', 'VISIBLE')])
-                ->withAvg(['reviews as average_rating' => fn ($q) => $q->where('status', 'VISIBLE')], 'rating')
-                ->orderByDesc('average_rating')
+                ->withAvg(['reviews as visible_reviews_average_rating' => fn ($q) => $q->where('status', 'VISIBLE')], 'rating')
+                ->orderByDesc('visible_reviews_average_rating')
                 ->orderByDesc('visible_reviews_count')
                 ->orderBy('display_order')
                 ->limit(self::FEATURED_SPECIALISTS_LIMIT)
@@ -105,7 +105,7 @@ class HomeController extends Controller
                     'name' => $profile->user->name,
                     'title' => $profile->title,
                     'experience_years' => $profile->years_of_experience,
-                    'average_rating' => (float) ($profile->average_rating ?? 0),
+                    'average_rating' => (float) ($profile->visible_reviews_average_rating ?? 0),
                     'visible_reviews_count' => $profile->visible_reviews_count,
                     'avatar_url' => $profile->avatar_url,
                 ]);

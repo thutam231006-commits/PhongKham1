@@ -60,7 +60,7 @@ class BookingController extends Controller
     public function specialistsApi(Request $request): JsonResponse
     {
         $data = $request->validate(['service_id' => ['required', 'integer', 'exists:services,id']]);
-        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->whereHas('services', fn ($query) => $query->whereKey($data['service_id']))->with('user')->withAvg(['reviews as average_rating' => fn ($query) => $query->where('status', 'VISIBLE')], 'rating')->withCount(['reviews as reviews_count' => fn ($query) => $query->where('status', 'VISIBLE')])->get()->map(fn (SpecialistProfile $specialist): array => ['id' => $specialist->id, 'name' => $specialist->user->name, 'title' => $specialist->title, 'avatar_url' => $specialist->avatar_url, 'rating' => (float) ($specialist->average_rating ?? 0), 'reviews_count' => $specialist->reviews_count]);
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->whereHas('services', fn ($query) => $query->whereKey($data['service_id']))->with('user')->withAvg(['reviews as visible_reviews_average_rating' => fn ($query) => $query->where('status', 'VISIBLE')], 'rating')->withCount(['reviews as reviews_count' => fn ($query) => $query->where('status', 'VISIBLE')])->get()->map(fn (SpecialistProfile $specialist): array => ['id' => $specialist->id, 'name' => $specialist->user->name, 'title' => $specialist->title, 'avatar_url' => $specialist->avatar_url, 'rating' => (float) ($specialist->visible_reviews_average_rating ?? 0), 'reviews_count' => $specialist->reviews_count]);
 
         return response()->json(['success' => true, 'data' => $specialists, 'error' => null]);
     }
@@ -73,7 +73,9 @@ class BookingController extends Controller
         }
         session(['booking' => [...session('booking', []), 'service_id' => $serviceId]]);
         $service = Service::query()->active()->with('category')->findOrFail($serviceId);
-        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->whereHas('services', fn ($query) => $query->whereKey($serviceId))->with(['user', 'services'])->withAvg(['reviews as average_rating' => fn ($query) => $query->where('status', 'VISIBLE')], 'rating')->withCount(['reviews as reviews_count' => fn ($query) => $query->where('status', 'VISIBLE')])->get();
+        $specialists = SpecialistProfile::query()->where('status', 'ACTIVE')->whereHas('services', fn ($query) => $query->whereKey($serviceId))->with(['user', 'services'])->withAvg(['reviews as visible_reviews_average_rating' => fn ($query) => $query->where('status', 'VISIBLE')], 'rating')->withCount(['reviews as reviews_count' => fn ($query) => $query->where('status', 'VISIBLE')])->get()->each(function (SpecialistProfile $specialist): void {
+            $specialist->setAttribute('average_rating', $specialist->visible_reviews_average_rating);
+        });
 
         // Đến từ thẻ "Đặt lịch với chuyên gia" (?specialist_id=ID): bỏ qua bước chọn
         // chuyên viên và chuyển thẳng sang bước chọn thời gian lịch hẹn.
