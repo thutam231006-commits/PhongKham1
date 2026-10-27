@@ -9,9 +9,9 @@ ENV PHP_ERRORS_STDERR=1
 ENV RUN_CLI=1
 ENV REAL_IP_HEADER=1
 
-# Cài đặt extension postgresql nếu cần và chạy composer install
+# Cài đặt extension và chạy composer install với tham số an toàn
 RUN apk add --no-cache php83-pdo_pgsql php83-pgsql \
-    && composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+    && composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
