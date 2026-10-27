@@ -83,21 +83,19 @@ return [
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-
-        'pgsql' => [
+'pgsql' => [
     'driver' => 'pgsql',
     'url' => env('DATABASE_URL'),
-    'host' => env('DB_HOST', '127.0.0.1'),
+    'host' => env('DB_HOST', 'dpg-dbg93ht9fdbs73d526og-a.oregon-postgres.render.com'),
     'port' => env('DB_PORT', '5432'),
-    'database' => env('DB_DATABASE', 'forge'),
-    'username' => env('DB_USERNAME', 'forge'),
+    'database' => env('DB_DATABASE', 'phongkham_g7ac'),
+    'username' => env('DB_USERNAME', 'phongkham_g7ac_user'),
     'password' => env('DB_PASSWORD', ''),
     'charset' => 'utf8',
     'prefix' => '',
     'prefix_indexes' => true,
     'search_path' => 'public',
     'sslmode' => 'require',
-    'sslrootcert' => env('POSTGRES_SSL_ROOT_CERT', ''),
 ],
 
         'sqlsrv' => [
