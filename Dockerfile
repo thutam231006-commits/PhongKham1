@@ -39,4 +39,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # 8. Lệnh khởi chạy server chuẩn (xóa cache và bật PHP-FPM + Nginx)
-CMD ["sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan optimize:clear && php artisan optimize && php-fpm -D && nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php artisan optimize:clear && php artisan optimize && php-fpm -D && nginx -g 'daemon off;'"]
