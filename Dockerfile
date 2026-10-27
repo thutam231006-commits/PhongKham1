@@ -34,4 +34,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # Chạy server Nginx + PHP-FPM an toàn
-CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php-fpm -D && nginx -g 'daemon off;'"]
